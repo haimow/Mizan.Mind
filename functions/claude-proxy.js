@@ -28,12 +28,8 @@ const handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "messages required" }) };
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 55000);
-
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         "x-api-key": ANTHROPIC_API_KEY,
@@ -41,12 +37,11 @@ const handler = async (event) => {
       },
       body: JSON.stringify({
         model: body.model || "claude-sonnet-4-20250514",
-        max_tokens: body.max_tokens || 4000,
+        max_tokens: Math.min(body.max_tokens || 2000, 2000),
         messages: body.messages,
       }),
     });
 
-    clearTimeout(timeout);
     const data = await response.json();
 
     if (!response.ok) {
@@ -55,10 +50,7 @@ const handler = async (event) => {
 
     return { statusCode: 200, headers, body: JSON.stringify(data) };
   } catch (err) {
-    if (err.name === "AbortError") {
-      return { statusCode: 504, headers, body: JSON.stringify({ error: "API isteği zaman aşımına uğradı. Lütfen tekrar deneyin." }) };
-    }
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "Proxy error: " + err.message }) };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: "Proxy: " + err.message }) };
   }
 };
 
