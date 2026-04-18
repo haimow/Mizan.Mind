@@ -6,6 +6,7 @@
 <title>FinAnaliz Pro — Finansal Analiz Platformu</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b82f6'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='bold'>F</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
@@ -48,17 +49,82 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg0);color:var(--t1);min-
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
+
+/* AUTH OVERLAY */
+.auth-overlay{position:fixed;inset:0;background:var(--bg0);z-index:1000;display:flex;align-items:center;justify-content:center}
+.auth-box{background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:40px 36px;width:100%;max-width:400px;text-align:center}
+.auth-logo{width:52px;height:52px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;color:#fff;margin:0 auto 16px}
+.auth-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.auth-sub{font-size:12px;color:var(--t2);margin-bottom:28px;line-height:1.6}
+.auth-btn{display:block;width:100%;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s;margin-bottom:10px}
+.auth-btn-p{background:var(--ac);color:#fff}.auth-btn-p:hover{background:#2563eb}
+.auth-btn-g{background:var(--bg1);color:var(--t1);border:1px solid var(--brd)}.auth-btn-g:hover{background:var(--bg2h)}
+
+/* USER BAR */
+.userbar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid var(--brd);flex-shrink:0;background:var(--bg0)}
+.userbar-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.userbar-nm{font-size:11px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.userbar-out{background:none;border:1px solid var(--brd);border-radius:4px;color:var(--tm);font-size:10px;cursor:pointer;padding:3px 7px;font-family:'DM Sans',sans-serif;transition:all .2s}.userbar-out:hover{color:var(--rd);border-color:var(--rd)}
+
+/* SECTOR SELECT */
+.sector-bar{display:flex;align-items:center;gap:7px;padding:7px 18px;background:var(--bgi);border-bottom:1px solid var(--brd);flex-shrink:0;flex-wrap:wrap}
+.sector-lbl{font-size:9px;color:var(--tm);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1.5px;flex-shrink:0}
+.sector-sel{background:var(--bg2);border:1px solid var(--brd);border-radius:6px;color:var(--t1);font-size:11px;padding:4px 10px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;transition:border-color .2s}.sector-sel:focus{border-color:var(--ac)}
+.sector-badge{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:600;background:var(--acd);color:var(--ac);border:1px solid rgba(59,130,246,.25);font-family:'JetBrains Mono',monospace}
+
+/* SAVED ANALYSES */
+.saved-item{background:var(--bgi);border:1px solid var(--brd);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px;transition:all .2s;cursor:pointer}.saved-item:hover{background:var(--bg2h);border-color:var(--brdf)}
+.saved-dot{width:8px;height:8px;border-radius:50%;background:var(--ac);flex-shrink:0}
+.saved-info{flex:1;min-width:0}
+.saved-name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.saved-meta{font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.saved-del{background:none;border:none;color:var(--tm);cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;transition:all .2s}.saved-del:hover{color:var(--rd);background:rgba(239,68,68,.1)}
+
+/* SAVE BTN */
+.btn-save-anim{animation:savePulse .6s ease}@keyframes savePulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
 </style>
 </head>
 <body>
-<div class="app" id="app">
+<!-- AUTH OVERLAY -->
+<div id="authOverlay" class="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">F</div>
+    <div class="auth-title">FinAnaliz Pro</div>
+    <div class="auth-sub">Finansal analizlerinize güvenli erişim için<br>giriş yapın veya hesap oluşturun.</div>
+    <button class="auth-btn auth-btn-p" onclick="netlifyIdentity.open('login')">📧 E-posta ile Giriş</button>
+    <button class="auth-btn auth-btn-g" onclick="netlifyIdentity.open('login')">🔑 Google ile Giriş</button>
+    <div style="font-size:10px;color:var(--tm);margin-top:12px">Hesabınız yok mu? <span style="color:var(--ac);cursor:pointer" onclick="netlifyIdentity.open('signup')">Kayıt Ol</span></div>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
 <div class="sidebar" id="sidebar">
 <div class="sb-brand"><div class="brand-i">F</div><div><div class="brand-n">FinAnaliz Pro</div><div class="brand-s">Finansal Analiz Platformu</div></div></div>
-<div class="sb-tabs"><button class="sb-tab on" data-st="formulas" onclick="sSTab('formulas')">📐 Formüller</button><button class="sb-tab" data-st="charts" onclick="sSTab('charts')">📊 Grafikler</button></div>
+<div class="sb-tabs"><button class="sb-tab on" data-st="formulas" onclick="sSTab('formulas')">📐 Formüller</button><button class="sb-tab" data-st="charts" onclick="sSTab('charts')">📊 Grafikler</button><button class="sb-tab" data-st="saved" onclick="sSTab('saved')">💾 Kayıtlı</button></div>
 <div class="sb-scroll" id="sbCont"></div>
+<div class="userbar" id="userBar"><div class="userbar-av" id="userAv">?</div><div class="userbar-nm" id="userNm">Yükleniyor...</div><button class="userbar-out" onclick="doLogout()">Çıkış</button></div>
 </div>
 <button class="tgl" id="tglBtn" onclick="tglSB()" style="top:62px">◀</button>
 <div class="main">
+<div class="sector-bar">
+  <span class="sector-lbl">Sektör:</span>
+  <select class="sector-sel" id="sektorSel" onchange="S.sektor=this.value;rRatIfActive();updateSectorBadge()">
+    <option value="">— Sektör Seçin —</option>
+    <option value="genel">🏢 Genel</option>
+    <option value="insaat">🏗️ İnşaat</option>
+    <option value="turizm">🏨 Turizm & Otelcilik</option>
+    <option value="perakende">🛒 Perakende</option>
+    <option value="imalat">🏭 İmalat</option>
+    <option value="hizmet">💼 Hizmet</option>
+    <option value="lojistik">🚛 Lojistik & Nakliye</option>
+    <option value="gida">🍽️ Gıda & Tarım</option>
+    <option value="teknoloji">💻 Teknoloji</option>
+    <option value="enerji">⚡ Enerji</option>
+  </select>
+  <span class="sector-badge" id="sektorBadge" style="display:none"></span>
+  <div style="flex:1"></div>
+  <button class="btn" id="saveBtn" onclick="saveAnaliz()" style="font-size:11px" title="Bu analizi kaydet">💾 Kaydet</button>
+</div>
 <div class="pbar" id="pBar"></div>
 <div class="mtabs"><button class="mtab on" data-mt="input" onclick="sTab('input')">📥 Veri Girişi</button><button class="mtab" data-mt="ratios" onclick="sTab('ratios')">📊 Rasyolar</button><button class="mtab" data-mt="compare" onclick="sTab('compare')">⚖️ Karşılaştırma</button><button class="mtab" data-mt="ai" onclick="sTab('ai')">🤖 Uzman Yorum</button></div>
 <div class="cont" id="cont"></div>
@@ -141,7 +207,7 @@ valuation:{label:"Değerleme",icon:"🏷️",items:[
 };
 
 // STATE
-const S={periods:[{name:"",data:{},fileName:null,parseLog:[]}],ap:0,tab:"input",stab:"formulas",sbo:true,ecat:null,aiRes:"",aiLd:false};
+const S={periods:[{name:"",data:{},fileName:null,parseLog:[]}],ap:0,tab:"input",stab:"formulas",sbo:true,ecat:null,aiRes:"",aiLd:false,sektor:"",user:null,savedList:[]};
 function eD(){const d={};FIELDS.forEach(s=>s.fields.forEach(f=>d[f.key]=""));return d}
 S.periods[0].data=eD();
 
@@ -312,7 +378,26 @@ function rCol(k,v){if(v==null||isNaN(v))return"var(--tm)";const R={cr:v=>v>=1.5?
 function render(){rPB();rSB();rC();uT()}
 function uT(){const b=document.getElementById('tglBtn');b.textContent=S.sbo?'◀':'▶';b.style.left=S.sbo?'calc(var(--sw) + 4px)':'6px'}
 function rPB(){const b=document.getElementById('pBar');let h='<span class="plab">Dönemler:</span>';S.periods.forEach((p,i)=>{const label=p.name||'Dönem '+(i+1);h+=`<button class="chip ${i===S.ap?'on':''}" onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}${S.periods.length>1?`<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span>`:''}</button>`});h+='<button class="chip add" onclick="openMo(\'add\')">+ Dönem Ekle</button>';b.innerHTML=h}
-function rSB(){const el=document.getElementById('sbCont');document.querySelectorAll('.sb-tab').forEach(t=>t.classList.toggle('on',t.dataset.st===S.stab));if(S.stab==='formulas'){let h='';Object.entries(RATIOS).forEach(([ck,cat])=>{const op=S.ecat===ck;h+=`<div class="sb-cat"><div class="sb-cat-h ${op?'open':''}" onclick="tCat('${ck}')"><span>${cat.icon}</span> ${cat.label}<span class="arr">▶</span></div>`;if(op)cat.items.forEach(r=>{h+=`<div class="fc"><div class="fc-n">${r.name}</div><div class="fc-f">${r.formula}</div><div class="fc-i">İdeal: ${r.ideal}</div></div>`});h+=`</div>`});el.innerHTML=h}else rSBC(el)}
+function rSB(){const el=document.getElementById('sbCont');document.querySelectorAll('.sb-tab').forEach(t=>t.classList.toggle('on',t.dataset.st===S.stab));if(S.stab==='formulas'){let h='';Object.entries(RATIOS).forEach(([ck,cat])=>{const op=S.ecat===ck;h+=`<div class="sb-cat"><div class="sb-cat-h ${op?'open':''}" onclick="tCat('${ck}')"><span>${cat.icon}</span> ${cat.label}<span class="arr">▶</span></div>`;if(op)cat.items.forEach(r=>{h+=`<div class="fc"><div class="fc-n">${r.name}</div><div class="fc-f">${r.formula}</div><div class="fc-i">İdeal: ${r.ideal}</div></div>`});h+=`</div>`});el.innerHTML=h}else if(S.stab==='charts')rSBC(el);else rSBSaved(el)}
+
+function rSBSaved(el){
+  if(!S.savedList||!S.savedList.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--tm);font-size:11px">Kayıtlı analiz yok.<br><span style="color:var(--ac)">Analiz yapıp 💾 Kaydet butonuna basın.</span></div>';return}
+  let h='<div style="padding:10px 10px 4px;font-size:9px;color:var(--tm);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1.5px">Kayıtlı Analizler</div>';
+  S.savedList.forEach(item=>{
+    const d=new Date(item.olusturma_tarihi);
+    const tarih=d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const sektor=item.sektor?` · ${SEKTOR_LABELS[item.sektor]||item.sektor}`:'';
+    h+=`<div class="saved-item" onclick="loadSaved('${item.id}')">
+      <div class="saved-dot"></div>
+      <div class="saved-info">
+        <div class="saved-name">${item.sirket_adi||item.donem||'Adsız Analiz'}</div>
+        <div class="saved-meta">${tarih}${sektor}</div>
+      </div>
+      <button class="saved-del" onclick="event.stopPropagation();deleteSaved('${item.id}')" title="Sil">✕</button>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
 let sCh=[];
 function rSBC(el){sCh.forEach(c=>c.destroy());sCh=[];const has=S.periods.some(p=>Object.values(p.data).some(v=>v));if(!has){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--tm);font-size:11px">Veri girişi yapın.</div>';return}
 
@@ -357,48 +442,6 @@ h+=`<div class="card"><div class="card-h"><div class="card-t">✏️ Manuel Giri
 FIELDS.forEach(s=>{h+=`<div class="st">${s.section}</div><div class="ig">`;s.fields.forEach(f=>{const v=p.data[f.key]||'';const n=parseTR(v);const hasVal=!isNaN(n)&&n!==0&&v!=='';const disp=hasVal?fC(n):'';const isMissing=p.missingFields&&p.missingFields.includes(f.key)&&p.fileName;h+=`<div class="igr"><label class="igl">${f.label} ${disp?`<span style="color:var(--gn);font-size:9px">${disp}</span>`:isMissing?`<span style="color:var(--rd);font-size:9px">⚠ Okunamadı</span>`:''}</label><input class="inp ${hasVal?'filled':''} ${isMissing?'missing':''}" value="${v}" placeholder="0,00 ₺" onchange="uF('${f.key}',this.value)" oninput="uF('${f.key}',this.value)"></div>`});h+=`</div>`});
 h+=`</div></div>`;el.innerHTML=h;
 setTimeout(()=>{const z=document.getElementById('upZ');if(!z)return;z.ondragover=e=>{e.preventDefault();z.classList.add('dov')};z.ondragleave=()=>z.classList.remove('dov');z.ondrop=e=>{e.preventDefault();z.classList.remove('dov');if(e.dataTransfer.files[0])hFile(e.dataTransfer.files[0])}},50)}
-function rRat(el){const p=S.periods[S.ap],d=nd(p);let h=`<div class="card"><div class="card-h"><div class="card-t">📊 Rasyolar${p.name?' — '+p.name:''}</div></div><div class="card-b">`;
-Object.entries(RATIOS).forEach(([,cat])=>{const cm=cat.items.map(r=>({...r,value:r.calc(d)}));if(!cm.some(r=>r.value!==null))return;h+=`<div class="rcat"><div class="rcat-h">${cat.icon} ${cat.label}</div><div class="rgrid">`;cm.forEach(r=>{const ds=r.value!==null?(r.pct?fP(r.value):r.cur?fC(r.value):fR(r.value)):"—";const c=rCol(r.key,r.value);h+=`<div class="rc" style="border-left-color:${c}"><div class="rc-n">${r.name}</div><div class="rc-v" style="color:${c}">${ds}</div><div class="rc-s">İdeal: ${r.ideal}</div></div>`});h+=`</div></div>`});
-// Financial Health Score — comprehensive weighted scoring
-const scores=[];
-function addScore(val,thresholds){
-  // thresholds: [excellent, good, fair] — returns 0-100 score
-  if(val==null||isNaN(val))return;
-  const [exc,good,fair]=thresholds;
-  let s;
-  if(exc>fair){// higher is better (e.g. current ratio)
-    s=val>=exc?100:val>=good?80:val>=fair?60:val>0?40:20;
-  }else{// lower is better (e.g. debt ratio)
-    s=val<=exc?100:val<=good?80:val<=fair?60:40;
-  }
-  scores.push(s);
-}
-// Likidite (ağırlık: yüksek)
-addScore(RATIOS.liquidity.items[0].calc(d),[2.0,1.5,1.0]); // Cari Oran
-addScore(RATIOS.liquidity.items[1].calc(d),[1.5,1.0,0.7]); // Asit-Test
-addScore(RATIOS.liquidity.items[2].calc(d),[0.3,0.2,0.1]); // Nakit Oran
-// Karlılık
-addScore(RATIOS.profitability.items[0].calc(d),[30,20,10]); // Brüt Marj
-addScore(RATIOS.profitability.items[1].calc(d),[15,8,3]); // Faaliyet Marjı
-addScore(RATIOS.profitability.items[2].calc(d),[10,5,1]); // Net Marj
-addScore(RATIOS.profitability.items[4].calc(d),[20,12,5]); // ROE
-addScore(RATIOS.profitability.items[5].calc(d),[8,4,1]); // ROA
-// Kaldıraç (düşük = iyi)
-addScore(RATIOS.leverage.items[0].calc(d),[0.4,0.6,0.8]); // Borç Oranı
-addScore(RATIOS.leverage.items[1].calc(d),[1.0,1.5,2.5]); // Borç/Özsermaye
-// Faiz Karşılama (yüksek = iyi)
-const ic=RATIOS.leverage.items[2].calc(d);if(ic!=null)addScore(ic,[5,3,1.5]);
-// Etkinlik
-addScore(RATIOS.efficiency.items[0].calc(d),[3,2,1]); // Aktif Devir
-
-if(scores.length>=3){
-  const avg=scores.reduce((a,b)=>a+b,0)/scores.length;
-  const pct=Math.round(avg);
-  const c=pct>=70?'var(--gn)':pct>=45?'var(--am)':'var(--rd)';
-  const lab=pct>=80?'Güçlü':pct>=65?'Sağlıklı':pct>=50?'Orta':pct>=35?'Zayıf':'Riskli';
-  h+=`<div style="margin-top:20px;display:flex;justify-content:center"><div class="score-c"><div class="score-ring" style="border-color:${c};color:${c}">${pct}</div><div class="score-l" style="color:${c}">Finansal Sağlık: ${lab}</div><div style="font-size:9px;color:var(--tm);margin-top:4px">${scores.length} gösterge üzerinden hesaplandı</div></div></div>`
-}
-h+=`</div></div>`;el.innerHTML=h}
 function rCmp(el){if(S.periods.length<2){el.innerHTML='<div class="card"><div class="card-b" style="text-align:center;color:var(--tm);padding:36px">En az <b>2 dönem</b> gerekli.<br><br><button class="btn btn-p" onclick="openMo(\'add\')">+ Dönem Ekle</button></div></div>';return}
 // Init comparison selection if not set
 if(!S.cmpA||!S.cmpB){
@@ -510,28 +553,185 @@ else{if(p.missingFields.length)p.parseLog.push({t:'warn',m:`⚠ ${p.missingField
 render()}
 else{hideLoading();p.parseLog.push({t:'err',m:'Desteklenmeyen: '+ext});render()}}
 
+// ─── SEKTÖR BENCHMARK'LARI ──────────────────────────────────────────────────
+const SEKTOR_LABELS={genel:'Genel',insaat:'İnşaat',turizm:'Turizm',perakende:'Perakende',imalat:'İmalat',hizmet:'Hizmet',lojistik:'Lojistik',gida:'Gıda',teknoloji:'Teknoloji',enerji:'Enerji'};
+
+const SEKTOR_BM={
+  genel:{cr:{iyi:[1.5,99],orta:[1.0,1.5],kotu:[0,1.0]},at:{iyi:[1.0,99],orta:[0.7,1.0],kotu:[0,0.7]},cashr:{iyi:[0.2,99],orta:[0.1,0.2],kotu:[0,0.1]},gm:{iyi:[30,99],orta:[15,30],kotu:[0,15]},om:{iyi:[15,99],orta:[5,15],kotu:[-99,5]},nm:{iyi:[10,99],orta:[3,10],kotu:[-99,3]},em:{iyi:[20,99],orta:[10,20],kotu:[-99,10]},roe:{iyi:[15,99],orta:[8,15],kotu:[-99,8]},roa:{iyi:[5,99],orta:[2,5],kotu:[-99,2]},dr:{iyi:[0,0.5],orta:[0.5,0.7],kotu:[0.7,99]},de:{iyi:[0,1.0],orta:[1.0,2.0],kotu:[2.0,99]},ic:{iyi:[3,99],orta:[1.5,3],kotu:[0,1.5]}},
+  insaat:{cr:{iyi:[1.3,99],orta:[0.9,1.3],kotu:[0,0.9]},at:{iyi:[0.8,99],orta:[0.5,0.8],kotu:[0,0.5]},cashr:{iyi:[0.15,99],orta:[0.08,0.15],kotu:[0,0.08]},gm:{iyi:[18,99],orta:[8,18],kotu:[0,8]},om:{iyi:[10,99],orta:[4,10],kotu:[-99,4]},nm:{iyi:[7,99],orta:[2,7],kotu:[-99,2]},em:{iyi:[15,99],orta:[8,15],kotu:[-99,8]},roe:{iyi:[12,99],orta:[6,12],kotu:[-99,6]},roa:{iyi:[4,99],orta:[1.5,4],kotu:[-99,1.5]},dr:{iyi:[0,0.65],orta:[0.65,0.8],kotu:[0.8,99]},de:{iyi:[0,1.5],orta:[1.5,2.5],kotu:[2.5,99]},ic:{iyi:[2.5,99],orta:[1.2,2.5],kotu:[0,1.2]}},
+  turizm:{cr:{iyi:[1.1,99],orta:[0.7,1.1],kotu:[0,0.7]},at:{iyi:[0.7,99],orta:[0.4,0.7],kotu:[0,0.4]},cashr:{iyi:[0.25,99],orta:[0.12,0.25],kotu:[0,0.12]},gm:{iyi:[50,99],orta:[30,50],kotu:[0,30]},om:{iyi:[18,99],orta:[8,18],kotu:[-99,8]},nm:{iyi:[12,99],orta:[4,12],kotu:[-99,4]},em:{iyi:[28,99],orta:[15,28],kotu:[-99,15]},roe:{iyi:[14,99],orta:[7,14],kotu:[-99,7]},roa:{iyi:[5,99],orta:[2,5],kotu:[-99,2]},dr:{iyi:[0,0.55],orta:[0.55,0.72],kotu:[0.72,99]},de:{iyi:[0,1.2],orta:[1.2,2.2],kotu:[2.2,99]},ic:{iyi:[3,99],orta:[1.5,3],kotu:[0,1.5]}},
+  perakende:{cr:{iyi:[1.4,99],orta:[1.0,1.4],kotu:[0,1.0]},at:{iyi:[2.0,99],orta:[1.2,2.0],kotu:[0,1.2]},cashr:{iyi:[0.15,99],orta:[0.07,0.15],kotu:[0,0.07]},gm:{iyi:[35,99],orta:[20,35],kotu:[0,20]},om:{iyi:[8,99],orta:[3,8],kotu:[-99,3]},nm:{iyi:[5,99],orta:[1.5,5],kotu:[-99,1.5]},em:{iyi:[12,99],orta:[6,12],kotu:[-99,6]},roe:{iyi:[18,99],orta:[10,18],kotu:[-99,10]},roa:{iyi:[7,99],orta:[3,7],kotu:[-99,3]},dr:{iyi:[0,0.6],orta:[0.6,0.75],kotu:[0.75,99]},de:{iyi:[0,1.3],orta:[1.3,2.3],kotu:[2.3,99]},ic:{iyi:[3,99],orta:[1.5,3],kotu:[0,1.5]},invt:{iyi:[8,99],orta:[4,8],kotu:[0,4]}},
+  imalat:{cr:{iyi:[1.6,99],orta:[1.1,1.6],kotu:[0,1.1]},at:{iyi:[1.2,99],orta:[0.7,1.2],kotu:[0,0.7]},cashr:{iyi:[0.18,99],orta:[0.08,0.18],kotu:[0,0.08]},gm:{iyi:[25,99],orta:[12,25],kotu:[0,12]},om:{iyi:[12,99],orta:[5,12],kotu:[-99,5]},nm:{iyi:[8,99],orta:[3,8],kotu:[-99,3]},em:{iyi:[18,99],orta:[9,18],kotu:[-99,9]},roe:{iyi:[14,99],orta:[7,14],kotu:[-99,7]},roa:{iyi:[6,99],orta:[2.5,6],kotu:[-99,2.5]},dr:{iyi:[0,0.55],orta:[0.55,0.72],kotu:[0.72,99]},de:{iyi:[0,1.2],orta:[1.2,2.0],kotu:[2.0,99]},ic:{iyi:[3.5,99],orta:[2.0,3.5],kotu:[0,2.0]},invt:{iyi:[6,99],orta:[3,6],kotu:[0,3]}},
+  hizmet:{cr:{iyi:[1.5,99],orta:[1.0,1.5],kotu:[0,1.0]},at:{iyi:[1.5,99],orta:[0.8,1.5],kotu:[0,0.8]},cashr:{iyi:[0.3,99],orta:[0.15,0.3],kotu:[0,0.15]},gm:{iyi:[40,99],orta:[22,40],kotu:[0,22]},om:{iyi:[18,99],orta:[8,18],kotu:[-99,8]},nm:{iyi:[12,99],orta:[5,12],kotu:[-99,5]},em:{iyi:[22,99],orta:[12,22],kotu:[-99,12]},roe:{iyi:[17,99],orta:[9,17],kotu:[-99,9]},roa:{iyi:[8,99],orta:[3,8],kotu:[-99,3]},dr:{iyi:[0,0.45],orta:[0.45,0.65],kotu:[0.65,99]},de:{iyi:[0,0.8],orta:[0.8,1.8],kotu:[1.8,99]},ic:{iyi:[4,99],orta:[2,4],kotu:[0,2]}},
+  lojistik:{cr:{iyi:[1.3,99],orta:[0.9,1.3],kotu:[0,0.9]},at:{iyi:[1.4,99],orta:[0.8,1.4],kotu:[0,0.8]},cashr:{iyi:[0.2,99],orta:[0.1,0.2],kotu:[0,0.1]},gm:{iyi:[22,99],orta:[10,22],kotu:[0,10]},om:{iyi:[10,99],orta:[4,10],kotu:[-99,4]},nm:{iyi:[6,99],orta:[2,6],kotu:[-99,2]},em:{iyi:[18,99],orta:[10,18],kotu:[-99,10]},roe:{iyi:[13,99],orta:[6,13],kotu:[-99,6]},roa:{iyi:[5,99],orta:[2,5],kotu:[-99,2]},dr:{iyi:[0,0.6],orta:[0.6,0.75],kotu:[0.75,99]},de:{iyi:[0,1.5],orta:[1.5,2.5],kotu:[2.5,99]},ic:{iyi:[2.5,99],orta:[1.3,2.5],kotu:[0,1.3]}},
+  gida:{cr:{iyi:[1.4,99],orta:[1.0,1.4],kotu:[0,1.0]},at:{iyi:[1.5,99],orta:[0.8,1.5],kotu:[0,0.8]},cashr:{iyi:[0.15,99],orta:[0.07,0.15],kotu:[0,0.07]},gm:{iyi:[28,99],orta:[14,28],kotu:[0,14]},om:{iyi:[10,99],orta:[4,10],kotu:[-99,4]},nm:{iyi:[6,99],orta:[2,6],kotu:[-99,2]},em:{iyi:[15,99],orta:[8,15],kotu:[-99,8]},roe:{iyi:[13,99],orta:[6,13],kotu:[-99,6]},roa:{iyi:[5,99],orta:[2,5],kotu:[-99,2]},dr:{iyi:[0,0.58],orta:[0.58,0.73],kotu:[0.73,99]},de:{iyi:[0,1.3],orta:[1.3,2.3],kotu:[2.3,99]},ic:{iyi:[3,99],orta:[1.5,3],kotu:[0,1.5]},invt:{iyi:[10,99],orta:[5,10],kotu:[0,5]}},
+  teknoloji:{cr:{iyi:[2.0,99],orta:[1.3,2.0],kotu:[0,1.3]},at:{iyi:[0.8,99],orta:[0.4,0.8],kotu:[0,0.4]},cashr:{iyi:[0.5,99],orta:[0.25,0.5],kotu:[0,0.25]},gm:{iyi:[55,99],orta:[35,55],kotu:[0,35]},om:{iyi:[20,99],orta:[8,20],kotu:[-99,8]},nm:{iyi:[15,99],orta:[5,15],kotu:[-99,5]},em:{iyi:[25,99],orta:[12,25],kotu:[-99,12]},roe:{iyi:[20,99],orta:[10,20],kotu:[-99,10]},roa:{iyi:[10,99],orta:[4,10],kotu:[-99,4]},dr:{iyi:[0,0.4],orta:[0.4,0.6],kotu:[0.6,99]},de:{iyi:[0,0.7],orta:[0.7,1.5],kotu:[1.5,99]},ic:{iyi:[5,99],orta:[2.5,5],kotu:[0,2.5]}},
+  enerji:{cr:{iyi:[1.2,99],orta:[0.8,1.2],kotu:[0,0.8]},at:{iyi:[0.5,99],orta:[0.3,0.5],kotu:[0,0.3]},cashr:{iyi:[0.2,99],orta:[0.1,0.2],kotu:[0,0.1]},gm:{iyi:[35,99],orta:[18,35],kotu:[0,18]},om:{iyi:[22,99],orta:[10,22],kotu:[-99,10]},nm:{iyi:[14,99],orta:[5,14],kotu:[-99,5]},em:{iyi:[40,99],orta:[22,40],kotu:[-99,22]},roe:{iyi:[12,99],orta:[5,12],kotu:[-99,5]},roa:{iyi:[4,99],orta:[1.5,4],kotu:[-99,1.5]},dr:{iyi:[0,0.6],orta:[0.6,0.78],kotu:[0.78,99]},de:{iyi:[0,1.5],orta:[1.5,2.8],kotu:[2.8,99]},ic:{iyi:[2.5,99],orta:[1.2,2.5],kotu:[0,1.2]}},
+};
+
+function getBM(rKey){const s=S.sektor&&SEKTOR_BM[S.sektor]?S.sektor:'genel';return SEKTOR_BM[s][rKey]||SEKTOR_BM.genel[rKey]||null}
+
+function rColS(k,v){
+  if(v==null||isNaN(v))return"var(--tm)";
+  const bm=getBM(k);
+  if(!bm)return rCol(k,v);
+  const inRange=(v,r)=>r&&v>=r[0]&&v<=r[1];
+  if(inRange(v,bm.iyi))return"var(--gn)";
+  if(inRange(v,bm.orta))return"var(--am)";
+  return"var(--rd)";
+}
+
+function updateSectorBadge(){
+  const b=document.getElementById('sektorBadge');
+  if(!b)return;
+  if(S.sektor&&S.sektor!==''){b.textContent=SEKTOR_LABELS[S.sektor]||S.sektor;b.style.display='inline-block'}
+  else b.style.display='none';
+  if(S.tab==='ratios')rC();
+}
+
+function rRatIfActive(){if(S.tab==='ratios')rC()}
+
+// ─── NETLIFY IDENTITY AUTH ───────────────────────────────────────────────────
+function initAuth(){
+  netlifyIdentity.on('init',user=>{
+    if(user)showApp(user);else showAuthOverlay();
+  });
+  netlifyIdentity.on('login',user=>{
+    netlifyIdentity.close();
+    showApp(user);
+  });
+  netlifyIdentity.on('logout',()=>{
+    S.user=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('authOverlay').style.display='flex';
+  });
+  netlifyIdentity.init();
+}
+
+function showAuthOverlay(){
+  document.getElementById('authOverlay').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+
+function showApp(user){
+  S.user=user;
+  document.getElementById('authOverlay').style.display='none';
+  document.getElementById('app').style.display='flex';
+  const email=user.email||'';
+  const name=user.user_metadata?.full_name||email.split('@')[0]||'Kullanıcı';
+  const av=document.getElementById('userAv');const nm=document.getElementById('userNm');
+  if(av)av.textContent=(name.charAt(0)||'U').toUpperCase();
+  if(nm)nm.textContent=name+' · '+email;
+  loadSavedList();
+  render();
+}
+
+function doLogout(){if(confirm('Çıkış yapmak istiyor musunuz?'))netlifyIdentity.logout()}
+
+// ─── SUPABASE HELPERS ────────────────────────────────────────────────────────
+async function sbCall(action,data={}){
+  if(!S.user)return{error:'Oturum yok'};
+  try{
+    const r=await fetch('/api/supabase',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,userEmail:S.user.email,data})});
+    return r.json();
+  }catch(e){return{error:e.message}}
+}
+
+async function loadSavedList(){
+  if(!S.user)return;
+  const res=await sbCall('list');
+  if(Array.isArray(res)){S.savedList=res;if(S.stab==='saved')rSB()}
+}
+
+async function saveAnaliz(){
+  if(!S.user){alert('Lütfen giriş yapın.');return}
+  const p=S.periods[S.ap];
+  if(!Object.values(p.data).some(v=>v)){alert('Kaydedilecek veri yok. Önce analiz yapın.');return}
+  const sirketAdi=prompt('Şirket adı (isteğe bağlı):',p.fileName?.replace(/\.[^/.]+$/,'')||'');
+  if(sirketAdi===null)return;
+  const btn=document.getElementById('saveBtn');
+  const orig=btn.textContent;btn.textContent='Kaydediliyor...';btn.disabled=true;
+  const d=nd(p);const rasyoJson={};
+  Object.entries(RATIOS).forEach(([,cat])=>cat.items.forEach(r=>{const v=r.calc(d);if(v!==null)rasyoJson[r.key]=parseFloat(v.toFixed(3))}));
+  const res=await sbCall('save',{sirketAdi,sektor:S.sektor,donem:p.name,rasyoJson,aiYorum:S.aiRes});
+  btn.disabled=false;
+  if(res.ok){
+    btn.textContent='✓ Kaydedildi';btn.classList.add('btn-save-anim');
+    await loadSavedList();
+    setTimeout(()=>{btn.textContent=orig;btn.classList.remove('btn-save-anim')},2000);
+  }else{btn.textContent=orig;alert('Kayıt hatası: '+(res.error||'Bilinmeyen hata'))}
+}
+
+async function deleteSaved(id){
+  if(!confirm('Bu analizi silmek istiyor musunuz?'))return;
+  await sbCall('delete',{id});
+  await loadSavedList();
+}
+
+function loadSaved(id){
+  const item=S.savedList.find(x=>x.id===id);
+  if(!item)return;
+  if(item.sektor){S.sektor=item.sektor;const sel=document.getElementById('sektorSel');if(sel)sel.value=item.sektor;updateSectorBadge()}
+  S.aiRes=item.ai_yorum||'';
+  if(item.donem&&S.periods[S.ap])S.periods[S.ap].name=item.donem;
+  alert(`"${item.sirket_adi||item.donem||'Analiz'}" yüklendi. AI yorumu Uzman Yorum sekmesinde görüntülenebilir.`);
+  S.tab='ai';render();
+}
+
+// ─── UPDATED rRat — sektöre duyarlı renk ────────────────────────────────────
+function rRat(el){const p=S.periods[S.ap],d=nd(p);
+const sektorInfo=S.sektor?`<span style="font-size:10px;color:var(--tm);font-weight:400"> — ${SEKTOR_LABELS[S.sektor]||S.sektor} benchmark'ı uygulandı</span>`:'<span style="font-size:10px;color:var(--am);font-weight:400"> — Sektör seçilmedi (genel değerler)</span>';
+let h=`<div class="card"><div class="card-h"><div class="card-t">📊 Rasyolar${p.name?' — '+p.name:''}${sektorInfo}</div></div><div class="card-b">`;
+Object.entries(RATIOS).forEach(([,cat])=>{const cm=cat.items.map(r=>({...r,value:r.calc(d)}));if(!cm.some(r=>r.value!==null))return;h+=`<div class="rcat"><div class="rcat-h">${cat.icon} ${cat.label}</div><div class="rgrid">`;
+cm.forEach(r=>{
+  const ds=r.value!==null?(r.pct?fP(r.value):r.cur?fC(r.value):fR(r.value)):"—";
+  const c=rColS(r.key,r.value);
+  const bm=getBM(r.key);
+  let bmHint='';
+  if(bm&&r.value!=null){
+    const iyiStr=bm.iyi[1]===99?`>${bm.iyi[0]}`:`${bm.iyi[0]}–${bm.iyi[1]}`;
+    bmHint=`<div style="font-size:8px;color:var(--tm);margin-top:2px">✓ İyi: ${iyiStr}</div>`;
+  }
+  h+=`<div class="rc" style="border-left-color:${c}"><div class="rc-n">${r.name}</div><div class="rc-v" style="color:${c}">${ds}</div><div class="rc-s">İdeal: ${r.ideal}</div>${bmHint}</div>`;
+});
+h+=`</div></div>`});
+// Finansal Sağlık Skoru
+const scores=[];
+function addScore(val,t){if(val==null||isNaN(val))return;const[exc,good,fair]=t;let s;if(exc>fair){s=val>=exc?100:val>=good?80:val>=fair?60:val>0?40:20}else{s=val<=exc?100:val<=good?80:val<=fair?60:40}scores.push(s)}
+addScore(RATIOS.liquidity.items[0].calc(d),[2.0,1.5,1.0]);addScore(RATIOS.liquidity.items[1].calc(d),[1.5,1.0,0.7]);addScore(RATIOS.liquidity.items[2].calc(d),[0.3,0.2,0.1]);
+addScore(RATIOS.profitability.items[0].calc(d),[30,20,10]);addScore(RATIOS.profitability.items[1].calc(d),[15,8,3]);addScore(RATIOS.profitability.items[2].calc(d),[10,5,1]);
+addScore(RATIOS.profitability.items[4].calc(d),[20,12,5]);addScore(RATIOS.profitability.items[5].calc(d),[8,4,1]);
+addScore(RATIOS.leverage.items[0].calc(d),[0.4,0.6,0.8]);addScore(RATIOS.leverage.items[1].calc(d),[1.0,1.5,2.5]);
+const ic=RATIOS.leverage.items[2].calc(d);if(ic!=null)addScore(ic,[5,3,1.5]);
+addScore(RATIOS.efficiency.items[0].calc(d),[3,2,1]);
+if(scores.length>=3){const avg=scores.reduce((a,b)=>a+b,0)/scores.length;const pct=Math.round(avg);const c=pct>=70?'var(--gn)':pct>=45?'var(--am)':'var(--rd)';const lab=pct>=80?'Güçlü':pct>=65?'Sağlıklı':pct>=50?'Orta':pct>=35?'Zayıf':'Riskli';
+h+=`<div style="margin-top:20px;display:flex;justify-content:center"><div class="score-c"><div class="score-ring" style="border-color:${c};color:${c}">${pct}</div><div class="score-l" style="color:${c}">Finansal Sağlık: ${lab}</div><div style="font-size:9px;color:var(--tm);margin-top:4px">${scores.length} gösterge üzerinden hesaplandı</div></div></div>`}
+h+=`</div></div>`;el.innerHTML=h}
+
+// ─── UPDATED runAI — sektör bağlamı ─────────────────────────────────────────
 async function runAI(){S.aiLd=true;S.aiRes='';rC();
-// Build a concise summary instead of full raw data to reduce API processing time
 const pd=S.periods.map(p=>{const d=nd(p);const ratios={};Object.values(RATIOS).forEach(cat=>{cat.items.forEach(r=>{const v=r.calc(d);if(v!==null)ratios[r.name]=parseFloat(v.toFixed(2))})});
 const summary={netSatislar:d.netSales,brutKar:d.grossProfit,faaliyetKari:d.operatingProfit,netKar:d.netProfit,toplamAktif:d.totalAssets,ozsermaye:d.equity,toplamBorc:d.totalLiabilities,stoklar:d.inventory,alacaklar:d.tradeReceivables,nakit:d.cashEquivalents,amortisman:d.depreciation};
 return{donem:p.name,ozet:summary,rasyolar:ratios}});
-try{const resp=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Sen kıdemli bir finansal analistsin. Aşağıdaki verilere dayanarak kısa bir YÖNETİCİ ÖZETİ hazırla. Uzun olmasın, net ve aksiyona yönelik olsun.
+const sektorCtx=S.sektor?`Şirket sektörü: ${SEKTOR_LABELS[S.sektor]||S.sektor}. Bu sektörün Türkiye'deki tipik dinamiklerini (mevsimsellik, karlılık beklentileri, finansman yapısı) göz önünde bulundur.\n\n`:'';
+try{const resp=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:`Sen kıdemli bir finansal analistsin. ${sektorCtx}Aşağıdaki verilere dayanarak kısa bir YÖNETİCİ ÖZETİ hazırla. Net ve aksiyona yönelik olsun.
 
 ${JSON.stringify(pd)}
 
 Şu yapıda yaz (her bölüm 2-3 cümle):
 
 📋 GENEL DURUM: Şirketin finansal sağlığını tek paragrafta özetle.
-${S.periods.length>1?'📊 DÖNEMSEL DEĞİŞİM: Önceki döneme göre öne çıkan değişimleri belirt.\n':''}⚠️ DİKKAT EDİLMESİ GEREKENLER: En kritik 2-3 risk faktörünü sırala.
+${S.periods.length>1?'📊 DÖNEMSEL DEĞİŞİM: Önceki döneme göre öne çıkan değişimleri belirt.\n':''}${S.sektor?`🏭 SEKTÖR KARŞILAŞTIRMASI: ${SEKTOR_LABELS[S.sektor]} sektörü ortalamasına göre güçlü ve zayıf yönleri belirt.\n`:''}⚠️ DİKKAT EDİLMESİ GEREKENLER: En kritik 2-3 risk faktörünü sırala.
 ✅ TAVSİYELER: Yönetime somut, uygulanabilir 3-4 öneri sun.
 
-Türkçe, profesyonel ve özlü yaz. Gereksiz tekrar yapma.`}]})});
+Türkçe, profesyonel ve özlü yaz.`}]})});
 const text=await resp.text();
-if(!resp.ok){S.aiRes='⚠️ Sunucu Hatası ('+resp.status+'): API bağlantısı kurulamadı. Lütfen ayarları kontrol edin.';S.aiLd=false;rC();return}
-try{const data=JSON.parse(text);S.aiRes=data.content?.map(b=>b.text||'').join('\n')||'Analiz oluşturulamadı.'}catch(e){S.aiRes='⚠️ API yanıt hatası. Lütfen tekrar deneyin.'}}catch(err){S.aiRes='⚠️ Bağlantı Hatası: '+err.message}
+if(!resp.ok){S.aiRes='⚠️ Sunucu Hatası ('+resp.status+'): API bağlantısı kurulamadı.';S.aiLd=false;rC();return}
+try{const data=JSON.parse(text);S.aiRes=data.content?.map(b=>b.text||'').join('\n')||'Analiz oluşturulamadı.'}catch(e){S.aiRes='⚠️ API yanıt hatası.'}}catch(err){S.aiRes='⚠️ Bağlantı Hatası: '+err.message}
 S.aiLd=false;rC()}
 
-render();
+// ─── INIT ────────────────────────────────────────────────────────────────────
+initAuth();
 </script>
 </body>
 </html>
