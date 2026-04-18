@@ -1,14 +1,12 @@
 [build]
   publish = "public"
 
-[functions]
-  directory = "functions"
-
-[functions."claude-proxy"]
-  external_node_modules = ["node-fetch"]
-
 [[redirects]]
   from = "/api/claude"
   to = "/.netlify/functions/claude-proxy"
   status = 200
-  force = true
+
+[[redirects]]
+  from = "/api/supabase"
+  to = "/.netlify/functions/supabase-proxy"
+  status = 200
