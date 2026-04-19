@@ -1002,261 +1002,247 @@ function rKredi(el){
   el.innerHTML=h;
 }
 
-// ─── PDF RAPOR ────────────────────────────────────────────────────────────────
+// ─── PDF RAPOR (HTML Print) ───────────────────────────────────────────────────
 function rRapor(el){
-  const p=S.periods[S.ap];const d=nd(p);
+  const p=S.periods[S.ap];
   const has=Object.values(p.data).some(v=>v&&v!=='0');
-
   let h=`<div class="card"><div class="card-h"><div class="card-t">📄 PDF Rapor Oluştur${p.name?' — '+p.name:''}</div></div><div class="card-b">`;
-
-  if(!has){
-    h+=`<div style="text-align:center;color:var(--tm);padding:36px">Önce <b>Veri Girişi</b> sekmesinden finansal veriler yükleyin.</div>`;
-    h+=`</div></div>`;el.innerHTML=h;return;
-  }
-
-  // Rapor içerik seçenekleri
-  h+=`<div style="margin-bottom:20px">
-    <div style="font-size:11px;color:var(--t2);margin-bottom:12px">Rapora eklenecek bölümleri seçin:</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      ${['ratios','kredi','ai','compare'].map((k,i)=>{
-        const labels={ratios:'📊 Finansal Rasyolar',kredi:'🏦 Kredi Analizi',ai:'🤖 AI Uzman Yorum',compare:'⚖️ Dönemsel Karşılaştırma'};
-        const available={ratios:true,kredi:has,ai:!!S.aiRes,compare:S.periods.length>=2};
-        return `<label style="display:flex;align-items:center;gap:8px;background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px 12px;cursor:pointer;opacity:${available[k]?1:.4}">
-          <input type="checkbox" id="rpr_${k}" ${available[k]?'checked':''} ${available[k]?'':'disabled'} style="accent-color:var(--ac)">
-          <span style="font-size:12px;font-weight:500">${labels[k]}</span>
-        </label>`;
-      }).join('')}
-    </div>
-  </div>`;
-
-  // Firma bilgisi
-  h+=`<div style="margin-bottom:20px">
-    <div style="font-size:11px;color:var(--t2);margin-bottom:10px">Rapor Bilgileri (isteğe bağlı)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="igr"><label class="igl">Şirket Adı</label><input class="inp" id="rpr_sirket" placeholder="ABC Ticaret A.Ş." value="${p.fileName?.replace(/\.[^/.]+$/,'')||''}"></div>
-      <div class="igr"><label class="igl">Hazırlayan</label><input class="inp" id="rpr_hazirlayan" placeholder="Mali Müşavir Adı"></div>
-      <div class="igr"><label class="igl">Dönem</label><input class="inp" id="rpr_donem" value="${p.name||''}" placeholder="2024"></div>
-      <div class="igr"><label class="igl">Rapor Tarihi</label><input class="inp" id="rpr_tarih" value="${new Date().toLocaleDateString('tr-TR')}"></div>
-    </div>
-  </div>`;
-
-  h+=`<div style="display:flex;gap:10px;align-items:center">
-    <button class="btn btn-p" onclick="pdfIndir()" style="font-size:12px;padding:9px 20px">⬇ PDF İndir</button>
-    <span id="pdfStatus" style="font-size:11px;color:var(--tm)"></span>
-  </div>`;
-
-  h+=`</div></div>`;
-  el.innerHTML=h;
+  if(!has){h+=`<div style="text-align:center;color:var(--tm);padding:36px">Önce <b>Veri Girişi</b> sekmesinden veri yükleyin.</div></div></div>`;el.innerHTML=h;return}
+  const available={ratios:true,kredi:has,ai:!!S.aiRes,compare:S.periods.length>=2};
+  const labels={ratios:'Finansal Rasyolar',kredi:'Kredi Analizi',ai:'AI Uzman Yorum',compare:'Dönemsel Karşılaştırma'};
+  const icons={ratios:'📊',kredi:'🏦',ai:'🤖',compare:'⚖️'};
+  h+=`<div style="margin-bottom:20px"><div style="font-size:11px;color:var(--t2);margin-bottom:12px">Rapora eklenecek bölümler:</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+  ${Object.keys(labels).map(k=>`<label style="display:flex;align-items:center;gap:8px;background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px 12px;cursor:${available[k]?'pointer':'default'};opacity:${available[k]?1:.4}">
+    <input type="checkbox" id="rpr_${k}" ${available[k]?'checked':''} ${available[k]?'':'disabled'} style="accent-color:var(--ac);width:14px;height:14px">
+    <span style="font-size:12px">${icons[k]} ${labels[k]}</span>
+    ${!available[k]?`<span style="font-size:9px;color:var(--tm);margin-left:auto">${k==='ai'?'Önce AI yorum oluşturun':k==='compare'?'2+ dönem gerekli':''}</span>`:''}
+  </label>`).join('')}
+  </div></div>
+  <div style="margin-bottom:20px"><div style="font-size:11px;color:var(--t2);margin-bottom:10px">Rapor Bilgileri</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div class="igr"><label class="igl">Şirket Adı</label><input class="inp" id="rpr_sirket" placeholder="ABC Ticaret A.Ş." value="${p.fileName?.replace(/\.[^/.]+$/,'')||''}"></div>
+    <div class="igr"><label class="igl">Hazırlayan</label><input class="inp" id="rpr_hazirlayan" placeholder="Mali Müşavir Adı"></div>
+    <div class="igr"><label class="igl">Dönem</label><input class="inp" id="rpr_donem" value="${p.name||''}" placeholder="2024"></div>
+    <div class="igr"><label class="igl">Rapor Tarihi</label><input class="inp" id="rpr_tarih" value="${new Date().toLocaleDateString('tr-TR')}"></div>
+  </div></div>
+  <div style="padding:10px 14px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:7px;font-size:11px;color:var(--t2);margin-bottom:16px;line-height:1.7">
+    💡 Önizleme açıldığında tarayıcının yazdır penceresinde <b>Hedef → PDF olarak kaydet</b> seçin. Chrome/Edge önerilir.
+  </div>
+  <button class="btn btn-p" onclick="raporOnizle()" style="font-size:12px;padding:9px 20px">👁 Önizle &amp; PDF İndir</button>`;
+  h+=`</div></div>`;el.innerHTML=h;
 }
 
-async function pdfIndir(){
+function raporOnizle(){
   const p=S.periods[S.ap];const d=nd(p);
-  const status=document.getElementById('pdfStatus');
-  if(status)status.textContent='PDF oluşturuluyor...';
-
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const W=210;const M=18;const CW=W-M*2;
-  let y=M;
-
-  const sirket=document.getElementById('rpr_sirket')?.value||p.fileName?.replace(/\.[^/.]+$/,'')||'Şirket';
+  const sirket=document.getElementById('rpr_sirket')?.value||'';
   const hazirlayan=document.getElementById('rpr_hazirlayan')?.value||'';
   const donem=document.getElementById('rpr_donem')?.value||p.name||'';
   const tarih=document.getElementById('rpr_tarih')?.value||new Date().toLocaleDateString('tr-TR');
-
   const incRatios=document.getElementById('rpr_ratios')?.checked;
   const incKredi=document.getElementById('rpr_kredi')?.checked;
   const incAI=document.getElementById('rpr_ai')?.checked;
   const incCompare=document.getElementById('rpr_compare')?.checked;
 
-  // Renk paleti
-  const C={bg:[15,22,35],hdr:[30,58,138],acc:[59,130,246],gn:[16,185,129],rd:[239,68,68],am:[245,158,11],t1:[226,232,244],t2:[132,148,178],brd:[35,46,72],wh:[255,255,255]};
+  const fC2=v=>{if(!v&&v!==0)return'—';const n=Number(v);if(isNaN(n))return'—';return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' ₺'};
+  const fR2=v=>v!=null&&!isNaN(v)?v.toFixed(2):'—';
+  const fP2=v=>v!=null&&!isNaN(v)?'%'+v.toFixed(2):'—';
+  const rCls=(k,v)=>{const c=rColS(k,v);return c.includes('gn')?'good':c.includes('rd')?'bad':c.includes('am')?'mid':'neu'};
 
-  const checkY=(needed=25)=>{if(y+needed>285){doc.addPage();y=M}};
+  // Kredi hesapları
+  const wc2=d.currentAssets&&d.shortTermLiabilities?(d.currentAssets-d.shortTermLiabilities):null;
+  const wcta=wc2&&d.totalAssets?(wc2/d.totalAssets):null;
+  const re2=d.equity&&d.totalAssets?(d.equity/d.totalAssets):null;
+  const ebit2=d.operatingProfit!=null&&d.totalAssets?(d.operatingProfit/d.totalAssets):null;
+  const sl2=d.netSales&&d.totalAssets?(d.netSales/d.totalAssets):null;
+  let zScore=null;
+  if(wcta!==null&&re2!==null&&ebit2!==null&&sl2!==null)zScore=6.56*wcta+3.26*re2+6.72*ebit2+1.05*sl2;
+  const cr2=d.currentAssets&&d.shortTermLiabilities?d.currentAssets/d.shortTermLiabilities:null;
+  const de2=d.totalLiabilities&&d.equity?d.totalLiabilities/d.equity:null;
+  const dr2=d.totalLiabilities&&d.totalAssets?d.totalLiabilities/d.totalAssets:null;
+  const nm2=d.netProfit&&d.netSales?(d.netProfit/d.netSales)*100:null;
+  const ic2=d.operatingProfit!=null&&d.financialExpenses&&d.financialExpenses>0?((d.operatingProfit+(d.depreciation||0))/d.financialExpenses):null;
+  const kriterler=[
+    {ad:'Cari Oran',v:cr2,fmt:v=>v.toFixed(2),iyi:v=>v>=1.5,orta:v=>v>=1.0,ideal:'≥ 1.5'},
+    {ad:'Borç / Özsermaye',v:de2,fmt:v=>v.toFixed(2),iyi:v=>v<=1.5,orta:v=>v<=2.5,ideal:'≤ 1.5'},
+    {ad:'Borç Oranı',v:dr2,fmt:v=>'%'+(v*100).toFixed(1),iyi:v=>v<=0.6,orta:v=>v<=0.75,ideal:'≤ %60'},
+    {ad:'Net Kâr Marjı',v:nm2,fmt:v=>'%'+v.toFixed(1),iyi:v=>v>=5,orta:v=>v>=0,ideal:'≥ %5'},
+    {ad:'Faiz Karşılama',v:ic2,fmt:v=>v.toFixed(2)+'x',iyi:v=>v>=3,orta:v=>v>=1.5,ideal:'≥ 3x'},
+  ];
+  const kScores=kriterler.map(k=>k.v===null?null:k.iyi(k.v)?100:k.orta(k.v)?60:20).filter(x=>x!==null);
+  const kSkor=kScores.length?Math.round(kScores.reduce((a,b)=>a+b)/kScores.length):null;
+  const sektorLabel=S.sektor?(SEKTOR_LABELS[S.sektor]||S.sektor):'';
 
-  // Koyu arka plan tüm sayfalar için helper
-  const bgPage=()=>{doc.setFillColor(...C.bg);doc.rect(0,0,W,297,'F')};
+  // Finansal sağlık skoru
+  const sc2=[];
+  const aS=(v,t)=>{if(v==null||isNaN(v))return;const[e,g,f]=t;sc2.push(e>f?(v>=e?100:v>=g?80:v>=f?60:40):(v<=e?100:v<=g?80:v<=f?60:40))};
+  aS(RATIOS.liquidity.items[0].calc(d),[2,1.5,1]);aS(RATIOS.liquidity.items[1].calc(d),[1.5,1,.7]);
+  aS(RATIOS.profitability.items[0].calc(d),[30,20,10]);aS(RATIOS.profitability.items[1].calc(d),[15,8,3]);
+  aS(RATIOS.profitability.items[2].calc(d),[10,5,1]);aS(RATIOS.leverage.items[0].calc(d),[.4,.6,.8]);
+  const sagSkor=sc2.length?Math.round(sc2.reduce((a,b)=>a+b)/sc2.length):null;
+  const sagLbl=sagSkor>=80?'Güçlü':sagSkor>=65?'Sağlıklı':sagSkor>=50?'Orta':sagSkor>=35?'Zayıf':'Riskli';
+  const sagCls=sagSkor>=65?'good':sagSkor>=45?'mid':'bad';
 
-  // ── KAPAK SAYFASI
-  bgPage();
-  // Üst gradient bar
-  doc.setFillColor(...C.hdr);doc.rect(0,0,W,2,'F');
-  doc.setFillColor(...C.acc);doc.rect(0,2,W,1,'F');
+  let body='';
 
-  // Logo kutusu
-  doc.setFillColor(...C.hdr);
-  doc.roundedRect(M,30,40,14,3,3,'F');
-  doc.setTextColor(...C.wh);doc.setFont('helvetica','bold');doc.setFontSize(16);
-  doc.text('FinAnaliz',M+5,39);
-  doc.setFontSize(7);doc.setTextColor(...C.acc);
-  doc.text('PRO',M+32,39);
+  // ── KAPAK
+  body+=`<div class="page cover-page">
+    <div class="cover-header"><span class="brand">FinAnaliz <span class="brand-pro">PRO</span></span><span class="cover-badge">Finansal Analiz Raporu</span></div>
+    <div class="cover-center">
+      <div class="cover-eyebrow">FİNANSAL ANALİZ RAPORU</div>
+      <div class="cover-company">${sirket||'Şirket'}</div>
+      ${sektorLabel?`<div class="cover-sector">${sektorLabel} Sektörü</div>`:''}
+    </div>
+    <div class="cover-grid">
+      <div class="cover-cell"><div class="cell-label">Dönem</div><div class="cell-val">${donem||'—'}</div></div>
+      <div class="cover-cell"><div class="cell-label">Tarih</div><div class="cell-val">${tarih}</div></div>
+      <div class="cover-cell"><div class="cell-label">Hazırlayan</div><div class="cell-val">${hazirlayan||'—'}</div></div>
+      <div class="cover-cell"><div class="cell-label">Platform</div><div class="cell-val">FinAnaliz Pro</div></div>
+    </div>
+    <div class="cover-footer">Bu rapor FinAnaliz Pro platformu tarafından otomatik oluşturulmuştur. Yatırım tavsiyesi niteliği taşımaz.</div>
+  </div>`;
 
-  // Şirket adı
-  doc.setFont('helvetica','bold');doc.setFontSize(26);doc.setTextColor(...C.t1);
-  doc.text(sirket,M,70);
-
-  // Alt başlık
-  doc.setFont('helvetica','normal');doc.setFontSize(12);doc.setTextColor(...C.t2);
-  doc.text('Finansal Analiz Raporu',M,80);
-
-  // Bilgi kutuları
-  [[donem,'Dönem'],[tarih,'Tarih'],[hazirlayan||'—','Hazırlayan']].forEach(([val,lbl],i)=>{
-    const bx=M+i*60;
-    doc.setFillColor(...C.brd);doc.roundedRect(bx,95,56,16,2,2,'F');
-    doc.setFontSize(7);doc.setTextColor(...C.t2);doc.text(lbl,bx+4,101);
-    doc.setFontSize(9);doc.setTextColor(...C.t1);doc.text(val||'—',bx+4,108);
-  });
-
-  // Alt çizgi
-  doc.setDrawColor(...C.brd);doc.setLineWidth(0.3);doc.line(M,120,W-M,120);
-  doc.setFontSize(8);doc.setTextColor(...C.t2);
-  doc.text('Bu rapor FinAnaliz Pro platformu tarafından otomatik olarak oluşturulmuştur.',M,127);
-
-  // ── RASYO SAYFASI
+  // ── RASYOLAR
   if(incRatios){
-    doc.addPage();bgPage();
-    doc.setFillColor(...C.hdr);doc.rect(0,0,W,1.5,'F');
-    y=M+5;
-    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(...C.t1);
-    doc.text('Finansal Rasyolar',M,y);y+=3;
-    doc.setDrawColor(...C.acc);doc.setLineWidth(0.5);doc.line(M,y,M+50,y);y+=8;
-
+    body+=`<div class="page"><div class="ph"><div class="ph-title">Finansal Rasyolar</div><div class="ph-sub">${sirket} — ${donem}</div></div><div class="pb">`;
+    if(sagSkor!==null)body+=`<div class="scores-row"><div class="sbox ${sagCls}"><div class="snum">${sagSkor}</div><div class="slbl">Finansal Sağlık: ${sagLbl}</div></div></div>`;
     Object.entries(RATIOS).forEach(([,cat])=>{
       const items=cat.items.map(r=>({...r,value:r.calc(d)})).filter(r=>r.value!==null);
       if(!items.length)return;
-      checkY(12);
-      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(...C.acc);
-      doc.text((cat.icon+' '+cat.label).replace(/[^\x00-\x7F]/g,''),M,y);y+=6;
-
+      body+=`<div class="stitle">${cat.label}</div><table class="rt"><thead><tr><th>Rasyo</th><th>Değer</th><th>İdeal</th><th>Durum</th></tr></thead><tbody>`;
       items.forEach(r=>{
-        checkY(10);
-        const val=r.pct?r.value.toFixed(2)+'%':r.cur?new Intl.NumberFormat('tr-TR',{maximumFractionDigits:0}).format(r.value)+' TL':r.value.toFixed(2);
-        const col=rColS(r.key,r.value);
-        const rgb=col.includes('gn')?C.gn:col.includes('rd')?C.rd:col.includes('am')?C.am:C.t2;
-
-        doc.setFillColor(...C.brd);doc.roundedRect(M,y-4,CW,8,1,1,'F');
-        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...C.t2);
-        doc.text(r.name,M+3,y);
-        doc.setFont('helvetica','bold');doc.setTextColor(...rgb);
-        doc.text(val,W-M-3,y,{align:'right'});
-        doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...C.t2);
-        doc.text('İdeal: '+r.ideal,W-M-30,y);
-        y+=9;
+        const val=r.pct?fP2(r.value):r.cur?fC2(r.value):fR2(r.value);
+        const cls=rCls(r.key,r.value);
+        const lbl={good:'✓ İyi',mid:'△ Orta',bad:'✗ Zayıf',neu:'—'}[cls];
+        body+=`<tr><td class="rn">${r.name}<span class="rf">${r.formula}</span></td><td class="rv ${cls}">${val}</td><td class="ri">${r.ideal}</td><td class="rs ${cls}">${lbl}</td></tr>`;
       });
-      y+=3;
+      body+=`</tbody></table>`;
     });
+    body+=`</div></div>`;
   }
 
-  // ── KREDİ ANALİZİ SAYFASI
+  // ── KREDİ
   if(incKredi){
-    doc.addPage();bgPage();
-    doc.setFillColor(...C.hdr);doc.rect(0,0,W,1.5,'F');
-    y=M+5;
-    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(...C.t1);
-    doc.text('Banka Kredi Analizi',M,y);y+=3;
-    doc.setDrawColor(...C.acc);doc.setLineWidth(0.5);doc.line(M,y,M+50,y);y+=10;
-
-    // Z-Score & Kredi Skoru
-    const wcv=d.currentAssets&&d.shortTermLiabilities?(d.currentAssets-d.shortTermLiabilities):null;
-    const wcta2=wcv&&d.totalAssets?(wcv/d.totalAssets):null;
-    const re2=d.equity&&d.totalAssets?(d.equity/d.totalAssets):null;
-    const ebit2=d.operatingProfit!=null&&d.totalAssets?(d.operatingProfit/d.totalAssets):null;
-    const sl2=d.netSales&&d.totalAssets?(d.netSales/d.totalAssets):null;
-    let zS=null;if(wcta2!==null&&re2!==null&&ebit2!==null&&sl2!==null)zS=6.56*wcta2+3.26*re2+6.72*ebit2+1.05*sl2;
-
-    const cr2=d.currentAssets&&d.shortTermLiabilities?d.currentAssets/d.shortTermLiabilities:null;
-    const de2=d.totalLiabilities&&d.equity?d.totalLiabilities/d.equity:null;
-    const dr2=d.totalLiabilities&&d.totalAssets?d.totalLiabilities/d.totalAssets:null;
-    const nm2=d.netProfit&&d.netSales?(d.netProfit/d.netSales)*100:null;
-    const ic2=d.operatingProfit!=null&&d.financialExpenses&&d.financialExpenses>0?((d.operatingProfit+(d.depreciation||0))/d.financialExpenses):null;
-
-    // Skor kutular
-    const scores2=[
-      {l:'Altman Z-Score',v:zS!==null?zS.toFixed(2):'—',d:zS===null?'—':zS>2.6?'Guvenli':zS>1.1?'Gri Bolge':'Tehlikeli',c:zS===null?C.t2:zS>2.6?C.gn:zS>1.1?C.am:C.rd},
-    ];
-    scores2.forEach((s,i)=>{
-      doc.setFillColor(...C.brd);doc.roundedRect(M+i*90,y,80,18,2,2,'F');
-      doc.setFontSize(7);doc.setTextColor(...C.t2);doc.text(s.l,M+i*90+4,y+5);
-      doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...s.c);
-      doc.text(String(s.v),M+i*90+4,y+14);
-      doc.setFontSize(8);doc.setTextColor(...s.c);
-      doc.text(s.d,M+i*90+25,y+14);
+    const zCls=zScore===null?'neu':zScore>2.6?'good':zScore>1.1?'mid':'bad';
+    const zLbl=zScore===null?'—':zScore>2.6?'Güvenli Bölge':zScore>1.1?'Gri Bölge':'Tehlikeli Bölge';
+    const kCls=kSkor===null?'neu':kSkor>=70?'good':kSkor>=45?'mid':'bad';
+    body+=`<div class="page"><div class="ph"><div class="ph-title">Banka Kredi Analizi</div><div class="ph-sub">${sirket} — ${donem}</div></div><div class="pb">`;
+    body+=`<div class="scores-row">
+      <div class="sbox ${kCls}"><div class="snum">${kSkor??'—'}</div><div class="slbl">Kredi Skoru</div></div>
+      <div class="sbox ${zCls}"><div class="snum">${zScore!==null?zScore.toFixed(2):'—'}</div><div class="slbl">Altman Z-Score<br><small>${zLbl}</small></div></div>
+    </div>`;
+    body+=`<div class="stitle">BDDK Kriter Değerlendirmesi</div><table class="rt"><thead><tr><th>Kriter</th><th>Değer</th><th>İdeal</th><th>Durum</th></tr></thead><tbody>`;
+    kriterler.forEach(k=>{
+      const cls=k.v===null?'neu':k.iyi(k.v)?'good':k.orta(k.v)?'mid':'bad';
+      const lbl={good:'✓ Uygun',mid:'△ Sınırda',bad:'✗ Yetersiz',neu:'— Veri Yok'}[cls];
+      body+=`<tr><td class="rn">${k.ad}</td><td class="rv ${cls}">${k.v!==null?k.fmt(k.v):'—'}</td><td class="ri">${k.ideal}</td><td class="rs ${cls}">${lbl}</td></tr>`;
     });
-    y+=24;
-
-    // Kriterler tablosu
-    const kriterPDF=[
-      {ad:'Cari Oran',v:cr2,fmt:v=>v.toFixed(2),iyi:v=>v>=1.5,orta:v=>v>=1.0},
-      {ad:'Borc/Ozsermaye',v:de2,fmt:v=>v.toFixed(2),iyi:v=>v<=1.5,orta:v=>v<=2.5},
-      {ad:'Borc Orani',v:dr2,fmt:v=>'%'+(v*100).toFixed(1),iyi:v=>v<=0.6,orta:v=>v<=0.75},
-      {ad:'Net Kar Marji',v:nm2,fmt:v=>'%'+v.toFixed(1),iyi:v=>v>=5,orta:v=>v>=0},
-      {ad:'Faiz Karsilama',v:ic2,fmt:v=>v.toFixed(2)+'x',iyi:v=>v>=3,orta:v=>v>=1.5},
-    ];
-
-    // Tablo başlıkları
-    doc.setFillColor(...C.hdr);doc.rect(M,y,CW,7,'F');
-    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...C.t1);
-    doc.text('Kriter',M+3,y+4.5);doc.text('Deger',M+80,y+4.5);doc.text('Sonuc',M+110,y+4.5);
-    y+=7;
-
-    kriterPDF.forEach((k,i)=>{
-      doc.setFillColor(i%2===0?20:25,i%2===0?28:35,i%2===0?45:55);
-      doc.rect(M,y,CW,7,'F');
-      const renk=k.v===null?C.t2:k.iyi(k.v)?C.gn:k.orta(k.v)?C.am:C.rd;
-      const sonuc=k.v===null?'Veri Yok':k.iyi(k.v)?'Uygun':k.orta(k.v)?'Sinirda':'Yetersiz';
-      doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...C.t2);
-      doc.text(k.ad,M+3,y+4.5);
-      doc.setTextColor(...renk);doc.setFont('helvetica','bold');
-      doc.text(k.v!==null?k.fmt(k.v):'—',M+80,y+4.5);
-      doc.text(sonuc,M+110,y+4.5);
-      y+=7;
-    });
-    y+=8;
-
-    // Öneriler
-    const on2=[];
-    if(cr2&&cr2<1.5)on2.push('Cari orani iyilestirin: kisa vadeli borclari azaltin');
-    if(de2&&de2>1.5)on2.push('Borc/ozsermaye oranini dusurun: kar dagitimini kisitlayin');
-    if(nm2&&nm2<5)on2.push('Net kar marjini artirin: maliyet optimizasyonu yapın');
-    if(ic2&&ic2<3)on2.push('Yuksek maliyetli kredileri refinanse edin');
-    if(on2.length){
-      checkY(on2.length*7+12);
-      doc.setFillColor(30,25,10);doc.roundedRect(M,y,CW,on2.length*7+10,2,2,'F');
-      doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(...C.am);
-      doc.text('Kredi Notu Iyilestirme Onerileri',M+3,y+6);y+=10;
-      on2.forEach(o=>{
-        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...C.t2);
-        doc.text('-> '+o,M+3,y);y+=7;
-      });
-    }
+    body+=`</tbody></table>`;
+    const on3=[];
+    if(cr2&&cr2<1.5)on3.push('Cari oranı artırmak için kısa vadeli borçları azaltın veya dönen varlıkları güçlendirin.');
+    if(de2&&de2>1.5)on3.push('Borç/özsermaye oranını düşürmek için kâr dağıtımını kısıtlayın, özsermayeyi güçlendirin.');
+    if(dr2&&dr2>0.6)on3.push('Borç yükü yüksek — uzun vadeli yapılandırma veya sermaye artırımı değerlendirin.');
+    if(nm2&&nm2<5)on3.push('Net kâr marjı düşük — maliyet optimizasyonu ve gelir artırıcı tedbirler alın.');
+    if(ic2&&ic2<3)on3.push('Faiz yükü ağır — yüksek maliyetli kredileri refinanse edin veya borç azaltın.');
+    if(on3.length){body+=`<div class="stitle">Kredi Notu İyileştirme Önerileri</div><div class="oneriler">`;on3.forEach(o=>body+=`<div class="oneri">→ ${o}</div>`);body+=`</div>`}
+    body+=`</div></div>`;
   }
 
-  // ── AI YORUM SAYFASI
+  // ── KARŞILAŞTIRMA
+  if(incCompare&&S.periods.length>=2){
+    const aR2=Object.values(RATIOS).flatMap(c=>c.items);
+    body+=`<div class="page"><div class="ph"><div class="ph-title">Dönemsel Karşılaştırma</div><div class="ph-sub">${sirket}</div></div><div class="pb">`;
+    body+=`<table class="rt"><thead><tr><th>Rasyo</th>${S.periods.map(pp=>`<th>${pp.name||'Dönem'}</th>`).join('')}</tr></thead><tbody>`;
+    aR2.forEach(r=>{
+      const vals=S.periods.map(pp=>r.calc(nd(pp)));
+      if(vals.every(v=>v===null))return;
+      body+=`<tr><td class="rn">${r.name}</td>${vals.map((v,i)=>{
+        const fmt=v===null?'—':r.pct?fP2(v):r.cur?fC2(v):fR2(v);
+        const cls=v!==null?rCls(r.key,v):'neu';
+        return`<td class="rv ${cls}">${fmt}</td>`;
+      }).join('')}</tr>`;
+    });
+    body+=`</tbody></table></div></div>`;
+  }
+
+  // ── AI YORUM
   if(incAI&&S.aiRes){
-    doc.addPage();bgPage();
-    doc.setFillColor(...C.hdr);doc.rect(0,0,W,1.5,'F');
-    y=M+5;
-    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(...C.t1);
-    doc.text('AI Uzman Finansal Degerlendirme',M,y);y+=3;
-    doc.setDrawColor(...C.acc);doc.setLineWidth(0.5);doc.line(M,y,M+70,y);y+=10;
-    const satirlar=doc.splitTextToSize(S.aiRes.replace(/[^\x00-\x7F]/g,c=>c),CW);
-    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...C.t2);
-    satirlar.forEach(s=>{checkY(6);doc.text(s,M,y);y+=5.5});
+    body+=`<div class="page"><div class="ph"><div class="ph-title">AI Uzman Finansal Değerlendirme</div><div class="ph-sub">${sirket} — ${donem}</div></div><div class="pb">`;
+    body+=`<div class="ai-box">${S.aiRes.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+    body+=`</div></div>`;
   }
 
-  // ── ALT BİLGİ (tüm sayfalara)
-  const pCount=doc.getNumberOfPages();
-  for(let i=1;i<=pCount;i++){
-    doc.setPage(i);
-    doc.setFillColor(...C.brd);doc.rect(0,289,W,8,'F');
-    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(...C.t2);
-    doc.text('FinAnaliz Pro — '+sirket+' — '+donem,M,294);
-    doc.text(i+'/'+pCount,W-M,294,{align:'right'});
-  }
+  const win=window.open('','_blank','width=960,height=750');
+  win.document.write(`<!DOCTYPE html><html lang="tr"><head>
+<meta charset="UTF-8">
+<title>${sirket} — Finansal Analiz Raporu</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;font-size:10pt;line-height:1.5}
+.page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 8mm;padding:18mm 18mm 16mm;box-shadow:0 2px 12px rgba(0,0,0,.08);position:relative;page-break-after:always}
 
-  const dosyaAdi=(sirket+'_'+donem+'_FinAnaliz.pdf').replace(/\s+/g,'_').replace(/[^\w._-]/g,'');
-  doc.save(dosyaAdi);
-  if(status)status.textContent='✓ PDF indirildi: '+dosyaAdi;
+/* KAPAK */
+.cover-page{background:linear-gradient(160deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:18mm}
+.cover-header{display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:20pt;font-weight:800;color:#fff;letter-spacing:-1px}.brand-pro{color:#3b82f6}
+.cover-badge{font-size:8pt;color:#93c5fd;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(147,197,253,.3);padding:4px 10px;border-radius:20px}
+.cover-center{flex:1;display:flex;flex-direction:column;justify-content:center;padding:12mm 0 8mm}
+.cover-eyebrow{font-size:8pt;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:10px}
+.cover-company{font-size:28pt;font-weight:800;line-height:1.1;margin-bottom:6px;color:#f8fafc}
+.cover-sector{font-size:13pt;color:#93c5fd;font-weight:400}
+.cover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:8mm}
+.cover-cell{}.cell-label{font-size:7pt;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.cell-val{font-size:10pt;font-weight:600;color:#e2e8f0}
+.cover-footer{font-size:7pt;color:#475569;margin-top:5mm;padding-top:4mm;border-top:1px solid rgba(255,255,255,.06)}
+
+/* SAYFA */
+.ph{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:8px;border-bottom:3px solid #1e40af;margin-bottom:16px}
+.ph-title{font-size:16pt;font-weight:700;color:#0f172a}.ph-sub{font-size:8pt;color:#94a3b8}
+.pb{}
+
+/* SKOR KUTULARI */
+.scores-row{display:flex;gap:12px;margin-bottom:18px}
+.sbox{flex:1;border-radius:10px;padding:14px 16px;text-align:center;border:1px solid}
+.sbox.good{background:#f0fdf4;border-color:#86efac}.sbox.mid{background:#fffbeb;border-color:#fcd34d}.sbox.bad{background:#fef2f2;border-color:#fca5a5}.sbox.neu{background:#f8fafc;border-color:#e2e8f0}
+.snum{font-size:26pt;font-weight:800;line-height:1}
+.sbox.good .snum{color:#16a34a}.sbox.mid .snum{color:#d97706}.sbox.bad .snum{color:#dc2626}.sbox.neu .snum{color:#64748b}
+.slbl{font-size:8pt;color:#64748b;margin-top:4px}small{font-size:7pt}
+
+/* BÖLÜM BAŞLIĞI */
+.stitle{font-size:9pt;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #dbeafe}
+
+/* TABLO */
+.rt{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:14px}
+.rt thead tr{background:#1e3a5f;color:#fff}
+.rt th{padding:7px 10px;font-size:7.5pt;font-weight:600;text-align:left}
+.rt th:nth-child(2),.rt td:nth-child(2){text-align:right}
+.rt tbody tr:nth-child(even){background:#f8fafc}
+.rt tbody tr:hover{background:#eff6ff}
+.rt td{padding:6px 10px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+.rn{font-weight:500;color:#1e293b}.rf{display:block;font-size:7pt;color:#94a3b8;font-family:monospace;font-weight:400}.ri{font-size:8pt;color:#94a3b8}.rs{font-size:8pt;font-weight:600;text-align:center}
+.rv{font-weight:700;text-align:right}
+.good{color:#16a34a}.mid{color:#d97706}.bad{color:#dc2626}.neu{color:#64748b}
+.rs.good{color:#16a34a}.rs.mid{color:#d97706}.rs.bad{color:#dc2626}
+
+/* ÖNERİLER */
+.oneriler{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-top:8px}
+.oneri{font-size:9pt;color:#92400e;padding:5px 0;border-bottom:1px solid rgba(253,230,138,.4)}.oneri:last-child{border:none}
+
+/* AI */
+.ai-box{background:#f8fafc;border-left:4px solid #3b82f6;border-radius:0 8px 8px 0;padding:14px 16px;font-size:10pt;line-height:1.8;color:#334155}
+
+/* PRINT */
+@media print{
+  body{background:#fff}
+  .page{box-shadow:none;margin:0;page-break-after:always}
+  .page:last-child{page-break-after:avoid}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+@page{size:A4;margin:0}
+</style></head><body>
+${body}
+<script>setTimeout(()=>{window.focus();window.print()},600)<\/script>
+</body></html>`);
+  win.document.close();
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
