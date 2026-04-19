@@ -402,44 +402,50 @@ function rSBSaved(el){
 let sCh=[];
 function rSBC(el){sCh.forEach(c=>c.destroy());sCh=[];const has=S.periods.some(p=>Object.values(p.data).some(v=>v));if(!has){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--tm);font-size:11px">Veri girişi yapın.</div>';return}
 
-// Kâr Marjları — SADECE AKTİF DÖNEM
 const activePeriod=S.periods[S.ap];
 const activeLabel=activePeriod?.name||'Aktif Dönem';
-let marginsHtml='<div class="cb"><div class="cb-l">Kâr Marjları — '+activeLabel+'</div>';
-const ad=nd(activePeriod);
-if(!ad.netSales){
-  marginsHtml+='<div style="padding:10px;font-size:10px;color:var(--tm)">Veri yok</div>';
-}else{
-  const gm=ad.grossProfit?((ad.grossProfit/ad.netSales)*100):0;
-  const om=ad.operatingProfit?((ad.operatingProfit/ad.netSales)*100):0;
-  const nm=ad.netProfit?((ad.netProfit/ad.netSales)*100):0;
-  const em=ad.operatingProfit!=null?((ad.operatingProfit+(ad.depreciation||0))/ad.netSales*100):om;
-  const bar=(val,color)=>{
-    const w=Math.min(Math.abs(val),100);
-    return `<div style="height:5px;background:rgba(255,255,255,.06);border-radius:3px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${w}%;background:${color};border-radius:3px;transition:width .4s"></div></div>`;
-  };
-  const rows=[
-    {l:'Brüt Kâr Marjı',v:gm,c:gm<0?'var(--rd)':gm>15?'var(--gn)':'var(--am)'},
-    {l:'Faaliyet Marjı',v:om,c:om<0?'var(--rd)':om>8?'var(--gn)':'var(--am)'},
-    {l:'Net Kâr Marjı',v:nm,c:nm<0?'var(--rd)':nm>5?'var(--gn)':'var(--am)'},
-    {l:'FAVÖK Marjı',v:em,c:em<0?'var(--rd)':em>10?'var(--gn)':'var(--am)'},
-  ];
-  rows.forEach(r=>{
-    marginsHtml+=`<div style="padding:7px 0;border-bottom:1px solid rgba(35,46,72,.3)">
-      <div style="display:flex;justify-content:space-between;font-size:10px">
-        <span style="color:var(--t2)">${r.l}</span>
-        <span style="color:${r.c};font-family:'JetBrains Mono',monospace;font-weight:700">%${r.v.toFixed(1)}</span>
-      </div>${bar(r.v,r.c)}</div>`;
-  });
-}
-marginsHtml+='</div>';
 
-el.innerHTML=`<div class="cb"><div class="cb-l">Gelir & Kâr (Tüm Dönemler)</div><canvas id="ch1"></canvas></div><div class="cb"><div class="cb-l">Kâr Marjı Karşılaştırması</div><canvas id="ch2"></canvas></div>${marginsHtml}<div class="cb"><div class="cb-l">Bilanço Yapısı — ${activeLabel}</div><canvas id="ch3"></canvas></div>`;
+// ── KÂR MARJI KARŞILAŞTIRMA KARTLARI ──────────────────────────────
+const MARGINS=[
+  {key:'gm',label:'Brüt Kâr',calc:d=>d.netSales&&d.grossProfit!=null?((d.grossProfit/d.netSales)*100):null,iyi:15,cok:30},
+  {key:'om',label:'Faaliyet',calc:d=>d.netSales&&d.operatingProfit!=null?((d.operatingProfit/d.netSales)*100):null,iyi:8,cok:18},
+  {key:'nm',label:'Net Kâr',calc:d=>d.netSales&&d.netProfit!=null?((d.netProfit/d.netSales)*100):null,iyi:5,cok:12},
+  {key:'em',label:'FAVÖK',calc:d=>d.netSales&&d.operatingProfit!=null?(((d.operatingProfit+(d.depreciation||0))/d.netSales)*100):null,iyi:10,cok:22},
+];
+
+let marginsHtml='<div class="cb"><div class="cb-l">Kâr Marjları</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 0">';
+MARGINS.forEach(m=>{
+  marginsHtml+=`<div style="background:var(--bg0);border:1px solid var(--brd);border-radius:8px;padding:10px;position:relative;overflow:hidden">`;
+  marginsHtml+=`<div style="font-size:9px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">${m.label}</div>`;
+  // Tüm dönemler için değer + mini bar
+  const validPeriods=S.periods.filter(p=>m.calc(nd(p))!==null);
+  if(!validPeriods.length){marginsHtml+=`<div style="font-size:10px;color:var(--tm)">Veri yok</div>`;marginsHtml+=`</div>`;return}
+  const maxVal=Math.max(...validPeriods.map(p=>Math.abs(m.calc(nd(p)))));
+  validPeriods.forEach((p,i)=>{
+    const v=m.calc(nd(p));
+    const isActive=S.periods.indexOf(p)===S.ap;
+    const c=v<0?'var(--rd)':v>=m.cok?'var(--gn)':v>=m.iyi?'var(--am)':'var(--rd)';
+    const barW=maxVal>0?Math.min((Math.abs(v)/maxVal)*100,100):0;
+    const pName=p.name||('D'+(S.periods.indexOf(p)+1));
+    marginsHtml+=`<div style="margin-bottom:${i<validPeriods.length-1?'6px':'0'}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <span style="font-size:9px;color:${isActive?'var(--t1)':'var(--tm)'};font-weight:${isActive?'600':'400'};max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${pName}${isActive?' ●':''}</span>
+        <span style="font-size:11px;font-weight:700;color:${c};font-family:'JetBrains Mono',monospace">%${v.toFixed(1)}</span>
+      </div>
+      <div style="height:3px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${barW}%;background:${c};border-radius:2px;opacity:.8"></div>
+      </div>
+    </div>`;
+  });
+  marginsHtml+=`</div>`;
+});
+marginsHtml+='</div></div>';
+
+el.innerHTML=`<div class="cb"><div class="cb-l">Gelir & Kâr (Tüm Dönemler)</div><canvas id="ch1"></canvas></div>${marginsHtml}<div class="cb"><div class="cb-l">Bilanço Yapısı — ${activeLabel}</div><canvas id="ch3"></canvas></div>`;
 
 const L=S.periods.map(p=>p.name||'—');
 const gD=k=>S.periods.map(p=>{const d=nd(p);return d[k]||0});
 
-// Gelir & Kâr — ayrı Y eksenleri (sol: tutarlar, sağ: net kâr marjı %)
 const c1=document.getElementById('ch1');
 if(c1){
   const c1opts={responsive:true,maintainAspectRatio:false,
@@ -453,24 +459,10 @@ if(c1){
   ]},options:c1opts}));
 }
 
-// Kâr Marjı Karşılaştırması — çizgi grafik, tüm dönemler
-const c2=document.getElementById('ch2');
-if(c2){
-  const gmArr=S.periods.map(p=>{const d=nd(p);return d.netSales&&d.grossProfit?parseFloat(((d.grossProfit/d.netSales)*100).toFixed(1)):null});
-  const omArr=S.periods.map(p=>{const d=nd(p);return d.netSales&&d.operatingProfit!=null?parseFloat(((d.operatingProfit/d.netSales)*100).toFixed(1)):null});
-  const nmArr=S.periods.map(p=>{const d=nd(p);return d.netSales&&d.netProfit!=null?parseFloat(((d.netProfit/d.netSales)*100).toFixed(1)):null});
-  sCh.push(new Chart(c2,{type:'line',data:{labels:L,datasets:[
-    {label:'Brüt %',data:gmArr,borderColor:'rgba(16,185,129,.9)',backgroundColor:'rgba(16,185,129,.1)',tension:.3,pointRadius:4,borderWidth:2},
-    {label:'Faaliyet %',data:omArr,borderColor:'rgba(59,130,246,.9)',backgroundColor:'rgba(59,130,246,.1)',tension:.3,pointRadius:4,borderWidth:2},
-    {label:'Net %',data:nmArr,borderColor:'rgba(139,92,246,.9)',backgroundColor:'rgba(139,92,246,.1)',tension:.3,pointRadius:4,borderWidth:2},
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#546078',font:{size:9}}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': %'+ctx.raw}}},scales:{x:{ticks:{color:'#546078',font:{size:9}},grid:{color:'rgba(35,46,72,.4)'}},y:{ticks:{color:'#546078',font:{size:9},callback:v=>v+'%'},grid:{color:'rgba(35,46,72,.4)'}}}}}));
-}
-
-// Bilanço — aktif dönem
 const c3=document.getElementById('ch3');
 if(c3&&activePeriod){
   const l=nd(activePeriod);
-  sCh.push(new Chart(c3,{type:'bar',data:{labels:['Dönen V.','Duran V.','Kısa V.Y.','Uzun V.Y.','Özsermaye'],datasets:[{data:[l.currentAssets||0,l.fixedAssets||0,l.shortTermLiabilities||0,l.longTermLiabilities||0,l.equity||0],backgroundColor:['rgba(59,130,246,.8)','rgba(99,160,246,.6)','rgba(239,68,68,.7)','rgba(239,120,120,.5)','rgba(16,185,129,.7)'],borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fC(ctx.raw)}}},scales:{x:{ticks:{color:'#546078',font:{size:9},callback:v=>fCS(v)},grid:{color:'rgba(35,46,72,.4)'}},y:{ticks:{color:'#8494b2',font:{size:9}},grid:{display:false}}}}}));
+  sCh.push(new Chart(c3,{type:'bar',data:{labels:['Dönen V.','Duran V.','Kısa V.Y.','Uzun V.Y.','Özsermaye'],datasets:[{data:[l.currentAssets||0,l.fixedAssets||0,l.shortTermLiabilities||0,l.longTermLiabilities||0,l.equity||0],backgroundColor:['rgba(59,130,246,.8)','rgba(99,160,246,.6)','rgba(239,68,68,.7)','rgba(239,120,120,.5)','rgba(16,185,129,.7)'],borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return fC(ctx.raw)}}}},scales:{x:{ticks:{color:'#546078',font:{size:9},callback:function(v){return fCS(v)}},grid:{color:'rgba(35,46,72,.4)'}},y:{ticks:{color:'#8494b2',font:{size:9}},grid:{display:false}}}}}));
 }
 }
 function rC(){document.querySelectorAll('.mtab').forEach(t=>t.classList.toggle('on',t.dataset.mt===S.tab));const el=document.getElementById('cont');if(S.tab==='input')rInp(el);else if(S.tab==='ratios')rRat(el);else if(S.tab==='compare')rCmp(el);else rAI(el)}
@@ -748,44 +740,42 @@ async function downloadSaved(dosyaPath){
 function loadSaved(id){
   const item=S.savedList.find(x=>x.id===id);
   if(!item)return;
-  // Yeni boş dönem oluştur veya mevcut dönemi kullan
   const donemAdi=item.donem||item.sirket_adi||'Kayıtlı Analiz';
-  // Mevcut dönemde veri varsa yeni dönem ekle
+  // Mevcut dönemde veri varsa yeni dönem ekle, yoksa mevcut dönemi kullan
   const mevcut=S.periods[S.ap];
-  if(Object.values(mevcut.data).some(v=>v)){
+  if(Object.values(mevcut.data).some(v=>v&&v!=='0')){
     S.periods.push({name:donemAdi,data:eD(),fileName:null,parseLog:[]});
     S.ap=S.periods.length-1;
   } else {
     S.periods[S.ap].name=donemAdi;
   }
   const p=S.periods[S.ap];
-  // rasyo_json'dan data alanlarını tersine çevir — alan adları eşleşiyorsa doldur
-  const fieldKeys=FIELDS.flatMap(s=>s.fields).map(f=>f.key);
+  // rasyo_json içindeki ham veri alanlarını yükle
+  // saveAnaliz'de fieldKey olarak kaydedildi (prefix'siz)
+  const fieldKeys=new Set(FIELDS.flatMap(s=>s.fields).map(f=>f.key));
   if(item.rasyo_json){
-    // rasyo_json rasyoları içerir, ham veriyi içermez
-    // ama kayıt sırasında ozet de kaydedilmişse oradan al
     const rj=item.rasyo_json;
-    // Doğrudan alan eşleşmesi dene
-    fieldKeys.forEach(k=>{if(rj[k]!==undefined)p.data[k]=String(rj[k])});
+    Object.keys(rj).forEach(k=>{
+      if(fieldKeys.has(k) && rj[k]!==undefined && rj[k]!==null && rj[k]!==''){
+        p.data[k]=String(rj[k]);
+      }
+    });
   }
-  // Sektörü uygula
+  // Sektör
   if(item.sektor){
     S.sektor=item.sektor;
     const sel=document.getElementById('sektorSel');
     if(sel)sel.value=item.sektor;
     updateSectorBadge();
   }
-  // AI yorumunu yükle
   S.aiRes=item.ai_yorum||'';
-  p.parseLog=[{t:'ok',m:`📂 Kayıtlı analiz yüklendi: ${donemAdi}`}];
-  if(item.dosya_adi)p.parseLog.push({t:'info',m:`📎 Orijinal dosya: ${item.dosya_adi}`});
+  p.parseLog=[{t:'ok',m:'📂 Kayıtlı analiz yüklendi: '+donemAdi}];
+  if(item.dosya_adi)p.parseLog.push({t:'info',m:'📎 Orijinal dosya: '+item.dosya_adi});
   p.fileName=item.dosya_adi||null;
-  // Veri girişi sekmesine git
-  S.tab='input';
-  render();
-  // Rasyo verisi varsa rasyolar sekmesine geç
+  p.missingFields=getMissing(p);
   const hasFilled=Object.values(p.data).some(v=>v&&v!=='0');
-  if(hasFilled){S.tab='ratios';rC()}
+  S.tab=hasFilled?'ratios':'input';
+  render();
 }
 
 // ─── UPDATED rRat — sektöre duyarlı renk ────────────────────────────────────
