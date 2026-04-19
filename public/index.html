@@ -605,7 +605,7 @@ function initAuth(){
     document.getElementById('app').style.display='none';
     document.getElementById('authOverlay').style.display='flex';
   });
-  netlifyIdentity.init();
+  netlifyIdentity.init({ APIUrl: 'https://finanaliz.netlify.app/.netlify/identity' });
 }
 
 function showAuthOverlay(){
