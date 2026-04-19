@@ -441,11 +441,17 @@ const gD=k=>S.periods.map(p=>{const d=nd(p);return d[k]||0});
 
 // Gelir & Kâr — ayrı Y eksenleri (sol: tutarlar, sağ: net kâr marjı %)
 const c1=document.getElementById('ch1');
-if(c1)sCh.push(new Chart(c1,{type:'bar',data:{labels:L,datasets:[
-  {label:'Net Sat.',data:gD('netSales'),backgroundColor:'rgba(59,130,246,.7)',borderRadius:3,yAxisID:'y'},
-  {label:'Brüt Kâr',data:gD('grossProfit'),backgroundColor:'rgba(16,185,129,.7)',borderRadius:3,yAxisID:'y'},
-  {label:'Net Kâr',data:gD('netProfit'),backgroundColor:'rgba(139,92,246,.85)',borderRadius:3,yAxisID:'y'},
-]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#546078',font:{size:9}}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fC(ctx.raw)}}},scales:{x:{ticks:{color:'#546078',font:{size:9}},grid:{color:'rgba(35,46,72,.4)'}},y:{ticks:{color:'#546078',font:{size:9},callback:v=>fCS(v)},grid:{color:'rgba(35,46,72,.4)'}}}}}}));
+if(c1){
+  const c1opts={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#546078',font:{size:9}}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+fC(ctx.raw)}}}},
+    scales:{x:{ticks:{color:'#546078',font:{size:9}},grid:{color:'rgba(35,46,72,.4)'}},y:{ticks:{color:'#546078',font:{size:9},callback:function(v){return fCS(v)}},grid:{color:'rgba(35,46,72,.4)'}}}
+  };
+  sCh.push(new Chart(c1,{type:'bar',data:{labels:L,datasets:[
+    {label:'Net Sat.',data:gD('netSales'),backgroundColor:'rgba(59,130,246,.7)',borderRadius:3},
+    {label:'Brüt Kâr',data:gD('grossProfit'),backgroundColor:'rgba(16,185,129,.7)',borderRadius:3},
+    {label:'Net Kâr',data:gD('netProfit'),backgroundColor:'rgba(139,92,246,.85)',borderRadius:3},
+  ]},options:c1opts}));
+}
 
 // Kâr Marjı Karşılaştırması — çizgi grafik, tüm dönemler
 const c2=document.getElementById('ch2');
@@ -639,18 +645,23 @@ function initAuth(){
   });
   netlifyIdentity.on('login',user=>{
     netlifyIdentity.close();
-    showApp(user);
+    // Kısa gecikme — widget animasyonu tamamlansın
+    setTimeout(()=>showApp(user),100);
   });
   netlifyIdentity.on('logout',()=>{
     S.user=null;
+    const ov=document.getElementById('authOverlay');
+    ov.style.zIndex='100'; // z-index'i sıfırla
+    ov.style.display='flex';
     document.getElementById('app').style.display='none';
-    document.getElementById('authOverlay').style.display='flex';
   });
-  netlifyIdentity.init();
+  netlifyIdentity.init({APIUrl:'https://finanaliz.netlify.app/.netlify/identity'});
 }
 
 function showAuthOverlay(){
-  document.getElementById('authOverlay').style.display='flex';
+  const ov=document.getElementById('authOverlay');
+  ov.style.zIndex='100';
+  ov.style.display='flex';
   document.getElementById('app').style.display='none';
 }
 
