@@ -1062,7 +1062,6 @@ function rDetay(el){
   const p=S.periods[S.ap];
   const d=nd(p);
 
-  // Mizan yüklü değilse yönlendirme göster
   if(!p.isMizan){
     el.innerHTML=`<div class="card"><div class="card-h"><div class="card-t">🔍 Detay Mizan Analizi</div></div><div class="card-b">
       <div style="text-align:center;padding:32px 20px">
@@ -1081,118 +1080,363 @@ function rDetay(el){
 
   const detay=p.mizanDetay||{};
   const accts=p.mizanAccts||{};
-  const totalAlacak=pF(p.data.tradeReceivables);
-  const totalBorc=pF(p.data.shortTermLiabilities)+pF(p.data.longTermLiabilities);
   const totalSatis=pF(p.data.netSales);
+  const totalAktif=pF(p.data.totalAssets);
+
+  // Yardımcı: hesap bakiyesi
+  const bD=(k)=>accts[k]?(accts[k].d-accts[k].c):0; // borç bakiyeli
+  const bC=(k)=>accts[k]?(accts[k].c-accts[k].d):0; // alacak bakiyeli
+
+  // Ana hesap toplamları
+  const alacak120=bD('120')+bD('121')+bD('122');
+  const borc320=bC('320')+bC('321')+bC('322');
+  const stok150=bD('150')+bD('151')+bD('152')+bD('153')+bD('157');
+  const nakit100=bD('100')+bD('101')+bD('102')+bD('103');
+  const ortaklarBorc131=bC('131'); // Ortaklara borç (131)
+  const ortaklarAlacak131=bD('131'); // Ortaklardan alacak
+  const uzunOrtaklarBorc231=bC('231');
+  const kdv191=bD('191');
+  const kdv391=bC('391'); // Hesaplanan KDV
+  const vergiBorc360=bC('360')+bC('361')+bC('362')+bC('368');
+  const kreditler300=bC('300')+bC('301')+bC('303');
+  const alacakSenetleri121=bD('121');
+  const borçSenetleri321=bC('321');
+  const supheli128=bD('128');
+  const sayimFazlasi197=bD('197');
 
   let h=`<div style="display:flex;flex-direction:column;gap:14px">`;
 
-  // ── 1. ANOMALİ & UYARI ÖZET KARTI
+  // ════════════════════════════════════════════════════════
+  // BÖLÜM 1: ANOMALİ & UYARI — Genişletilmiş
+  // ════════════════════════════════════════════════════════
   const anomaliler=[];
-  if(accts['128']&&(accts['128'].d-accts['128'].c)>0)anomaliler.push({sev:'rd',msg:`Şüpheli Alacak (128): ${fC(accts['128'].d-accts['128'].c)} — tahsilat riski`,detay:'128 hesabında bakiye, alacakların bir kısmının şüpheli olduğuna işaret eder.'});
-  if(accts['197']&&Math.abs(accts['197'].d-accts['197'].c)>1000)anomaliler.push({sev:'am',msg:`Sayım Fazlası (197): ${fC(Math.abs(accts['197'].d-accts['197'].c))} — stok/muhasebe uyumsuzluğu`,detay:'Fiziksel sayım ile kayıt arasında fark var.'});
-  if(accts['131']&&(accts['131'].c-accts['131'].d)>0)anomaliler.push({sev:'am',msg:`Ortaklara Borç (131): ${fC(accts['131'].c-accts['131'].d)} — ilişkili taraf işlemi`,detay:'Şirketin ortaklara borcu mevcut. Transfer fiyatlaması riski olabilir.'});
-  if(accts['231']&&(accts['231'].c-accts['231'].d)>0)anomaliler.push({sev:'am',msg:`Uzun Vadeli Ortaklara Borç (231): ${fC(accts['231'].c-accts['231'].d)}`,detay:'Uzun vadeli ilişkili taraf finansmanı.'});
-  const kdv191=accts['191']?(accts['191'].d-accts['191'].c):0;
-  if(kdv191>pF(p.data.totalAssets)*0.03)anomaliler.push({sev:'am',msg:`İndirilecek KDV (191) yüksek: ${fC(kdv191)} — nakit sıkışıklığı işareti`,detay:'Büyük KDV alacağı tahsilat beklendiği anlamına gelir.'});
-  // Ters bakiye kontrolleri
-  ['120','121','150','153'].forEach(k=>{if(accts[k]&&(accts[k].c-accts[k].d)>1000)anomaliler.push({sev:'am',msg:`${k} hesabında ters bakiye: ${fC(accts[k].c-accts[k].d)} — muhasebe hatası olabilir`,detay:''})});
-  ['320','321','400','401'].forEach(k=>{if(accts[k]&&(accts[k].d-accts[k].c)>1000)anomaliler.push({sev:'am',msg:`${k} hesabında ters bakiye — muhasebe hatası olabilir`,detay:''})});
 
-  h+=`<div class="card"><div class="card-h"><div class="card-t">⚠️ Anomali & Uyarı Tespiti</div><span style="font-size:10px;color:${anomaliler.length?'var(--rd)':'var(--gn)'}">${anomaliler.length?anomaliler.length+' uyarı tespit edildi':'✓ Önemli anomali yok'}</span></div><div class="card-b">`;
+  // Muhasebe hataları — ters bakiyeler
+  ['120','121','150','153'].forEach(k=>{if(bD(k)<-1000)anomaliler.push({sev:'rd',kat:'muhasebe',msg:`${k} hesabında ters bakiye (${fC(Math.abs(bD(k)))}) — alacak bakiyeli olmamalı`,detay:'Alacak/stok hesabında alacak bakiyesi muhasebe hatasına işaret eder.'})});
+  ['320','321','400','401'].forEach(k=>{if(bC(k)<-1000)anomaliler.push({sev:'rd',kat:'muhasebe',msg:`${k} hesabında ters bakiye — borç bakiyeli olmamalı`,detay:'Borç hesabında borç bakiyesi muhasebe hatasına işaret eder.'})});
+
+  // Şüpheli alacak
+  if(supheli128>0){
+    const oran=alacak120>0?(supheli128/alacak120*100):0;
+    anomaliler.push({sev:'rd',kat:'alacak',msg:`Şüpheli Alacak (128): ${fC(supheli128)} — toplam alacağın %${oran.toFixed(1)}'i`,detay:'Bu tutar bankacılar tarafından aktiften düşülür. Net alacak değeri bu kadar azdır.'});
+  }
+
+  // Sayım fazlası
+  if(sayimFazlasi197>1000)anomaliler.push({sev:'am',kat:'stok',msg:`Sayım Fazlası (197): ${fC(sayimFazlasi197)} — stok/muhasebe uyumsuzluğu`,detay:'Fiziksel sayım ile kayıt arasında fark var. Yıl sonu sayım tutanağı kontrol edilmeli.'});
+
+  // Ortaklara borç (131) — banka iskonto kalemi
+  if(ortaklarBorc131>0){
+    const aktifOran=totalAktif>0?(ortaklarBorc131/totalAktif*100):0;
+    const sev=aktifOran>10?'rd':aktifOran>5?'am':'am';
+    anomaliler.push({sev,kat:'ortak',msg:`Ortaklara Borç (131): ${fC(ortaklarBorc131)} — aktifin %${aktifOran.toFixed(1)}'i`,detay:`BDDK ve bankalar bu tutarı değerlendirmede iskonto eder — gerçek özsermaye bu kadar düşük kabul edilir. Yüksek bakiye kredi notunu olumsuz etkiler.`});
+  }
+  if(uzunOrtaklarBorc231>0){
+    const aktifOran=totalAktif>0?(uzunOrtaklarBorc231/totalAktif*100):0;
+    anomaliler.push({sev:'am',kat:'ortak',msg:`Uzun Vadeli Ortaklara Borç (231): ${fC(uzunOrtaklarBorc231)} — aktifin %${aktifOran.toFixed(1)}'i`,detay:'Uzun vadeli ilişkili taraf finansmanı. Bankalar bu tutarı özsermayeye eklemeyebilir.'});
+  }
+
+  // Ortaklardan alacak (131 borç bakiye) — şirketten para çekme işareti
+  if(ortaklarAlacak131>0){
+    const aktifOran=totalAktif>0?(ortaklarAlacak131/totalAktif*100):0;
+    anomaliler.push({sev:'am',kat:'ortak',msg:`Ortaklardan Alacak (131 borç): ${fC(ortaklarAlacak131)} — aktifin %${aktifOran.toFixed(1)}'i`,detay:'Ortaklar şirketten para çekmiş görünüyor. Bankalar bu tutarı aktiften indirir.'});
+  }
+
+  // KDV analizi
+  if(kdv191>0&&totalAktif>0){
+    const kdvAktifOran=kdv191/totalAktif*100;
+    if(kdvAktifOran>5)anomaliler.push({sev:'am',kat:'kdv',msg:`İndirilecek KDV (191) çok yüksek: ${fC(kdv191)} — aktifin %${kdvAktifOran.toFixed(1)}'i`,detay:'Bu kadar büyük KDV alacağı tahsil edilmemiş KDV birikimini gösterir. Nakit akışını olumsuz etkiler.'});
+  }
+
+  // 120 / Ciro oranı — kritik oran
+  if(alacak120>0&&totalSatis>0){
+    const oran=alacak120/totalSatis*100;
+    if(oran>33)anomaliler.push({sev:'rd',kat:'alacak',msg:`Ticari alacak/ciro oranı çok yüksek: %${oran.toFixed(1)} (120+121+122 / Net Satış)`,detay:'Cironun 4 ayından fazlası alacakta bekliyor. Tahsilat sorunu veya uzun vade riski var. Kaynak: TCMB Finansal İstikrar Raporu.'});
+    else if(oran>20)anomaliler.push({sev:'am',kat:'alacak',msg:`Ticari alacak/ciro oranı yüksek: %${oran.toFixed(1)}`,detay:'Cironun yaklaşık 2.5 ayı alacakta. Sektör ortalamasıyla kıyaslanmalı.'});
+  }
+
+  // 120 > 320 — piyasa fonlama tespiti
+  if(alacak120>0&&borc320>0){
+    if(alacak120>borc320*1.5){
+      const fark=alacak120-borc320;
+      anomaliler.push({sev:'am',kat:'alacak',msg:`Şirket piyasayı fonluyor: Alacak ${fC(alacak120)} > Borç ${fC(borc320)} (fark: ${fC(fark)})`,detay:'Müşterilere uzun vade verirken tedarikçilere kısa vade ödeniyor. Bu nakit açığı banka kredisiyle veya özkaynaklarla finanse ediliyor. Kaynak: Basel III likidite analiz kriterleri.'});
+    }
+  }
+  if(borc320>alacak120*1.5&&alacak120>0){
+    anomaliler.push({sev:'gn',kat:'alacak',msg:`Şirket tedarikçiden finansman sağlıyor: Borç ${fC(borc320)} > Alacak ${fC(alacak120)}`,detay:'Tedarikçilerden uzun vade alınırken müşterilere kısa vade veriliyor. Sağlıklı nakit yönetimi göstergesi.'});
+  }
+
+  // Vergi borcu analizi
+  if(vergiBorc360>0&&totalSatis>0){
+    const vOran=vergiBorc360/totalSatis*100;
+    if(vOran>10)anomaliler.push({sev:'rd',kat:'vergi',msg:`Vergi Borcu (360/361/368) çok yüksek: ${fC(vergiBorc360)} — cironun %${vOran.toFixed(1)}'i`,detay:'Birikmiş vergi borcu işareti. Vergi dairesiyle ilişki risk altında olabilir.'});
+    else if(vOran>5)anomaliler.push({sev:'am',kat:'vergi',msg:`Vergi Borcu (360/361/368) dikkat: ${fC(vergiBorc360)} — cironun %${vOran.toFixed(1)}'i`,detay:'Vergi borcu takip edilmeli.'});
+  }
+
+  // Senet kullanımı — alacak senetleri vs borç senetleri
+  if(alacakSenetleri121>0&&borçSenetleri321>0){
+    const senetOran=alacakSenetleri121/borçSenetleri321;
+    if(senetOran<0.5)anomaliler.push({sev:'am',kat:'senet',msg:`Borç senedi (${fC(borçSenetleri321)}) alacak senedinin (${fC(alacakSenetleri121)}) 2 katından fazla`,detay:'Tedarikçilere senet verirken müşterilerden senet alınmıyor. Nakit akışı riski var.'});
+  }
+
+  // Stok/Ciro oranı
+  if(stok150>0&&totalSatis>0){
+    const stokOran=stok150/totalSatis*100;
+    if(stokOran>50)anomaliler.push({sev:'am',kat:'stok',msg:`Stok/Ciro oranı yüksek: %${stokOran.toFixed(1)} — ciroya göre stok fazla`,detay:'Cironun yarısından fazlası stokta bekleniyor. Ölü stok riski veya satış yavaşlığı olabilir.'});
+  }
+
+  // Kasa fazlası — kasa çok yüksekse risk
+  const kasa100=bD('100');
+  if(kasa100>0&&totalAktif>0){
+    const kasaOran=kasa100/totalAktif*100;
+    if(kasaOran>5)anomaliler.push({sev:'am',kat:'nakit',msg:`Kasa bakiyesi yüksek: ${fC(kasa100)} — aktifin %${kasaOran.toFixed(1)}'i`,detay:'Yüksek kasa bakiyesi kayıt dışı işlem veya yanlış muhasebe işareti olabilir. Bankacılar bu tutarı iskonto eder.'});
+  }
+
+  // Anomali kartı
+  const anomKatlar={muhasebe:'🔴 Muhasebe Hataları',alacak:'💳 Alacak & Tahsilat',ortak:'👤 Ortaklar Cari',kdv:'🧾 KDV',vergi:'🏛️ Vergi',stok:'📦 Stok',nakit:'💵 Nakit',senet:'📄 Senet'};
+  const katGruplari={};
+  anomaliler.forEach(a=>{if(!katGruplari[a.kat])katGruplari[a.kat]=[];katGruplari[a.kat].push(a)});
+  const rdSay=anomaliler.filter(a=>a.sev==='rd').length;
+  const amSay=anomaliler.filter(a=>a.sev==='am').length;
+  const gnSay=anomaliler.filter(a=>a.sev==='gn').length;
+
+  h+=`<div class="card"><div class="card-h"><div class="card-t">⚠️ Anomali & Uyarı Tespiti</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      ${rdSay?`<span style="font-size:9px;background:rgba(239,68,68,.12);color:var(--rd);padding:2px 7px;border-radius:10px;font-weight:700">${rdSay} kritik</span>`:''}
+      ${amSay?`<span style="font-size:9px;background:rgba(245,158,11,.12);color:var(--am);padding:2px 7px;border-radius:10px;font-weight:700">${amSay} uyarı</span>`:''}
+      ${gnSay?`<span style="font-size:9px;background:rgba(34,197,94,.12);color:var(--gn);padding:2px 7px;border-radius:10px;font-weight:700">${gnSay} olumlu</span>`:''}
+      ${!anomaliler.length?`<span style="font-size:10px;color:var(--gn)">✓ Anomali yok</span>`:''}
+    </div>
+  </div><div class="card-b">`;
+
   if(!anomaliler.length){
     h+=`<div style="color:var(--gn);font-size:12px;padding:8px 0">✓ Mizanda kritik anomali tespit edilmedi.</div>`;
   } else {
-    anomaliler.forEach(a=>{
-      h+=`<div style="background:var(--bgi);border:1px solid var(--brd);border-left:3px solid var(--${a.sev});border-radius:7px;padding:10px 12px;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:600;color:var(--${a.sev})">${a.msg}</div>
-        ${a.detay?`<div style="font-size:10px;color:var(--tm);margin-top:3px">${a.detay}</div>`:''}
-      </div>`;
+    Object.entries(katGruplari).forEach(([kat,items])=>{
+      h+=`<div style="font-size:9px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px">${anomKatlar[kat]||kat}</div>`;
+      items.forEach(a=>{
+        const sevRenk=a.sev==='rd'?'var(--rd)':a.sev==='gn'?'var(--gn)':'var(--am)';
+        h+=`<div style="background:var(--bgi);border:1px solid var(--brd);border-left:3px solid ${sevRenk};border-radius:7px;padding:9px 12px;margin-bottom:7px">
+          <div style="font-size:11px;font-weight:600;color:${sevRenk}">${a.msg}</div>
+          ${a.detay?`<div style="font-size:10px;color:var(--tm);margin-top:3px;line-height:1.5">${a.detay}</div>`:''}
+        </div>`;
+      });
     });
   }
+  h+=`<div style="font-size:9px;color:var(--tm);margin-top:8px;padding:6px 10px;background:rgba(59,130,246,.04);border-radius:5px">ℹ Eşik değerleri TCMB Sektörel Bilanço verileri, BDDK kredi analiz kriterleri ve Basel III likidite standartları referans alınarak belirlenmiştir.</div>`;
   h+=`</div></div>`;
 
-  // ── 2. MÜŞTERİ YOĞUNLAŞMASI (120/121 alt hesapları)
+  // ════════════════════════════════════════════════════════
+  // BÖLÜM 2: ORTAKLAR CARİ HESABI — Detaylı analiz
+  // ════════════════════════════════════════════════════════
+  const ortaklar131Borc=bC('131'); // Şirket ortağa borçlu
+  const ortaklar131Alacak=bD('131'); // Şirket ortaktan alacaklı (para çekilmiş)
+  const ortaklar231=bC('231');
+  if(ortaklar131Borc>0||ortaklar131Alacak>0||ortaklar231>0){
+    h+=`<div class="card"><div class="card-h"><div class="card-t">👤 Ortaklar Cari Hesabı Analizi</div><span style="font-size:9px;color:var(--am)">⚠ Bankalar bu hesabı iskonto eder</span></div><div class="card-b">`;
+    h+=`<div style="font-size:11px;color:var(--t2);line-height:1.7;margin-bottom:12px;padding:8px 12px;background:rgba(245,158,11,.06);border-radius:6px;border:1px solid rgba(245,158,11,.15)">
+      <b>Bankacılık perspektifi:</b> BDDK'nın kredi değerlendirme rehberlerine göre, 131 hesabındaki bakiyeler banka analistleri tarafından şu şekilde değerlendirilir:<br>
+      • <b>131 alacak bakiyesi</b> (ortağa borç): Özsermayeden düşülür → gerçek net değer azalır<br>
+      • <b>131 borç bakiyesi</b> (ortaktan alacak): Aktiften iskonto edilir → gerçek aktif büyüklüğü azalır<br>
+      • Yüksek 131 bakiyesi kredi limitini ve teminat değerini düşürür
+    </div>`;
+    const satirlar=[];
+    if(ortaklar131Borc>0){
+      const aktifEtki=totalAktif>0?(ortaklar131Borc/totalAktif*100):0;
+      satirlar.push({ad:'Ortaklara Borç (131 alacak)',tutar:ortaklar131Borc,etki:`Özsermayeyi %${aktifEtki.toFixed(1)} etkiler`,renk:'var(--rd)',aciklama:'Ortak şirketten para almış — banka analistleri bunu özsermayeden düşer'});
+    }
+    if(ortaklar131Alacak>0){
+      const aktifEtki=totalAktif>0?(ortaklar131Alacak/totalAktif*100):0;
+      satirlar.push({ad:'Ortaklardan Alacak (131 borç)',tutar:ortaklar131Alacak,etki:`Aktifi %${aktifEtki.toFixed(1)} etkiler`,renk:'var(--am)',aciklama:'Şirket ortağa borç vermiş — banka aktifi düşük görebilir'});
+    }
+    if(ortaklar231>0){
+      const aktifEtki=totalAktif>0?(ortaklar231/totalAktif*100):0;
+      satirlar.push({ad:'Uzun Vadeli Ortaklara Borç (231)',tutar:ortaklar231,etki:`Aktifin %${aktifEtki.toFixed(1)}'i`,renk:'var(--am)',aciklama:'Uzun vadeli ilişkili taraf borcu — hibrit borç/özsermaye olarak değerlendirilebilir'});
+    }
+    satirlar.forEach(s=>{
+      h+=`<div style="background:var(--bgi);border:1px solid var(--brd);border-radius:8px;padding:10px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--t1)">${s.ad}</div>
+            <div style="font-size:10px;color:var(--tm);margin-top:2px">${s.aciklama}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:12px">
+            <div style="font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${s.renk}">${fC(s.tutar)}</div>
+            <div style="font-size:9px;color:${s.renk};margin-top:2px">${s.etki}</div>
+          </div>
+        </div>
+      </div>`;
+    });
+    const toplamEtki=ortaklar131Borc+ortaklar131Alacak+ortaklar231;
+    const duzeltilmisAktif=totalAktif-toplamEtki;
+    if(totalAktif>0){
+      h+=`<div style="border-top:1px solid var(--brd);padding-top:10px;margin-top:4px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+          <span style="color:var(--t2)">Bilanço toplam aktif</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-weight:600">${fC(totalAktif)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+          <span style="color:var(--rd)">Ortak cari iskonto (−)</span>
+          <span style="font-family:'JetBrains Mono',monospace;color:var(--rd)">− ${fC(toplamEtki)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;border-top:1px solid var(--brd);padding-top:6px">
+          <span style="color:var(--t1)">Banka gözünden düzeltilmiş aktif</span>
+          <span style="font-family:'JetBrains Mono',monospace;color:var(--ac)">${fC(duzeltilmisAktif)}</span>
+        </div>
+      </div>`;
+    }
+    h+=`</div></div>`;
+  }
+
+  // ════════════════════════════════════════════════════════
+  // BÖLÜM 3: TİCARİ ALACAK — Ciro oranı + yoğunlaşma
+  // ════════════════════════════════════════════════════════
   const mAlt=[...(detay['120']||[]),...(detay['121']||[]),...(detay['122']||[])].filter(x=>x.bakiye>0).sort((a,b)=>b.bakiye-a.bakiye);
-  if(mAlt.length>0){
-    const topToplam=mAlt.reduce((s,x)=>s+x.bakiye,0);
-    const ilk3=mAlt.slice(0,3).reduce((s,x)=>s+x.bakiye,0);
-    const yogunPct=topToplam>0?(ilk3/topToplam*100):0;
-    h+=`<div class="card"><div class="card-h"><div class="card-t">👥 Müşteri Alacak Yoğunlaşması</div><span style="font-size:10px;color:var(--tm)">${mAlt.length} müşteri · Toplam: ${fC(topToplam)}</span></div><div class="card-b">`;
-    if(yogunPct>60)h+=`<div style="padding:8px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;font-size:11px;color:var(--am);margin-bottom:12px">⚠ İlk 3 müşteri toplam alacağın <b>%${yogunPct.toFixed(0)}'ini</b> oluşturuyor — yoğunlaşma riski yüksek</div>`;
-    h+=`<table class="ctb"><thead><tr><th>Müşteri / Hesap</th><th>Alacak Tutarı</th><th>Pay</th><th>Risk</th></tr></thead><tbody>`;
-    mAlt.slice(0,10).forEach((m,i)=>{
-      const pay=topToplam>0?(m.bakiye/topToplam*100):0;
-      const ady=m.ad||m.kod;
-      const risk=pay>30?'Yüksek':pay>15?'Orta':'Düşük';
-      const rCol=pay>30?'var(--rd)':pay>15?'var(--am)':'var(--gn)';
-      h+=`<tr><td style="font-weight:${i<3?'600':'400'}">${ady}</td><td style="font-family:'JetBrains Mono',monospace;text-align:right">${fC(m.bakiye)}</td><td style="font-family:'JetBrains Mono',monospace;text-align:right">%${pay.toFixed(1)}</td><td style="color:${rCol};font-weight:600;text-align:center">${risk}</td></tr>`;
-    });
-    if(mAlt.length>10)h+=`<tr><td colspan="4" style="text-align:center;color:var(--tm);font-size:10px">+ ${mAlt.length-10} müşteri daha</td></tr>`;
-    h+=`</tbody></table></div></div>`;
+  if(alacak120>0||mAlt.length>0){
+    h+=`<div class="card"><div class="card-h"><div class="card-t">💳 Ticari Alacak Analizi</div><span style="font-size:10px;color:var(--tm)">${fC(alacak120)}</span></div><div class="card-b">`;
+
+    // Ciro oranları — gösterge kartları
+    if(totalSatis>0){
+      const ciroPct=alacak120/totalSatis*100;
+      const dso=alacak120/totalSatis*365; // gün cinsinden ortalama tahsilat süresi
+      const ciroDurum=ciroPct>33?{renk:'var(--rd)',etiket:'Kritik'}:ciroPct>20?{renk:'var(--am)',etiket:'Yüksek'}:{renk:'var(--gn)',etiket:'Normal'};
+      h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--tm);margin-bottom:4px">Alacak / Ciro</div>
+          <div style="font-size:18px;font-weight:700;color:${ciroDurum.renk}">%${ciroPct.toFixed(1)}</div>
+          <div style="font-size:9px;color:${ciroDurum.renk}">${ciroDurum.etiket}</div>
+        </div>
+        <div style="background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--tm);margin-bottom:4px">Ort. Tahsilat Süresi</div>
+          <div style="font-size:18px;font-weight:700;color:${dso>120?'var(--rd)':dso>90?'var(--am)':'var(--gn)'}">${dso.toFixed(0)} gün</div>
+          <div style="font-size:9px;color:var(--tm)">DSO</div>
+        </div>
+        <div style="background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--tm);margin-bottom:4px">120 vs 320</div>
+          <div style="font-size:18px;font-weight:700;color:${alacak120>borc320?'var(--am)':'var(--gn)'}">${borc320>0?(alacak120/borc320).toFixed(2)+'x':'—'}</div>
+          <div style="font-size:9px;color:var(--tm)">${alacak120>borc320?'Piyasayı fonluyorsunuz':'Tedarikçi finansmanı'}</div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--tm);margin-bottom:10px">ℹ Alacak/Ciro >%20 yüksek, >%33 kritik kabul edilir. DSO >90 gün tahsilat sorununun işareti olabilir. Kaynak: TCMB Finansal İstikrar Raporu, Coface Türkiye KOBİ Analizi.</div>`;
+    }
+
+    // Müşteri yoğunlaşması — ciroya oranla
+    if(mAlt.length>0){
+      const topToplam=mAlt.reduce((s,x)=>s+x.bakiye,0);
+      const ilk3=mAlt.slice(0,3).reduce((s,x)=>s+x.bakiye,0);
+      const yogunPct=topToplam>0?(ilk3/topToplam*100):0;
+      if(yogunPct>60)h+=`<div style="padding:8px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;font-size:11px;color:var(--am);margin-bottom:10px">⚠ İlk 3 müşteri toplam alacağın <b>%${yogunPct.toFixed(0)}'ini</b> oluşturuyor — yoğunlaşma riski yüksek</div>`;
+      h+=`<table class="ctb"><thead><tr><th>Müşteri / Hesap</th><th>Alacak</th><th>Toplam Alacak Payı</th><th>Ciro Payı</th><th>Risk</th></tr></thead><tbody>`;
+      mAlt.slice(0,10).forEach((m,i)=>{
+        const pay=topToplam>0?(m.bakiye/topToplam*100):0;
+        const ciroPay=totalSatis>0?(m.bakiye/totalSatis*100):0;
+        // Tek müşteri ciroya oranı >%1 ise dikkat, >%5 ise yüksek
+        const riskCiro=ciroPay>10?'Kritik':ciroPay>5?'Yüksek':ciroPay>1?'Dikkat':'Normal';
+        const rCol=ciroPay>10?'var(--rd)':ciroPay>5?'var(--am)':ciroPay>1?'var(--am)':'var(--gn)';
+        h+=`<tr>
+          <td style="font-weight:${i<3?'600':'400'}">${m.ad||m.kod}</td>
+          <td style="font-family:'JetBrains Mono',monospace;text-align:right">${fC(m.bakiye)}</td>
+          <td style="font-family:'JetBrains Mono',monospace;text-align:right">%${pay.toFixed(1)}</td>
+          <td style="font-family:'JetBrains Mono',monospace;text-align:right;color:${rCol};font-weight:600">${totalSatis>0?'%'+ciroPay.toFixed(2):'—'}</td>
+          <td style="color:${rCol};font-weight:600;text-align:center;font-size:10px">${riskCiro}</td>
+        </tr>`;
+      });
+      if(mAlt.length>10)h+=`<tr><td colspan="5" style="text-align:center;color:var(--tm);font-size:10px">+ ${mAlt.length-10} müşteri daha</td></tr>`;
+      h+=`</tbody></table>`;
+      if(totalSatis>0)h+=`<div style="font-size:9px;color:var(--tm);margin-top:6px">ℹ Ciro payı >%1 dikkat, >%5 yüksek risk, >%10 kritik eşik olarak değerlendirilir. Tek müşteri bağımlılığı hem tahsilat hem de iş sürekliliği riski yaratır.</div>`;
+    }
+    h+=`</div></div>`;
   }
 
-  // ── 3. TEDARİKÇİ YOĞUNLAŞMASI (320/321 alt hesapları)
+  // ════════════════════════════════════════════════════════
+  // BÖLÜM 4: TEDARİKÇİ ANALİZİ — 320/321 + DPO
+  // ════════════════════════════════════════════════════════
   const tAlt=[...(detay['320']||[]),...(detay['321']||[]),...(detay['322']||[])].map(x=>({...x,bakiye:x.alacak-x.borc})).filter(x=>x.bakiye>0).sort((a,b)=>b.bakiye-a.bakiye);
-  if(tAlt.length>0){
-    const tTopToplam=tAlt.reduce((s,x)=>s+x.bakiye,0);
-    const tIlk3=tAlt.slice(0,3).reduce((s,x)=>s+x.bakiye,0);
-    const tYogPct=tTopToplam>0?(tIlk3/tTopToplam*100):0;
-    h+=`<div class="card"><div class="card-h"><div class="card-t">🏭 Tedarikçi Borç Yoğunlaşması</div><span style="font-size:10px;color:var(--tm)">${tAlt.length} tedarikçi · Toplam: ${fC(tTopToplam)}</span></div><div class="card-b">`;
-    if(tYogPct>60)h+=`<div style="padding:8px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;font-size:11px;color:var(--am);margin-bottom:12px">⚠ İlk 3 tedarikçi toplam borcun <b>%${tYogPct.toFixed(0)}'ini</b> oluşturuyor — tedarik zinciri riski</div>`;
-    h+=`<table class="ctb"><thead><tr><th>Tedarikçi / Hesap</th><th>Borç Tutarı</th><th>Pay</th><th>Risk</th></tr></thead><tbody>`;
-    tAlt.slice(0,10).forEach((t,i)=>{
-      const pay=tTopToplam>0?(t.bakiye/tTopToplam*100):0;
-      const risk=pay>30?'Yüksek':pay>15?'Orta':'Düşük';
-      const rCol=pay>30?'var(--rd)':pay>15?'var(--am)':'var(--gn)';
-      h+=`<tr><td style="font-weight:${i<3?'600':'400'}">${t.ad||t.kod}</td><td style="font-family:'JetBrains Mono',monospace;text-align:right">${fC(t.bakiye)}</td><td style="font-family:'JetBrains Mono',monospace;text-align:right">%${pay.toFixed(1)}</td><td style="color:${rCol};font-weight:600;text-align:center">${risk}</td></tr>`;
-    });
-    if(tAlt.length>10)h+=`<tr><td colspan="4" style="text-align:center;color:var(--tm);font-size:10px">+ ${tAlt.length-10} tedarikçi daha</td></tr>`;
-    h+=`</tbody></table></div></div>`;
+  const smm=pF(p.data.cogs)||totalSatis*0.6;
+  if(borc320>0||tAlt.length>0){
+    h+=`<div class="card"><div class="card-h"><div class="card-t">🏭 Tedarikçi Analizi</div><span style="font-size:10px;color:var(--tm)">${fC(borc320)}</span></div><div class="card-b">`;
+    if(smm>0){
+      const dpo=borc320/smm*365;
+      h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--tm);margin-bottom:4px">Ort. Ödeme Süresi (DPO)</div>
+          <div style="font-size:18px;font-weight:700;color:${dpo>120?'var(--rd)':dpo>60?'var(--am)':'var(--gn)'}">${dpo.toFixed(0)} gün</div>
+          <div style="font-size:9px;color:var(--tm)">Tedarikçiye ortalama vade</div>
+        </div>
+        <div style="background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--tm);margin-bottom:4px">Borç / Alacak Dengesi</div>
+          <div style="font-size:16px;font-weight:700;color:${borc320>alacak120*1.5?'var(--gn)':alacak120>borc320*1.5?'var(--rd)':'var(--ac)'}">
+            ${alacak120>0?((borc320/alacak120).toFixed(2)+'x'):'—'}
+          </div>
+          <div style="font-size:9px;color:var(--tm)">Tedarikçi borç / Müşteri alacak</div>
+        </div>
+      </div>`;
+    }
+    if(tAlt.length>0){
+      const tTopToplam=tAlt.reduce((s,x)=>s+x.bakiye,0);
+      const tIlk3=tAlt.slice(0,3).reduce((s,x)=>s+x.bakiye,0);
+      const tYogPct=tTopToplam>0?(tIlk3/tTopToplam*100):0;
+      if(tYogPct>60)h+=`<div style="padding:8px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;font-size:11px;color:var(--am);margin-bottom:10px">⚠ İlk 3 tedarikçi toplam borcun <b>%${tYogPct.toFixed(0)}'ini</b> oluşturuyor — tedarik zinciri ve finansman riski</div>`;
+      h+=`<table class="ctb"><thead><tr><th>Tedarikçi / Hesap</th><th>Borç Tutarı</th><th>Pay</th><th>Risk</th></tr></thead><tbody>`;
+      tAlt.slice(0,10).forEach((t,i)=>{
+        const pay=tTopToplam>0?(t.bakiye/tTopToplam*100):0;
+        const risk=pay>40?'Kritik':pay>25?'Yüksek':pay>10?'Orta':'Normal';
+        const rCol=pay>40?'var(--rd)':pay>25?'var(--am)':'var(--gn)';
+        h+=`<tr><td style="font-weight:${i<3?'600':'400'}">${t.ad||t.kod}</td><td style="font-family:'JetBrains Mono',monospace;text-align:right">${fC(t.bakiye)}</td><td style="font-family:'JetBrains Mono',monospace;text-align:right">%${pay.toFixed(1)}</td><td style="color:${rCol};font-weight:600;text-align:center;font-size:10px">${risk}</td></tr>`;
+      });
+      if(tAlt.length>10)h+=`<tr><td colspan="4" style="text-align:center;color:var(--tm);font-size:10px">+ ${tAlt.length-10} tedarikçi daha</td></tr>`;
+      h+=`</tbody></table>`;
+    }
+    h+=`</div></div>`;
   }
 
-  // ── 4. NAKİT & BANKA DETAYI (100/102 alt hesapları)
+  // ════════════════════════════════════════════════════════
+  // BÖLÜM 5: NAKİT & BANKA DETAYI
+  // ════════════════════════════════════════════════════════
   const kasaAlt=detay['100']||[];
   const bankaAlt=detay['102']||[];
   if(kasaAlt.length>0||bankaAlt.length>0){
-    h+=`<div class="card"><div class="card-h"><div class="card-t">🏦 Nakit & Banka Detayı</div></div><div class="card-b">`;
+    const kasaToplam=kasaAlt.reduce((s,x)=>s+Math.abs(x.bakiye),0);
+    const bankaToplam=bankaAlt.reduce((s,x)=>s+Math.abs(x.bakiye),0);
+    h+=`<div class="card"><div class="card-h"><div class="card-t">🏦 Nakit & Banka Detayı</div><span style="font-size:10px;color:var(--tm)">Toplam: ${fC(kasaToplam+bankaToplam)}</span></div><div class="card-b">`;
+    if(kasaToplam>0&&totalAktif>0&&(kasaToplam/totalAktif*100)>5){
+      h+=`<div style="padding:8px 12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;font-size:11px;color:var(--am);margin-bottom:10px">⚠ Kasa bakiyesi aktifin %${(kasaToplam/totalAktif*100).toFixed(1)}'i — yüksek kasa bankacılar tarafından sorgulanır</div>`;
+    }
     if(kasaAlt.length){
-      const kasaToplam=kasaAlt.reduce((s,x)=>s+Math.abs(x.bakiye),0);
-      h+=`<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Kasa (100)</div>`;
+      h+=`<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Kasa (100) — ${fC(kasaToplam)}</div>`;
       kasaAlt.forEach(k=>h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd);font-size:11px"><span>${k.ad||k.kod}</span><span style="font-family:'JetBrains Mono',monospace;color:var(--gn)">${fC(Math.abs(k.bakiye))}</span></div>`);
     }
     if(bankaAlt.length){
-      h+=`<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px">Bankalar (102)</div>`;
-      const bankaToplam=bankaAlt.reduce((s,x)=>s+Math.abs(x.bakiye),0);
+      h+=`<div style="font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px">Bankalar (102) — ${fC(bankaToplam)}</div>`;
       bankaAlt.forEach(b=>h+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--brd);font-size:11px"><span>${b.ad||b.kod}</span><span style="font-family:'JetBrains Mono',monospace;color:var(--ac)">${fC(Math.abs(b.bakiye))}</span></div>`);
     }
     h+=`</div></div>`;
   }
 
-  // ── 5. GİDER YAPISI ANALİZİ (7'li hesaplar)
+  // ════════════════════════════════════════════════════════
+  // BÖLÜM 6: GİDER YAPISI
+  // ════════════════════════════════════════════════════════
   const giderler=[
-    {kod:'631',ad:'Pazarlama Giderleri',val:accts['631']?(accts['631'].d-accts['631'].c):0},
-    {kod:'632',ad:'Genel Yönetim Giderleri',val:accts['632']?(accts['632'].d-accts['632'].c):0},
-    {kod:'630',ad:'AR-GE Giderleri',val:accts['630']?(accts['630'].d-accts['630'].c):0},
-    {kod:'660',ad:'Kısa Vadeli Finansman Giderleri',val:accts['660']?(accts['660'].d-accts['660'].c):0},
-    {kod:'661',ad:'Uzun Vadeli Finansman Giderleri',val:accts['661']?(accts['661'].d-accts['661'].c):0},
+    {kod:'631',ad:'Pazarlama Giderleri',val:bD('631')},
+    {kod:'632',ad:'Genel Yönetim Giderleri',val:bD('632')},
+    {kod:'630',ad:'AR-GE Giderleri',val:bD('630')},
+    {kod:'660',ad:'Kısa Vadeli Finansman Giderleri',val:bD('660')},
+    {kod:'661',ad:'Uzun Vadeli Finansman Giderleri',val:bD('661')},
   ].filter(g=>g.val>0);
   const giderBM={
-    '631':{ust:15,kaynak:'Pazarlama giderlerinin net satışa oranı için genel kabul: %5-15 (Kaynak: TCMB Sektörel Bilanço Ortalamaları)'},
-    '632':{ust:10,kaynak:'Genel yönetim giderlerinin net satışa oranı için genel kabul: %3-10 (Kaynak: Atradius/Coface KOBİ analizleri)'},
-    '630':{ust:999,kaynak:'AR-GE giderleri için üst sınır yoktur, yüksek oran olumludur'},
-    '660':{ust:5,kaynak:'Kısa vadeli finansman giderlerinin %5 üzeri olması yüksek faiz yükü anlamına gelir'},
-    '661':{ust:5,kaynak:'Uzun vadeli finansman giderlerinin %5 üzeri olması yüksek borç maliyeti anlamına gelir'},
+    '631':{ust:15,kaynak:'Pazarlama giderleri/ciro %5-15 genel kabul (TCMB Sektörel Bilanço)'},
+    '632':{ust:10,kaynak:'Genel yönetim giderleri/ciro %3-10 genel kabul (Atradius KOBİ)'},
+    '630':{ust:999,kaynak:'AR-GE giderleri — yüksek oran olumludur'},
+    '660':{ust:5,kaynak:'Kısa vadeli finansman giderleri >%5 yüksek faiz yükü'},
+    '661':{ust:5,kaynak:'Uzun vadeli finansman giderleri >%5 yüksek borç maliyeti'},
   };
   if(giderler.length>0&&totalSatis>0){
     const gToplam=giderler.reduce((s,g)=>s+g.val,0);
-    h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Gider Yapısı Analizi</div><span style="font-size:10px;color:var(--tm)">Net satışların %${(gToplam/totalSatis*100).toFixed(1)}'i</span></div><div class="card-b">`;
-    h+=`<div style="font-size:9px;color:var(--tm);margin-bottom:10px;padding:6px 10px;background:rgba(59,130,246,.04);border-radius:5px">ℹ Renk eşikleri TCMB sektörel bilanço ortalamaları ve Atradius KOBİ analizleri referans alınarak belirlenmiştir. Sektöre göre farklılık gösterebilir.</div>`;
-    h+=`<table class="ctb"><thead><tr><th>Gider Kalemi</th><th>Tutar</th><th>Net Sat. Payı</th><th>Değerlendirme</th></tr></thead><tbody>`;
+    h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Gider Yapısı Analizi</div><span style="font-size:10px;color:var(--tm)">Satışların %${(gToplam/totalSatis*100).toFixed(1)}'i</span></div><div class="card-b">`;
+    h+=`<div style="font-size:9px;color:var(--tm);margin-bottom:10px;padding:6px 10px;background:rgba(59,130,246,.04);border-radius:5px">ℹ Renk eşikleri TCMB sektörel bilanço ve Atradius KOBİ analizleri referans alınarak belirlenmiştir. Sektöre göre farklılık gösterebilir.</div>`;
+    h+=`<table class="ctb"><thead><tr><th>Gider Kalemi</th><th>Tutar</th><th>Ciro Payı</th><th>Değerlendirme</th></tr></thead><tbody>`;
     giderler.sort((a,b)=>b.val-a.val).forEach(g=>{
-      const pay=totalSatis>0?(g.val/totalSatis*100):0;
-      const bm=giderBM[g.kod];
-      const ust=bm?.ust||20;
+      const pay=g.val/totalSatis*100;
+      const bm=giderBM[g.kod];const ust=bm?.ust||20;
       const renk=pay>ust*1.5?'var(--rd)':pay>ust?'var(--am)':'var(--gn)';
       const durum=pay>ust*1.5?'Yüksek':pay>ust?'Dikkat':'Normal';
       h+=`<tr title="${bm?.kaynak||''}">
@@ -1202,14 +1446,13 @@ function rDetay(el){
         <td style="text-align:center;font-size:10px;color:${renk};font-weight:600">${durum}</td>
       </tr>`;
     });
-    h+=`</tbody></table><div style="font-size:9px;color:var(--tm);margin-top:6px">💡 Eşikler üzerine fare getirerek açıklama görebilirsiniz.</div>`;
-    const arge=giderler.find(g=>g.kod==='630');
-    if(!arge||arge.val===0)h+=`<div style="margin-top:8px;padding:8px 12px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:6px;font-size:11px;color:var(--ac)">💡 AR-GE gideri görünmüyor — TÜBİTAK/KOSGEB teşviklerini değerlendiriyor musunuz?</div>`;
+    h+=`</tbody></table><div style="font-size:9px;color:var(--tm);margin-top:6px">💡 Satır üzerine fare getirerek kaynak bilgisi görünür.</div>`;
+    if(!giderler.find(g=>g.kod==='630'))h+=`<div style="margin-top:8px;padding:8px 12px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:6px;font-size:11px;color:var(--ac)">💡 AR-GE gideri (630) görünmüyor — TÜBİTAK/KOSGEB teşviklerini değerlendiriyor musunuz?</div>`;
     h+=`</div></div>`;
   }
 
-  // Hiç alt hesap yoksa bilgi ver
-  if(mAlt.length===0&&tAlt.length===0&&kasaAlt.length===0&&bankaAlt.length===0){
+  // Alt hesap yoksa uyarı
+  if(mAlt.length===0&&tAlt.length===0&&(detay['100']||[]).length===0&&(detay['102']||[]).length===0&&!ortaklar131Borc&&!ortaklar131Alacak){
     h+=`<div class="card"><div class="card-b" style="text-align:center;padding:24px;color:var(--tm)">
       <div style="font-size:13px;margin-bottom:8px">Alt hesap verisi bulunamadı</div>
       <div style="font-size:11px;line-height:1.7">Yüklenen mizan yalnızca 3 haneli (özet) hesapları içeriyor.<br>Müşteri/tedarikçi analizi için <b>alt hesap detaylı</b> mizan gerekli.<br><span style="color:var(--ac)">Netsis/Logo'da "Detay Mizan" veya "Yardımcı Hesap Mizanı" seçeneğini kullanın.</span></div>
