@@ -857,8 +857,11 @@ function doLogout(){if(confirm('Çıkış yapmak istiyor musunuz?'))netlifyIdent
 // ─── SUPABASE HELPERS ────────────────────────────────────────────────────────
 async function sbCall(action,data={}){
   if(!S.user)return{error:'Oturum yok'};
+  // JWT token al — plain email değil imzalı token gönder
+  let token='';
+  try{const cu=netlifyIdentity.currentUser();if(cu)token=await cu.jwt();}catch(e){}
   try{
-    const r=await fetch('/api/supabase',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,userEmail:S.user.email,data})});
+    const r=await fetch('/api/supabase',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action,data})});
     return r.json();
   }catch(e){return{error:e.message}}
 }
@@ -892,28 +895,18 @@ async function saveAnaliz(){
   const res=await sbCall('save',{sirketAdi,sektor:S.sektor,donem:p.name,rasyoJson,aiYorum:S.aiRes,dosyaAdi:p.fileName||''});
   if(!res.ok){btn.disabled=false;btn.textContent=orig;alert('Kayıt hatası: '+(res.error||'Bilinmeyen hata'));return}
   const analizId=res.id;
-  // Dosyayı doğrudan Supabase Storage'a yükle (proxy size limitini aşmak için)
+  // Dosyayı proxy üzerinden yükle (Storage artık anon erişime kapalı)
   if(p.rawFile&&analizId&&S.user){
     btn.textContent='Dosya yükleniyor...';
     try{
-      const safeEmail=S.user.email.replace(/[^a-zA-Z0-9]/g,'_');
-      const safeName=p.fileName.replace(/[^a-zA-Z0-9._-]/g,'_');
-      const path=`${safeEmail}/${analizId}/${safeName}`;
-      const SURL=await getSupabaseUrl();
-      const SKEY=await getSupabaseAnonKey();
-      if(SURL&&SKEY){
-        const uploadRes=await fetch(`${SURL}/storage/v1/object/analizler/${path}`,{
-          method:'POST',
-          headers:{'apikey':SKEY,'Authorization':`Bearer ${SKEY}`,'Content-Type':p.rawFile.type||'application/octet-stream','x-upsert':'true'},
-          body:p.rawFile
-        });
-        if(uploadRes.ok){
-          await sbCall('updatePath',{id:analizId,dosyaPath:path,dosyaAdi:p.fileName});
-        }else{
-          const err=await uploadRes.text();
-          console.warn('Storage upload hatası:',err);
-        }
-      }
+      const safeName=p.fileName.replace(/[^a-zA-Z0-9._-]/g,'_').substring(0,100);
+      const buf=await p.rawFile.arrayBuffer();
+      const bytes=new Uint8Array(buf);
+      // Chunk'a böl — base64 encoding
+      let bin='';const chunk=8192;
+      for(let i=0;i<bytes.length;i+=chunk){bin+=String.fromCharCode(...bytes.subarray(i,i+chunk));}
+      const b64=btoa(bin);
+      await sbCall('uploadFile',{analizId,dosyaAdi:safeName,base64Data:b64,mimeType:p.rawFile.type||'application/octet-stream'});
     }catch(e){console.warn('Dosya yüklenemedi:',e)}
   }
   btn.disabled=false;btn.textContent='✓ Kaydedildi';btn.classList.add('btn-save-anim');
