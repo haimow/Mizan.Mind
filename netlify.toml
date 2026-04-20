@@ -4,6 +4,7 @@
 [functions]
   directory = "functions"
 
+# ─── API Redirects ────────────────────────────────────────
 [[redirects]]
   from = "/api/claude"
   to = "/.netlify/functions/claude-proxy"
@@ -12,4 +13,16 @@
 [[redirects]]
   from = "/api/supabase"
   to = "/.netlify/functions/supabase-proxy"
+  status = 200
+
+# ─── Dosya indirme endpoint'i ─────────────────────────────
+[[redirects]]
+  from = "/api/download"
+  to = "/.netlify/functions/supabase-proxy"
+  status = 200
+
+# ─── Tüm bilinmeyen route'ları index.html'e yönlendir (SPA) ─
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
