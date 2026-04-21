@@ -1098,7 +1098,7 @@ if(p.isMizan&&p.mizanAccts){
   const bC=(k)=>a[k]?(a[k].c-a[k].d):0;
   mizanCtx=`\n\nDetay Mizan Verileri (THP bazlı):
 - Ticari Alacak (120-122): ${bD('120')+bD('121')+bD('122')}
-- Ticari Borç (320-322): ${bC('320')+bC('321')+bC('322')}
+- Ticari Borç (320-322-329): ${bC('320')+bC('321')+bC('322')+bC('329')}
 - Kasa (100): ${bD('100')}, Bankalar (102): ${bD('102')}
 - Ortaklara Borç (131): ${bC('131')}
 - İndirilecek KDV (191): ${bD('191')}
@@ -1156,7 +1156,7 @@ function rDetay(el){
 
   // Ana hesap toplamları
   const alacak120=bD('120')+bD('121')+bD('122');
-  const borc320=bC('320')+bC('321')+bC('322');
+  const borc320=bC('320')+bC('321')+bC('322')+bC('329'); // 329 dahil
   const stok150=bD('150')+bD('151')+bD('152')+bD('153')+bD('157');
   const nakit100=bD('100')+bD('101')+bD('102')+bD('103');
   const ortaklarBorc131=bC('131'); // Ortaklara borç (131)
@@ -1180,7 +1180,7 @@ function rDetay(el){
 
   // Muhasebe hataları — ters bakiyeler
   ['120','121','150','153'].forEach(k=>{if(bD(k)<-1000)anomaliler.push({sev:'rd',kat:'muhasebe',msg:`${k} hesabında ters bakiye (${fC(Math.abs(bD(k)))}) — alacak bakiyeli olmamalı`,detay:'Alacak/stok hesabında alacak bakiyesi muhasebe hatasına işaret eder.'})});
-  ['320','321','400','401'].forEach(k=>{if(bC(k)<-1000)anomaliler.push({sev:'rd',kat:'muhasebe',msg:`${k} hesabında ters bakiye — borç bakiyeli olmamalı`,detay:'Borç hesabında borç bakiyesi muhasebe hatasına işaret eder.'})});
+  ['320','321','329','400','401'].forEach(k=>{if(bC(k)<-1000)anomaliler.push({sev:'rd',kat:'muhasebe',msg:`${k} hesabında ters bakiye — borç bakiyeli olmamalı`,detay:'Borç hesabında borç bakiyesi muhasebe hatasına işaret eder.'})});
 
   // Şüpheli alacak
   if(supheli128>0){
@@ -1225,11 +1225,11 @@ function rDetay(el){
   if(alacak120>0&&borc320>0){
     if(alacak120>borc320*1.5){
       const fark=alacak120-borc320;
-      anomaliler.push({sev:'am',kat:'alacak',msg:`Şirket piyasayı fonluyor: Alacak ${fC(alacak120)} > Borç ${fC(borc320)} (fark: ${fC(fark)})`,detay:'Müşterilere uzun vade verirken tedarikçilere kısa vade ödeniyor. Bu nakit açığı banka kredisiyle veya özkaynaklarla finanse ediliyor. Kaynak: Basel III likidite analiz kriterleri.'});
+      anomaliler.push({sev:'am',kat:'alacak',msg:`Şirket piyasayı fonluyor: Alacak ${fC(alacak120)} > Ticari Borç/320+329 ${fC(borc320)} (fark: ${fC(fark)})`,detay:'Müşterilere uzun vade verirken tedarikçilere kısa vade ödeniyor. Bu nakit açığı banka kredisiyle veya özkaynaklarla finanse ediliyor. Kaynak: Basel III likidite analiz kriterleri.'});
     }
   }
   if(borc320>alacak120*1.5&&alacak120>0){
-    anomaliler.push({sev:'gn',kat:'alacak',msg:`Şirket tedarikçiden finansman sağlıyor: Borç ${fC(borc320)} > Alacak ${fC(alacak120)}`,detay:'Tedarikçilerden uzun vade alınırken müşterilere kısa vade veriliyor. Sağlıklı nakit yönetimi göstergesi.'});
+    anomaliler.push({sev:'gn',kat:'alacak',msg:`Şirket tedarikçiden finansman sağlıyor: Ticari Borç/320+329 ${fC(borc320)} > Alacak ${fC(alacak120)}`,detay:'Tedarikçilerden uzun vade alınırken müşterilere kısa vade veriliyor. Sağlıklı nakit yönetimi göstergesi.'});
   }
 
   // Vergi borcu analizi
@@ -1378,7 +1378,7 @@ function rDetay(el){
           <div style="font-size:9px;color:var(--tm)">DSO</div>
         </div>
         <div style="background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px;text-align:center">
-          <div style="font-size:9px;color:var(--tm);margin-bottom:4px">120 vs 320</div>
+          <div style="font-size:9px;color:var(--tm);margin-bottom:4px">120 vs 320+329</div>
           <div style="font-size:18px;font-weight:700;color:${alacak120>borc320?'var(--am)':'var(--gn)'}">${borc320>0?(alacak120/borc320).toFixed(2)+'x':'—'}</div>
           <div style="font-size:9px;color:var(--tm)">${alacak120>borc320?'Piyasayı fonluyorsunuz':'Tedarikçi finansmanı'}</div>
         </div>
@@ -1417,10 +1417,10 @@ function rDetay(el){
   // ════════════════════════════════════════════════════════
   // BÖLÜM 4: TEDARİKÇİ ANALİZİ — 320/321 + DPO
   // ════════════════════════════════════════════════════════
-  const tAlt=[...(detay['320']||[]),...(detay['321']||[]),...(detay['322']||[])].map(x=>({...x,bakiye:x.alacak-x.borc})).filter(x=>x.bakiye>0).sort((a,b)=>b.bakiye-a.bakiye);
+  const tAlt=[...(detay['320']||[]),...(detay['321']||[]),...(detay['322']||[]),...(detay['329']||[])].map(x=>({...x,bakiye:x.alacak-x.borc})).filter(x=>x.bakiye>0).sort((a,b)=>b.bakiye-a.bakiye);
   const smm=pF(p.data.cogs)||totalSatis*0.6;
   if(borc320>0||tAlt.length>0){
-    h+=`<div class="card"><div class="card-h"><div class="card-t">🏭 Tedarikçi Analizi</div><span style="font-size:10px;color:var(--tm)">${fC(borc320)}</span></div><div class="card-b">`;
+    h+=`<div class="card"><div class="card-h"><div class="card-t">🏭 Tedarikçi Analizi (320+329)</div><span style="font-size:10px;color:var(--tm)">${fC(borc320)}</span></div><div class="card-b">`;
     if(smm>0){
       const dpo=borc320/smm*365;
       h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
@@ -2402,110 +2402,417 @@ async function parseEDefterXML(file){
         fisler.push({fisNo,tarih,aciklama,satirlar,mesaiDisi,saat});
       });
 
-      // ANOMALİ TESPİTİ
+      // ══════════════════════════════════════════════════════════
+      // ANOMALİ TESPİTİ — 37 Kategori
+      // ══════════════════════════════════════════════════════════
       const anomaliler=[];
+      const push=(kategori,risk,emoji,aciklama,detay)=>anomaliler.push({kategori,risk,emoji,aciklama,detay});
 
-      // 1. Gece yarısı / mesai dışı kayıtlar
-      const geceFisler=fisler.filter(f=>f.mesaiDisi);
-      if(geceFisler.length>0){
-        anomaliler.push({
-          kategori:'Mesai Dışı Kayıt',
-          risk:'yuksek',
-          emoji:'🌙',
-          aciklama:`${geceFisler.length} fiş gece 23:00-06:00 arasında girilmiş`,
-          detay:geceFisler.map(f=>`Fiş #${f.fisNo} (${f.tarih}) — saat ${f.saat}:xx`).join(', ')
-        });
+      // ── YARDIMCI FONKSİYONLAR ───────────────────────────────
+      const isTatil=(tarih)=>{
+        if(!tarih)return false;
+        const d=new Date(tarih);
+        const gun=d.getDay(); // 0=Pazar, 6=Cumartesi
+        return gun===0||gun===6;
+      };
+      const getSaat=(aciklama)=>{
+        const m=(aciklama||'').match(/T(\d{2}):(\d{2})/);
+        return m?parseInt(m[1]):null;
+      };
+      const isMesaiDisi=(aciklama)=>{
+        const s=getSaat(aciklama);
+        return s!==null&&(s>=22||s<6);
+      };
+      const BILINEN_HESAPLAR=new Set(['100','101','102','103','104','105','106','108','109','110','111','112','119','120','121','122','123','124','125','126','127','128','129','130','131','132','133','134','135','136','137','138','139','140','141','142','143','144','145','146','147','148','149','150','151','152','153','154','155','156','157','158','159','160','161','162','163','164','165','166','167','168','169','170','171','172','173','174','175','176','177','178','179','180','181','182','183','184','185','186','187','188','189','190','191','192','193','194','195','196','197','198','199','200','210','220','230','231','232','233','240','241','242','243','244','245','246','247','248','249','250','251','252','253','254','255','256','257','258','259','260','261','262','263','264','265','266','267','268','269','270','271','272','273','274','275','276','277','278','279','280','281','282','283','284','285','286','287','288','289','290','291','292','293','294','295','296','297','298','299','300','301','302','303','304','305','306','307','308','309','310','311','312','313','314','315','316','317','318','319','320','321','322','323','324','325','326','327','328','329','330','331','332','333','334','335','336','337','338','339','340','341','342','343','344','345','346','347','348','349','350','351','352','353','354','355','356','357','358','359','360','361','362','363','364','365','366','367','368','369','370','371','372','373','374','375','376','377','378','379','380','381','382','383','384','385','386','387','388','389','390','391','392','393','394','395','396','397','398','399','400','401','402','403','404','405','406','407','408','409','410','411','412','413','414','415','416','417','418','419','420','421','422','423','424','425','426','427','428','429','430','431','432','433','434','435','436','437','438','439','440','441','442','443','444','445','446','447','448','449','450','451','452','453','454','455','456','457','458','459','460','461','462','463','464','465','466','467','468','469','470','471','472','473','474','475','476','477','478','479','480','481','482','483','484','485','486','487','488','489','490','491','492','493','494','495','496','497','498','499','500','501','502','503','510','511','512','513','514','515','516','517','518','519','520','521','522','523','524','525','526','527','528','529','540','541','542','543','544','545','546','547','548','549','550','551','552','553','554','555','556','557','558','559','560','561','562','563','564','565','566','567','568','569','600','601','602','603','604','605','606','607','608','609','610','611','612','613','614','615','616','617','618','619','620','621','622','623','624','625','626','627','628','629','630','631','632','633','634','635','636','637','638','639','640','641','642','643','644','645','646','647','648','649','650','651','652','653','654','655','656','657','658','659','660','661','662','663','664','665','666','667','668','669','670','671','672','673','674','675','676','677','678','679','680','681','682','683','684','685','686','687','688','689','690','691','692','693','694','695','696','697','698','699','700','710','720','730','740','750','760','770','780','790','791','792','793','794','795','796','797','798','799','900','950','960','970','980','990']);
+
+      // ── 1. AÇILIŞ / KAPANIŞ FİŞLERİ ─────────────────────────
+      const acilislar=fisler.filter(f=>/(açılış|acilis|devir|opening|kapanış|kapanis|closing)/i.test(f.aciklama||''));
+      if(acilislar.length===0&&fisler.length>5){
+        push('Açılış Fişi Eksik','orta','📂','Dönem açılış/devir fişi tespit edilemedi','Yeni dönem bakiyesi açılış fişiyle başlamalı. 131/231 veya bilanço devirlerini kontrol edin.');
       }
-
-      // 2. Yuvarlak tutar analizi (tam milyon veya 10bin katları)
-      const yuvarlakFisler=[];
-      fisler.forEach(f=>{
-        f.satirlar.forEach(s=>{
-          if(s.tutar>0&&s.tutar%10000===0&&s.belgeTip==='other'){
-            yuvarlakFisler.push({fisNo:f.fisNo,tutar:s.tutar,tarih:f.tarih});
-          }
-        });
+      // ── 2. DÖNEM DEVIR KONTROLÜ ─────────────────────────────
+      // Açılış fişlerinde tek taraflı satır varsa
+      acilislar.forEach(f=>{
+        const tek=f.satirlar.filter(s=>s.dc==='D').length===0||f.satirlar.filter(s=>s.dc==='C').length===0;
+        if(tek)push('Tek Taraflı Devir','yuksek','⚠️',`Fiş #${f.fisNo}: Açılış/devir fişi tek taraflı`,`${f.aciklama} — borç veya alacak tarafı boş. Bakiye transferi hatalı olabilir.`);
       });
-      if(yuvarlakFisler.length>0){
-        const topTutar=yuvarlakFisler.reduce((a,b)=>a+b.tutar,0);
-        anomaliler.push({
-          kategori:'Yuvarlak Tutar',
-          risk:'orta',
-          emoji:'🔢',
-          aciklama:`${yuvarlakFisler.length} satirda 10.000₺ tam katı + belgesiz kayıt`,
-          detay:`Toplam: ${fC(topTutar)} — `+yuvarlakFisler.slice(0,3).map(x=>`Fiş#${x.fisNo}: ${fC(x.tutar)}`).join(', ')
-        });
+
+      // ── 3. DUPLICATE FİŞ NUMARASI ────────────────────────────
+      const fisNolar={};
+      fisler.forEach(f=>{
+        if(!f.fisNo)return;
+        if(!fisNolar[f.fisNo])fisNolar[f.fisNo]=[];
+        fisNolar[f.fisNo].push(f.tarih);
+      });
+      const dupFisler=Object.entries(fisNolar).filter(([,dates])=>dates.length>1);
+      if(dupFisler.length>0){
+        push('Duplicate Fiş Numarası','yuksek','🔁',`${dupFisler.length} fiş numarası birden fazla kullanılmış`,
+          dupFisler.slice(0,5).map(([no,dates])=>`Fiş#${no}: ${dates.join(', ')}`).join(' | '));
       }
 
-      // 3. Aynı gün iptal çiftleri
-      const iptalFisler=fisler.filter(f=>f.aciklama&&(f.aciklama.includes('İPTAL')||f.aciklama.includes('IPTAL')||f.aciklama.includes('iptal')));
-      if(iptalFisler.length>0){
-        // Aynı gün başka fiş var mı
-        const ayniGunIptal=iptalFisler.filter(f=>{
-          return fisler.some(g=>g.fisNo!==f.fisNo&&g.tarih===f.tarih&&!g.aciklama.includes('İPTAL'));
-        });
-        if(ayniGunIptal.length>0){
-          anomaliler.push({
-            kategori:'Aynı Gün İptal',
-            risk:'orta',
-            emoji:'↩️',
-            aciklama:`${ayniGunIptal.length} iptal fişi, orijinal fişle aynı günde`,
-            detay:ayniGunIptal.map(f=>`Fiş #${f.fisNo} (${f.tarih}): ${f.aciklama.substring(0,60)}`).join(' | ')
-          });
+      // ── 4. RESMİ TATİL / HAFTA SONU YÜKSEK TUTARLI ──────────
+      const tatilFisler=fisler.filter(f=>isTatil(f.tarih)&&f.satirlar.some(s=>s.tutar>50000));
+      if(tatilFisler.length>0){
+        const topTutar=tatilFisler.reduce((a,f)=>a+f.satirlar.reduce((b,s)=>b+s.tutar,0)/2,0);
+        push('Hafta Sonu/Tatil Yüksek Kayıt','orta','📅',`${tatilFisler.length} fiş hafta sonu/tatilde, toplam ~${fC(topTutar)}`,
+          tatilFisler.slice(0,4).map(f=>`Fiş#${f.fisNo} (${f.tarih})`).join(', '));
+      }
+
+      // ── 5. GERİYE TARİHLİ FİŞ (dönem bitişinden sonra) ──────
+      if(baslik.donemBit){
+        const donemBit=new Date(baslik.donemBit);
+        const geriTarihli=fisler.filter(f=>f.tarih&&new Date(f.tarih)>donemBit);
+        if(geriTarihli.length>0){
+          push('Dönem Dışı/Geriye Tarihli Kayıt','yuksek','📆',`${geriTarihli.length} fiş, defter dönem bitiş tarihi sonrasında`,
+            geriTarihli.slice(0,3).map(f=>`Fiş#${f.fisNo} tarih:${f.tarih} (dönem bitti:${baslik.donemBit})`).join(' | '));
         }
       }
 
-      // 4. Ortak cari (131) büyük hareketler
+      // ── 6. KAPANMIŞ DÖNEME MÜDAHALE (iptal+yeni aynı anda) ──
+      const gecmisIptalDuzenle=fisler.filter(f=>{
+        const eski=f.satirlar.some(s=>s.belgeRef&&s.belgeRef!==s.belgeNo);
+        return eski&&(f.aciklama||'').match(/düzelt|duzelt|iptal|müdahale/i);
+      });
+      if(gecmisIptalDuzenle.length>0){
+        push('Önceki Döneme Müdahale İzi','yuksek','🔍',`${gecmisIptalDuzenle.length} fişte farklı dönem belge referansı + düzeltme`,
+          gecmisIptalDuzenle.slice(0,3).map(f=>`Fiş#${f.fisNo}`).join(', '));
+      }
+
+      // ── 7. AYNI GÜN TOPLU MANUEL DÜZELTME ───────────────────
+      const gunDuzeltme={};
+      fisler.filter(f=>(f.aciklama||'').match(/düzelt|duzelt|hata|iptal|değiş/i)).forEach(f=>{
+        if(!f.tarih)return;
+        gunDuzeltme[f.tarih]=(gunDuzeltme[f.tarih]||0)+1;
+      });
+      Object.entries(gunDuzeltme).forEach(([gun,sayi])=>{
+        if(sayi>=3)push('Toplu Manuel Düzeltme','orta','✏️',`${gun} tarihinde ${sayi} düzeltme/iptal fişi`,
+          'Aynı günde yoğun düzeltme aktivitesi dönem sonu manipülasyon riski taşır.');
+      });
+
+      // ── 8. OLAĞANDIŞI HESAP KOMBİNASYONLARI ─────────────────
+      const olagandisiKombo=[
+        {a:'100',b:['640','641','642','643','644','645','646','647','648','649','650','651','652','653','654','655','656','657','658','659','660','661'],acik:'Kasa ↔ Gider hesabı (ara hesap olmadan)'},
+        {a:'100',b:['600','601','602'],acik:'Kasa ↔ Satış hesabı doğrudan'},
+        {a:'690',b:['100','102'],acik:'Dönem K/Z ↔ Nakit (K/Z hesabı nakit etkilememeli)'},
+        {a:'570',b:['100','102'],acik:'Geçmiş Yıl Karı ↔ Nakit doğrudan'},
+      ];
+      const komboSayac=[];
+      olagandisiKombo.forEach(kural=>{
+        fisler.forEach(f=>{
+          const varA=f.satirlar.some(s=>s.hesapKod===kural.a);
+          const varB=f.satirlar.some(s=>kural.b.includes(s.hesapKod));
+          if(varA&&varB)komboSayac.push({fisNo:f.fisNo,acik:kural.acik});
+        });
+      });
+      if(komboSayac.length>0){
+        push('Olağandışı Hesap Kombinasyonu','orta','🔀',`${komboSayac.length} fişte alışılmadık hesap çifti`,
+          komboSayac.slice(0,4).map(k=>`Fiş#${k.fisNo}: ${k.acik}`).join(' | '));
+      }
+
+      // ── 9. NORMALDE KULLANILMAYAN HESAP AKTİFLEŞMESİ ────────
+      // Tüm hesap kodlarını say — tek kez geçen ve ana hesap olanlar şüpheli
+      const hesapFrekans={};
+      fisler.forEach(f=>f.satirlar.forEach(s=>{if(s.hesapKod){hesapFrekans[s.hesapKod]=(hesapFrekans[s.hesapKod]||0)+1;}}));
+      const tekSefer=Object.entries(hesapFrekans).filter(([k,v])=>v===1&&parseInt(k)>=100).map(([k])=>k);
+      if(tekSefer.length>3){
+        push('Nadir Kullanılan Hesap','bilgi','💤',`${tekSefer.length} hesap kod tüm dönemde yalnızca 1 kez kullanılmış`,
+          'Şüpheli: '+tekSefer.slice(0,8).join(', ')+' — kasıtlı tek seferlik kayıt olabilir.');
+      }
+
+      // ── 10. MUAVIN OLMADAN ANA HESAPTA YOĞUN HAREKET ────────
+      // Sadece ana hesap kodu olan (alt hesap boş) ve çok tekrar eden
+      const anaHesapYogun={};
+      fisler.forEach(f=>f.satirlar.forEach(s=>{
+        if(s.hesapKod&&!s.altHesap){
+          anaHesapYogun[s.hesapKod]=(anaHesapYogun[s.hesapKod]||0)+1;
+        }
+      }));
+      const muavinEksik=Object.entries(anaHesapYogun)
+        .filter(([k,v])=>v>=5&&['120','320','321','329','131','231'].includes(k))
+        .map(([k,v])=>({kod:k,sayi:v}));
+      if(muavinEksik.length>0){
+        push('Muavin Hesap Eksik','orta','📋',`${muavinEksik.length} kritik hesapta alt hesap kodu kullanılmamış`,
+          muavinEksik.map(x=>`${x.kod}: ${x.sayi} satır alt hesapsız`).join(', ')+' — müşteri/tedarikçi bazlı analiz yapılamaz.');
+      }
+
+      // ── 11. HESAP PLANI DIŞI / HATALI KODLAR ────────────────
+      const tuhafKodlar=Object.keys(hesapFrekans).filter(k=>{
+        if(!k||k.length<3)return false;
+        const kok=k.substring(0,3);
+        return !BILINEN_HESAPLAR.has(kok)&&parseInt(kok)>=100;
+      });
+      if(tuhafKodlar.length>0){
+        push('Hesap Planı Dışı Kod','orta','❌',`${tuhafKodlar.length} kayıtta THP dışında hesap kodu`,
+          tuhafKodlar.slice(0,8).join(', ')+' — GİB şematron hatası riski.');
+      }
+
+      // ── 12. AYNI AÇIKLAMA + FARKLI TUTAR SERİ KAYIT ────────
+      const aciklamaGruplari={};
+      fisler.forEach(f=>{
+        if(!f.aciklama||f.aciklama.length<5)return;
+        const key=f.aciklama.toUpperCase().trim();
+        if(!aciklamaGruplari[key])aciklamaGruplari[key]=[];
+        const tutar=f.satirlar.reduce((a,s)=>s.dc==='D'?a+s.tutar:a,0);
+        aciklamaGruplari[key].push({fisNo:f.fisNo,tutar});
+      });
+      Object.entries(aciklamaGruplari).forEach(([acik,fislr])=>{
+        if(fislr.length<3)return;
+        const tutarlar=fislr.map(x=>x.tutar);
+        const farkliTutar=new Set(tutarlar.filter(t=>t>0)).size>2;
+        if(farkliTutar){
+          push('Seri Kayıt Uyuşmazlığı','orta','🔢',`"${acik.substring(0,40)}" açıklaması ${fislr.length} fişte, farklı tutarlarla`,
+            fislr.slice(0,4).map(x=>`#${x.fisNo}:${fC(x.tutar)}`).join(', '));
+        }
+      });
+
+      // ── 13. ORTALAMA DIŞI EKSTREM KAYITLAR ──────────────────
+      const tutarListesi=fisler.map(f=>f.satirlar.reduce((a,s)=>s.dc==='D'?a+s.tutar:a,0)).filter(t=>t>0);
+      if(tutarListesi.length>3){
+        const ort=tutarListesi.reduce((a,b)=>a+b,0)/tutarListesi.length;
+        const std=Math.sqrt(tutarListesi.reduce((a,b)=>a+Math.pow(b-ort,2),0)/tutarListesi.length);
+        const ekstremler=fisler.filter(f=>{
+          const t=f.satirlar.reduce((a,s)=>s.dc==='D'?a+s.tutar:a,0);
+          return t>0&&Math.abs(t-ort)>3*std;
+        });
+        if(ekstremler.length>0){
+          push('Ekstrem Tutarlı Kayıt','orta','📈',`${ekstremler.length} fiş ortalama işlem büyüklüğünün 3σ üzerinde`,
+            `Ortalama: ${fC(ort)}, Std: ${fC(std)} — Şüpheli: `+ekstremler.slice(0,3).map(f=>`#${f.fisNo}:${fC(f.satirlar.reduce((a,s)=>s.dc==='D'?a+s.tutar:a,0))}`).join(', '));
+        }
+      }
+
+      // ── 14. PARÇALANMIŞ İŞLEMLER (limit altı bölünme) ───────
+      // Aynı gün aynı hesaba küçük tutarlı çok sayıda kayıt
+      const gunHesapGrup={};
+      fisler.forEach(f=>{
+        if(!f.tarih)return;
+        f.satirlar.forEach(s=>{
+          const key=`${f.tarih}|${s.hesapKod}|${s.dc}`;
+          if(!gunHesapGrup[key])gunHesapGrup[key]=[];
+          gunHesapGrup[key].push(s.tutar);
+        });
+      });
+      Object.entries(gunHesapGrup).forEach(([key,tutarlar])=>{
+        if(tutarlar.length<4)return;
+        const toplam=tutarlar.reduce((a,b)=>a+b,0);
+        const maks=Math.max(...tutarlar);
+        if(maks<10000&&toplam>30000){
+          const [gun,hesap,dc]=key.split('|');
+          push('Parçalanmış İşlem','orta','✂️',`${gun} tarihinde ${hesap} hesabına ${tutarlar.length} küçük kayıt (toplam ${fC(toplam)})`,
+            `Maksimum tek kayıt ${fC(maks)} — limit altı bölünme şüphesi.`);
+        }
+      });
+
+      // ── 15. KDV HESABI KONTROLÜ ──────────────────────────────
+      // 191 İndirilecek KDV, 391 Hesaplanan KDV
+      const kdv191=fisler.flatMap(f=>f.satirlar.filter(s=>s.hesapKod==='191'));
+      const kdv391=fisler.flatMap(f=>f.satirlar.filter(s=>s.hesapKod==='391'));
+
+      // KDV ters çalışma: 191 alacak, 391 borç olmamalı (çok istisnai)
+      const kdv191Alacak=kdv191.filter(s=>s.dc==='C');
+      const kdv391Borc=kdv391.filter(s=>s.dc==='D');
+      if(kdv191Alacak.length>2){
+        const top=kdv191Alacak.reduce((a,s)=>a+s.tutar,0);
+        push('KDV Hesabı Ters Çalışıyor','yuksek','⚡',`191 İndirilecek KDV ${kdv191Alacak.length} satırda alacak olarak çalışmış (${fC(top)})`,
+          '191 normalde borç tarafında çalışır. Alacak hareketi KDV iadesi veya hata olabilir.');
+      }
+      if(kdv391Borc.length>2){
+        const top=kdv391Borc.reduce((a,s)=>a+s.tutar,0);
+        push('KDV Hesabı Ters Çalışıyor','yuksek','⚡',`391 Hesaplanan KDV ${kdv391Borc.length} satırda borç olarak çalışmış (${fC(top)})`,
+          '391 normalde alacak tarafında çalışır. Borç hareketi KDV ödemesi veya hata olabilir.');
+      }
+
+      // KDV Matrah–KDV oranı uyumu
+      fisler.forEach(f=>{
+        const kdvSatir=f.satirlar.filter(s=>s.hesapKod==='391'||s.hesapKod==='191');
+        const matrahSatir=f.satirlar.filter(s=>['600','601','602','150','151','152'].includes(s.hesapKod));
+        if(kdvSatir.length===0||matrahSatir.length===0)return;
+        const kdvToplam=kdvSatir.reduce((a,s)=>a+s.tutar,0);
+        const matrahToplam=matrahSatir.reduce((a,s)=>a+s.tutar,0);
+        if(matrahToplam>1000&&kdvToplam>0){
+          const oran=kdvToplam/matrahToplam;
+          // Geçerli KDV oranları: %1, %10, %20
+          if(oran>0&&!(Math.abs(oran-0.01)<0.005||Math.abs(oran-0.10)<0.008||Math.abs(oran-0.20)<0.01)){
+            push('KDV Oran Uyumsuzluğu','orta','💰',`Fiş#${f.fisNo}: KDV/Matrah oranı %${(oran*100).toFixed(1)} (geçerli: %1, %10, %20)`,
+              `Matrah: ${fC(matrahToplam)}, KDV: ${fC(kdvToplam)}`);
+          }
+        }
+      });
+
+      // ── 16. STOPAJ KONTROLÜ ──────────────────────────────────
+      const stopajHesap=fisler.flatMap(f=>f.satirlar.filter(s=>s.hesapKod==='360'||s.hesapKod==='361'));
+      const stopajSadece=fisler.filter(f=>f.satirlar.some(s=>s.hesapKod==='360')&&!f.satirlar.some(s=>['730','740','750','760','770','780'].includes(s.hesapKod)));
+      if(stopajSadece.length>1){
+        push('Stopaj Tek Taraflı','orta','📋',`${stopajSadece.length} fişte 360 stopaj, bağlantılı gider hesabı yok`,
+          'Stopaj kaydının ilgili gider kalemiyle eşleşmesi beklenir.');
+      }
+
+      // ── 17. ERP ENTEGRASYON / MANUEL FİŞ AYRIŞMASI ──────────
+      const erpFisler=fisler.filter(f=>{
+        const src=(f.aciklama||'').toUpperCase();
+        return src.includes('ERP')||src.includes('ENTEGRASYON')||src.includes('OTOMATİK')||src.includes('SISTEM')||src.includes('API');
+      });
+      const manuelFisler=fisler.filter(f=>{
+        const src=(f.aciklama||'').toUpperCase();
+        return src.includes('MANUEL')||src.includes('EL İLE')||src.includes('DÜZELTMESİ');
+      });
+      // Aynı belge referansına hem ERP hem manuel kayıt
+      const erpBelgeler=new Set(erpFisler.flatMap(f=>f.satirlar.map(s=>s.belgeRef).filter(Boolean)));
+      const manuelBelgeler=new Set(manuelFisler.flatMap(f=>f.satirlar.map(s=>s.belgeRef).filter(Boolean)));
+      const ciftKayit=[...erpBelgeler].filter(b=>manuelBelgeler.has(b));
+      if(ciftKayit.length>0){
+        push('ERP+Manuel Çift Kayıt','yuksek','⚠️',`${ciftKayit.length} belge referansında hem ERP hem manuel kayıt`,
+          ciftKayit.slice(0,5).join(', ')+' — aynı işlem iki kez muhasebeleşmiş olabilir.');
+      }
+
+      // ── 18. VIRMAN YOĞUNLUĞU ─────────────────────────────────
+      const virmanFisler=fisler.filter(f=>{
+        const a=(f.aciklama||'').toUpperCase();
+        return a.includes('VİRMAN')||a.includes('VIRMAN')||a.includes('AKTARIM')||a.includes('TRANSFER');
+      });
+      if(virmanFisler.length>fisler.length*0.15&&virmanFisler.length>3){
+        push('Virman Yoğunluğu','orta','↔️',`Toplam fişlerin %${Math.round(virmanFisler.length/fisler.length*100)}'i virman/aktarım (${virmanFisler.length} fiş)`,
+          'Yüksek virman oranı gerçek işlem azlığını gizliyor olabilir.');
+      }
+
+      // ── 19. KAR/ZARAR HESABI KONTROLÜ ───────────────────────
+      const kzHesap=['690','691','692','693','694','695','696','697','698','699'];
+      const kzHareketler=fisler.filter(f=>f.satirlar.some(s=>kzHesap.includes(s.hesapKod)));
+      // K/Z hesabı dönem ortasında çalışmamalı (sadece kapanışta)
+      if(baslik.donemBit){
+        const donemBit=new Date(baslik.donemBit);
+        const ortadaKZ=kzHareketler.filter(f=>{
+          const d=new Date(f.tarih);
+          const fark=(donemBit-d)/(1000*60*60*24);
+          return fark>10; // dönem bitişinden 10 günden önce
+        });
+        if(ortadaKZ.length>0){
+          push('Dönem Ortasında K/Z Hareketi','orta','💸',`${ortadaKZ.length} fişte 690 grubu hesap dönem ortasında hareket etmiş`,
+            ortadaKZ.slice(0,3).map(f=>`Fiş#${f.fisNo} (${f.tarih})`).join(', ')+' — K/Z hesapları normalde yalnızca dönem kapanışında kullanılır.');
+        }
+      }
+
+      // ── 20. AMORTİSMAN KONTROLÜ ──────────────────────────────
+      const amorFisler=fisler.filter(f=>f.satirlar.some(s=>s.hesapKod==='257'||s.hesapKod==='268'||s.hesapKod==='278'));
+      // Amortisman her dönem benzer tutarda olmalı
+      const amorTutarlar=amorFisler.map(f=>f.satirlar.filter(s=>['257','268','278'].includes(s.hesapKod)).reduce((a,s)=>a+s.tutar,0));
+      if(amorTutarlar.length>0){
+        const amorOrt=amorTutarlar.reduce((a,b)=>a+b,0)/amorTutarlar.length;
+        const amorEkstrem=amorFisler.filter((_,i)=>Math.abs(amorTutarlar[i]-amorOrt)>amorOrt*0.5);
+        if(amorEkstrem.length>0&&amorFisler.length>1){
+          push('Amortisman Tutarsızlığı','orta','🏗️',`${amorEkstrem.length} amortisman fişi ortalama değerin %50 uzağında`,
+            `Ortalama: ${fC(amorOrt)} — Şüpheli: `+amorEkstrem.slice(0,3).map(f=>`Fiş#${f.fisNo}`).join(', '));
+        }
+      } else if(fisler.length>10){
+        push('Amortisman Fişi Yok','bilgi','🏗️','Dönemde amortisman kaydı (257/268/278) tespit edilmedi',
+          'Duran varlık varsa dönemlik amortisman ayrılması beklenir.');
+      }
+
+      // ── 21. BERAT HASH KONTROLÜ ──────────────────────────────
+      // XML içinde imza/hash alanı var mı kontrol et
+      const imzaAlanlari=doc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#','Signature');
+      if(imzaAlanlari.length===0){
+        push('Berat/İmza Alanı Eksik','bilgi','🔐','XML dosyasında dijital imza (Signature) alanı bulunamadı',
+          'GİB onaylı e-Defterlerde XAdES-BES imzası bulunmalı. Test/örnek dosya ise bu normal.');
+      }
+
+      // ── 22. XML ŞEMA KONTROLÜ ────────────────────────────────
+      // Zorunlu alanlar var mı
+      const zorunluAlanlar=[
+        {tag:'entriesType',ns:'http://www.xbrl.org/int/gl/cor/2006-10-25',ad:'entriesType'},
+        {tag:'uniqueID',ns:'http://www.xbrl.org/int/gl/cor/2006-10-25',ad:'uniqueID'},
+        {tag:'periodCoveredStart',ns:'http://www.xbrl.org/int/gl/cor/2006-10-25',ad:'periodCoveredStart'},
+      ];
+      const eksikAlanlar=zorunluAlanlar.filter(z=>doc.getElementsByTagNameNS(z.ns,z.tag).length===0);
+      if(eksikAlanlar.length>0){
+        push('XML Şema Hatası','yuksek','🔴','Zorunlu XML alanları eksik: '+eksikAlanlar.map(z=>z.ad).join(', '),
+          'GİB şematron kontrolünden geçemez. Şema uyumsuzluğu.');
+      }
+
+      // ── 23. DEFTER PARÇA SIRALAMA ────────────────────────────
+      // Fiş numaraları sıralı olmalı
+      const fisNumaraları=fisler.map(f=>parseInt(f.fisNo||'0')).filter(n=>n>0);
+      let siralamamaHatasi=false;
+      for(let i=1;i<fisNumaraları.length;i++){
+        if(fisNumaraları[i]<fisNumaraları[i-1]){siralamamaHatasi=true;break;}
+      }
+      if(siralamamaHatasi){
+        push('Fiş Sıralama Hatası','orta','🔢','Fiş numaraları müteselsil sırada değil',
+          'GİB şematron müteselsil sıra kontrolü yapar. Sıra bozukluğu onay reddine yol açar.');
+      }
+
+      // ── 24. GECE YARISI / MESAİ DIŞI KRİTİK KAYIT ───────────
+      const geceFislerAll=fisler.filter(f=>isMesaiDisi(f.aciklama));
+      if(geceFislerAll.length>0){
+        const geceToplam=geceFislerAll.reduce((a,f)=>a+f.satirlar.filter(s=>s.dc==='D').reduce((b,s)=>b+s.tutar,0),0);
+        push('Mesai Dışı Kayıt','yuksek','🌙',`${geceFislerAll.length} fiş 22:00-06:00 arası (toplam ${fC(geceToplam)})`,
+          geceFislerAll.slice(0,4).map(f=>`Fiş#${f.fisNo}(${f.tarih})`).join(', '));
+      }
+
+      // ── 25. SİLİNEN/İPTAL YOĞUNLUĞU ────────────────────────
+      const iptalToplam=fisler.filter(f=>(f.aciklama||'').match(/iptal|iptali|silme|silinmiş|storno/i)).length;
+      if(iptalToplam>fisler.length*0.1&&iptalToplam>2){
+        push('Yüksek İptal Yoğunluğu','orta','🗑️',`Toplam fişlerin %${Math.round(iptalToplam/fisler.length*100)}'i iptal/silme (${iptalToplam}/${fisler.length})`,
+          'Yüksek iptal oranı kayıt kalitesi veya kasıtlı değişiklik riski.');
+      }
+
+      // ── 26. YUVARLAK TUTAR + BELGESİZ ───────────────────────
+      const yuvarlakFisler=[];
+      fisler.forEach(f=>f.satirlar.forEach(s=>{
+        if(s.tutar>0&&s.tutar%10000===0&&s.belgeTip==='other'){
+          yuvarlakFisler.push({fisNo:f.fisNo,tutar:s.tutar,tarih:f.tarih});
+        }
+      }));
+      if(yuvarlakFisler.length>0){
+        const topTutar=yuvarlakFisler.reduce((a,b)=>a+b.tutar,0);
+        push('Yuvarlak Tutar + Belgesiz','orta','🔢',`${yuvarlakFisler.length} satırda 10.000₺ katı belgesiz kayıt (toplam ${fC(topTutar)})`,
+          yuvarlakFisler.slice(0,3).map(x=>`Fiş#${x.fisNo}:${fC(x.tutar)}`).join(', '));
+      }
+
+      // ── 27. ORTAK CARİ (131/231) ─────────────────────────────
       const ortakHes=fisler.flatMap(f=>f.satirlar.filter(s=>s.hesapKod==='131'||s.hesapKod==='231'));
       if(ortakHes.length>0){
         const toplamOrtak=ortakHes.filter(s=>s.dc==='D').reduce((a,b)=>a+b.tutar,0);
-        anomaliler.push({
-          kategori:'Ortaklar Cari Hareketi',
-          risk:toplamOrtak>100000?'yuksek':'orta',
-          emoji:'👤',
-          aciklama:`131/231 hesabında ${ortakHes.length} kayıt, toplam borç: ${fC(toplamOrtak)}`,
-          detay:'Banka perspektifinden özsermaye düşürücü etki olabilir'
-        });
+        push('Ortaklar Cari Hareketi',toplamOrtak>100000?'yuksek':'orta','👤',
+          `131/231 hesabında ${ortakHes.length} kayıt, toplam borç: ${fC(toplamOrtak)}`,
+          'Banka perspektifinden özsermaye düşürücü etki. İskonto analizi önerilir.');
       }
 
-      // 5. Belge tipi uyuşmazlığı: fatura içerikli açıklama ama documentType=other
+      // ── 28. BELGE TİPİ UYUŞMAZLIĞI ──────────────────────────
       const uyusmazFisler=fisler.filter(f=>{
-        const acikFat=f.aciklama&&(f.aciklama.includes('FAT')|| f.aciklama.includes('FATURA'));
-        const otherTip=f.satirlar.some(s=>s.belgeTip==='other');
-        return acikFat&&otherTip;
+        const acikFat=f.aciklama&&(f.aciklama.includes('FAT')||f.aciklama.includes('FATURA'));
+        return acikFat&&f.satirlar.some(s=>s.belgeTip==='other');
       });
       if(uyusmazFisler.length>0){
-        anomaliler.push({
-          kategori:'Belge Tipi Uyuşmazlığı',
-          risk:'orta',
-          emoji:'📄',
-          aciklama:`${uyusmazFisler.length} fişte açıklama "fatura" içeriyor ama documentType=other`,
-          detay:uyusmazFisler.map(f=>`Fiş#${f.fisNo}: ${f.aciklama.substring(0,50)}`).join(' | ')
-        });
+        push('Belge Tipi Uyuşmazlığı','orta','📄',`${uyusmazFisler.length} fişte açıklama "fatura" içeriyor ama documentType=other`,
+          uyusmazFisler.slice(0,3).map(f=>`Fiş#${f.fisNo}:${(f.aciklama||'').substring(0,40)}`).join(' | '));
       }
 
-      // 6. Dönem sonu yoğunlaşması (ayın son 3 günü)
-      const donemSonuFisler=fisler.filter(f=>{
-        if(!f.tarih)return false;
-        const d=new Date(f.tarih);
-        const sonGun=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
-        return d.getDate()>=sonGun-2;
+      // ── 29. DÖNEM SONU YOĞUNLAŞMASI ─────────────────────────
+      if(baslik.donemBit){
+        const donemBit=new Date(baslik.donemBit);
+        const son3Gun=fisler.filter(f=>{
+          if(!f.tarih)return false;
+          const d=new Date(f.tarih);
+          return (donemBit-d)/(1000*60*60*24)<=3;
+        });
+        if(son3Gun.length>fisler.length*0.25&&son3Gun.length>3){
+          push('Dönem Sonu Yoğunlaşması','bilgi','📅',`Fişlerin %${Math.round(son3Gun.length/fisler.length*100)}'i son 3 günde (${son3Gun.length}/${fisler.length})`,
+            'Dönem sonunda yoğun kayıt olağan olabilir ancak kontrol edilmesi önerilir.');
+        }
+      }
+
+      // ── 30. AYNI GÜN ÇOKLU İPTAL ────────────────────────────
+      const gunIptal={};
+      fisler.filter(f=>(f.aciklama||'').match(/iptal/i)).forEach(f=>{
+        if(f.tarih) gunIptal[f.tarih]=(gunIptal[f.tarih]||0)+1;
       });
-      if(donemSonuFisler.length>fisler.length*0.25){
-        anomaliler.push({
-          kategori:'Dönem Sonu Yoğunlaşması',
-          risk:'bilgi',
-          emoji:'📅',
-          aciklama:`Fişlerin %${Math.round(donemSonuFisler.length/fisler.length*100)}'i ayın son 3 gününde`,
-          detay:`${donemSonuFisler.length}/${fisler.length} fiş dönem sonunda — olağan olabilir, kontrol edin`
-        });
-      }
-
-      // Hesap özeti — bakiyeler
-      const hesapOzet=Object.entries(hesaplar).map(([kod,v])=>({
-        kod,ad:v.ad,borç:v.borç,alacak:v.alacak,
-        bakiye:v.borç-v.alacak,fisSayisi:v.fisSayisi
-      })).sort((a,b)=>Math.abs(b.bakiye)-Math.abs(a.bakiye));
+      Object.entries(gunIptal).forEach(([gun,sayi])=>{
+        if(sayi>=2){
+          const eslesenFis=fisler.filter(g=>g.tarih===gun&&!(g.aciklama||'').match(/iptal/i));
+          push('Aynı Gün İptal Çifti','orta','↩️',`${gun} tarihinde ${sayi} iptal fişi`,
+            eslesenFis.length>0?`Orijinal fişler: `+eslesenFis.slice(0,3).map(f=>`#${f.fisNo}`).join(','):'Eşleşen kayıt bulunamadı');
+        }
+      });
 
       resolve({
         ok:true,
