@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FinAnaliz Pro — Finansal Analiz Platformu</title>
+<title>Dijital Mizan — Akıllı Finansal Analiz</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b82f6'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='bold'>F</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script>
@@ -577,10 +577,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg0);color:var(--t1);min-
   <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 60% 20%,rgba(59,130,246,.18) 0%,transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(139,92,246,.12) 0%,transparent 55%);pointer-events:none"></div>
   <div class="auth-box">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px">
-      <div class="auth-logo">F</div>
+      <div class="auth-logo">D</div>
       <div>
-        <div style="font-size:18px;font-weight:700;letter-spacing:-.3px">FinAnaliz Pro</div>
-        <div style="font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;text-transform:uppercase">Finansal Analiz Platformu</div>
+        <div style="font-size:18px;font-weight:700;letter-spacing:-.3px">Dijital Mizan</div>
+        <div style="font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;text-transform:uppercase">Akıllı Finansal Analiz</div>
       </div>
     </div>
     <div style="font-size:12px;color:var(--t2);margin-bottom:24px;line-height:1.7;padding:12px 14px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-radius:8px">
@@ -651,7 +651,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg0);color:var(--t1);min-
 
 <div class="app" id="app" style="display:none">
 <div class="sidebar" id="sidebar">
-<div class="sb-brand"><div class="brand-i">F</div><div><div class="brand-n">FinAnaliz Pro</div><div class="brand-s">Finansal Analiz Platformu</div></div></div>
+<div class="sb-brand"><div class="brand-i">D</div><div><div class="brand-n">Dijital Mizan</div><div class="brand-s">Akıllı Finansal Analiz</div></div></div>
 <div class="sb-tabs"><button class="sb-tab on" data-st="formulas" onclick="sSTab('formulas')">📐 Formüller</button><button class="sb-tab" data-st="charts" onclick="sSTab('charts')">📊 Grafikler</button><button class="sb-tab" data-st="saved" onclick="sSTab('saved')">💾 Kayıtlı</button></div>
 <div class="sb-scroll" id="sbCont"></div>
 <div class="userbar" id="userBar"><div class="userbar-av" id="userAv">?</div><div class="userbar-nm" id="userNm">Yükleniyor...</div><button class="userbar-out" onclick="doLogout()">Çıkış</button></div>
@@ -1472,7 +1472,7 @@ let _authMode = 'login';
 function getGoTrue(){
   if(_goTrue) return _goTrue;
   _goTrue = new GoTrue({
-    APIUrl: 'https://finanaliz.netlify.app/.netlify/identity',
+    APIUrl: 'https://dijitalmizan.netlify.app/.netlify/identity',
     setCookie: true,
   });
   return _goTrue;
@@ -2835,7 +2835,7 @@ function raporOnizle(){
   // ── KAPAK
   body+=`<div class="page cover-page">
     <div class="cover-header">
-      <span class="brand">FinAnaliz <span class="brand-pro">PRO</span></span>
+      <span class="brand">Dijital Mizan <span class="brand-pro">PRO</span></span>
       ${logoHtml?`<div class="cover-logo">${logoHtml}</div>`:'<span class="cover-badge">Finansal Analiz Raporu</span>'}
     </div>
     <div class="cover-center">
@@ -2846,9 +2846,9 @@ function raporOnizle(){
       <div class="cover-cell"><div class="cell-label">Dönem</div><div class="cell-val">${donem||'—'}</div></div>
       <div class="cover-cell"><div class="cell-label">Tarih</div><div class="cell-val">${tarih}</div></div>
       <div class="cover-cell"><div class="cell-label">Hazırlayan</div><div class="cell-val">${hazirlayan||'—'}</div></div>
-      <div class="cover-cell"><div class="cell-label">Platform</div><div class="cell-val">FinAnaliz Pro</div></div>
+      <div class="cover-cell"><div class="cell-label">Platform</div><div class="cell-val">Dijital Mizan</div></div>
     </div>
-    <div class="cover-footer">Bu rapor FinAnaliz Pro platformu tarafından otomatik oluşturulmuştur. Yatırım tavsiyesi niteliği taşımaz.</div>
+    <div class="cover-footer">Bu rapor Dijital Mizan platformu tarafından otomatik oluşturulmuştur. Yatırım tavsiyesi niteliği taşımaz.</div>
   </div>`;
 
   // ── RASYOLAR
@@ -2931,7 +2931,7 @@ function raporOnizle(){
   const win=window.open('','_blank','width=960,height=750');
   win.document.write(`<!DOCTYPE html><html lang="tr"><head>
 <meta charset="UTF-8">
-<title>${sirket} — Finansal Analiz Raporu</title>
+<title>Dijital Mizan — Akıllı Finansal Analiz</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;font-size:10pt;line-height:1.5}
