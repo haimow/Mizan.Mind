@@ -960,7 +960,28 @@ function rCol(k,v){if(v==null||isNaN(v))return"var(--tm)";const R={cr:v=>v>=1.5?
 // RENDER
 function render(){rPB();rSB();rC();uT()}
 function uT(){const b=document.getElementById('tglBtn');if(!b)return;b.textContent=S.sbo?'◀':'▶'}
-function rPB(){const b=document.getElementById('pBar');let h='<span class="plab">Dönemler:</span>';S.periods.forEach((p,i)=>{const label=p.name||'Dönem '+(i+1);h+=`<button class="chip ${i===S.ap?'on':''}" onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span></button>`});h+='<button class="chip add" onclick="openMo(\'add\')">+ Dönem Ekle</button>';b.innerHTML=h}
+function rPB(){
+  const b=document.getElementById('pBar');
+  let h='<span class="plab">Dönemler:</span>';
+  // Normal dönemler
+  S.periods.forEach((p,i)=>{
+    const label=p.name||'Dönem '+(i+1);
+    h+=`<button class="chip ${i===S.ap?'on':''}" onclick="setAP(${i});if(S.tab==='edefter')sTab('input')" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span></button>`;
+  });
+  // e-Defter chip — varsa göster
+  if(S.ed&&S.ed.dosyaAdi){
+    const isAktif=S.tab==='edefter';
+    h+=`<button class="chip ${isAktif?'on':''}" onclick="sTab('edefter')"
+      style="${isAktif?'':'border-color:var(--gn);color:var(--gn)'}"
+      title="e-Defter: ${S.ed.dosyaAdi}">
+      📋 ${S.ed.dosyaAdi.replace(/\.[^.]+$/,'').substring(0,20)}
+      <span style="opacity:.6;font-size:9px">e-D</span>
+      <span class="x" onclick="event.stopPropagation();if(confirm('e-Defter verisi temizlensin mi?')){S.ed={fişler:[],özet:{},log:[],dosyaAdi:null,aiYorum:'',aiLd:false,fisler:[],ozet:{},hesapOzet:[],anomaliler:[]};if(S.tab==='edefter')sTab('input');else render()}">✕</span>
+    </button>`;
+  }
+  h+='<button class="chip add" onclick="openMo(\'add\')">+ Dönem Ekle</button>';
+  b.innerHTML=h;
+}
 function rSB(){const el=document.getElementById('sbCont');document.querySelectorAll('.sb-tab').forEach(t=>t.classList.toggle('on',t.dataset.st===S.stab));if(S.stab==='formulas'){let h='';Object.entries(RATIOS).forEach(([ck,cat])=>{const op=S.ecat===ck;h+=`<div class="sb-cat"><div class="sb-cat-h ${op?'open':''}" onclick="tCat('${ck}')"><span>${cat.icon}</span> ${cat.label}<span class="arr">▶</span></div>`;if(op)cat.items.forEach(r=>{h+=`<div class="fc"><div class="fc-n">${r.name}</div><div class="fc-f">${r.formula}</div><div class="fc-i">İdeal: ${r.ideal}</div></div>`});h+=`</div>`});el.innerHTML=h}else if(S.stab==='charts')rSBC(el);else rSBSaved(el)}
 
 function rSBSaved(el){
@@ -1268,7 +1289,7 @@ function rCmp(el){
       const son=vals.filter(v=>v!==null).pop()??0;
       const delta=son-ilk;
       const deltaPct=ilk!==0?(delta/Math.abs(ilk)*100):null;
-      const dCol=delta>0?'var(--gn)':delta<0?'var(--rd)':'var(--t2)';
+      const dCol=delta>0?'#a78bfa':delta<0?'#fb923c':'var(--t3)';
       h+=`<tr>
         <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ac)">${k}</td>
         <td style="font-size:11px">${ad}</td>
@@ -1314,7 +1335,7 @@ function rCmp(el){
       const ilk=geçerli[0]??0, son=geçerli[geçerli.length-1]??0;
       const delta=son-ilk;
       const deltaPct=ilk!==0?(delta/Math.abs(ilk)*100):null;
-      const dCol=delta>0?'var(--gn)':delta<0?'var(--rd)':'var(--t2)';
+      const dCol=delta>0?'#a78bfa':delta<0?'#fb923c':'var(--t3)';
 
       h+=`<tr>
         <td style="font-size:11px;font-weight:500">${r.name}</td>
@@ -1322,7 +1343,7 @@ function rCmp(el){
           // Ardışık dönemler arası küçük delta göster
           const prev=vi>0?vals[vi-1]:null;
           const d2=v!==null&&prev!==null?v-prev:null;
-          const d2Col=d2===null?'':d2>0?'var(--gn)':d2<0?'var(--rd)':'';
+          const d2Col=d2===null?'':d2>0?'#a78bfa':'#fb923c';
           const d2Txt=d2!==null&&Math.abs(d2)>0.01
             ?`<span style="font-size:9px;color:${d2Col};margin-left:4px">${d2>0?'▲':'▼'}${r.pct?Math.abs(d2).toFixed(1)+'%':fR(Math.abs(d2))}</span>`
             :'';
@@ -2657,6 +2678,13 @@ function rKredi(el){
       <div style="font-size:42px;font-weight:700;font-family:'JetBrains Mono',monospace;color:${zRenk};line-height:1">${zScore!==null?zScore.toFixed(2):'—'}</div>
       <div style="font-size:10px;color:${zRenk};margin-top:6px;font-weight:600">${zLabel}</div>
     </div>
+  </div>
+  <div style="font-size:10px;color:var(--tm);font-style:italic;line-height:1.7;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:7px;border:1px solid var(--brd)">
+    <b style="font-style:normal;color:var(--t2)">Altman Z-Score nedir?</b> Edward Altman'ın 1968'de geliştirdiği istatistiksel iflas tahmin modelidir. 
+    Likidite, karlılık, kaldıraç ve verimlilik rasyolarını tek bir skorla özetler. 
+    <span style="color:var(--gn)">≥ 2.6 Güvenli</span> · 
+    <span style="color:var(--am)">1.1–2.6 Gri Bölge</span> · 
+    <span style="color:var(--rd)">≤ 1.1 Tehlikeli</span>
   </div>`;
 
   // BDDK Kriterleri
