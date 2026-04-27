@@ -4121,7 +4121,7 @@ function rChecklist(el) {
   </style>`;
 
   // ── Sekme listesi ──
-  h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2px">`;
+  h+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">`;
   Object.entries(CL_LISTELER).forEach(([key,lst])=>{
     const st=clStats(key);
     const isAktif=key===aktif;
@@ -4150,7 +4150,7 @@ function rChecklist(el) {
   </div>`;
 
   // ── Progress bar ──
-  h+=`<div style="height:6px;background:var(--bgi);border-radius:3px;overflow:hidden">
+  h+=`<div style="height:6px;background:var(--bgi);border-radius:3px;overflow:hidden;margin-bottom:6px">
     <div id="cl_bar_${aktif}" style="height:100%;width:${s.pct}%;background:${pctRenk};border-radius:3px;transition:width .3s"></div>
   </div>`;
 
