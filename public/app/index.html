@@ -960,7 +960,7 @@ function rCol(k,v){if(v==null||isNaN(v))return"var(--tm)";const R={cr:v=>v>=1.5?
 // RENDER
 function render(){rPB();rSB();rC();uT()}
 function uT(){const b=document.getElementById('tglBtn');if(!b)return;b.textContent=S.sbo?'◀':'▶'}
-function rPB(){const b=document.getElementById('pBar');let h='<span class="plab">Dönemler:</span>';S.periods.forEach((p,i)=>{const label=p.name||'Dönem '+(i+1);h+=`<button class="chip ${i===S.ap?'on':''}" onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}${S.periods.length>1?`<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span>`:''}</button>`});h+='<button class="chip add" onclick="openMo(\'add\')">+ Dönem Ekle</button>';b.innerHTML=h}
+function rPB(){const b=document.getElementById('pBar');let h='<span class="plab">Dönemler:</span>';S.periods.forEach((p,i)=>{const label=p.name||'Dönem '+(i+1);h+=`<button class="chip ${i===S.ap?'on':''}" onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span></button>`});h+='<button class="chip add" onclick="openMo(\'add\')">+ Dönem Ekle</button>';b.innerHTML=h}
 function rSB(){const el=document.getElementById('sbCont');document.querySelectorAll('.sb-tab').forEach(t=>t.classList.toggle('on',t.dataset.st===S.stab));if(S.stab==='formulas'){let h='';Object.entries(RATIOS).forEach(([ck,cat])=>{const op=S.ecat===ck;h+=`<div class="sb-cat"><div class="sb-cat-h ${op?'open':''}" onclick="tCat('${ck}')"><span>${cat.icon}</span> ${cat.label}<span class="arr">▶</span></div>`;if(op)cat.items.forEach(r=>{h+=`<div class="fc"><div class="fc-n">${r.name}</div><div class="fc-f">${r.formula}</div><div class="fc-i">İdeal: ${r.ideal}</div></div>`});h+=`</div>`});el.innerHTML=h}else if(S.stab==='charts')rSBC(el);else rSBSaved(el)}
 
 function rSBSaved(el){
@@ -1222,78 +1222,123 @@ if(p.isMizan){
 
 h+=`</div>`;el.innerHTML=h;
 setTimeout(()=>{const z=document.getElementById('upZ');if(!z)return;z.ondragover=e=>{e.preventDefault();z.classList.add('dov')};z.ondragleave=()=>z.classList.remove('dov');z.ondrop=e=>{e.preventDefault();z.classList.remove('dov');if(e.dataTransfer.files[0])hFile(e.dataTransfer.files[0])}},50)}
-function rCmp(el){if(S.periods.length<2){el.innerHTML='<div class="card"><div class="card-b" style="text-align:center;color:var(--tm);padding:36px">En az <b>2 dönem</b> gerekli.<br><br><button class="btn btn-p" onclick="openMo(\'add\')">+ Dönem Ekle</button></div></div>';return}
-if(S.cmpA==null||S.cmpB==null||S.cmpA===S.cmpB){
-  const sorted=[...S.periods].filter(p=>p.name).sort((a,b)=>{const yA=parseInt((a.name.match(/(\d{4})/)||[])[1])||0;const yB=parseInt((b.name.match(/(\d{4})/)||[])[1])||0;return yA-yB});
-  S.cmpA=sorted.length>=2?S.periods.indexOf(sorted[sorted.length-2]):0;
-  S.cmpB=sorted.length>=2?S.periods.indexOf(sorted[sorted.length-1]):1;
-  if(S.cmpA===S.cmpB)S.cmpB=S.cmpA===0?1:0;
-}
-if(S.cmpA>=S.periods.length)S.cmpA=0;
-if(S.cmpB>=S.periods.length)S.cmpB=Math.min(1,S.periods.length-1);
-const pA=S.periods[S.cmpA],pB=S.periods[S.cmpB];
-const nameA=pA?.name||'Dönem '+(S.cmpA+1), nameB=pB?.name||'Dönem '+(S.cmpB+1);
-let selH=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-<select class="inp" style="width:auto;padding:4px 8px;font-size:11px" onchange="S.cmpA=parseInt(this.value);S.cmpB=S.cmpA===S.cmpB?(S.cmpA===0?1:0):S.cmpB;rC()">`;
-S.periods.forEach((p,i)=>{selH+=`<option value="${i}" ${i===S.cmpA?'selected':''}>${p.name||'Dönem '+(i+1)}</option>`});
-selH+=`</select><span style="color:var(--tm);font-size:11px">ile</span>
-<select class="inp" style="width:auto;padding:4px 8px;font-size:11px" onchange="S.cmpB=parseInt(this.value);S.cmpA=S.cmpA===S.cmpB?(S.cmpB===0?1:0):S.cmpA;rC()">`;
-S.periods.forEach((p,i)=>{selH+=`<option value="${i}" ${i===S.cmpB?'selected':''}>${p.name||'Dönem '+(i+1)}</option>`});
-selH+=`</select><span style="color:var(--tm);font-size:11px">karşılaştırılıyor</span></div>`;
-
-// En az biri mizan ise → hesap kodu karşılaştırması
-if(pA?.isMizan||pB?.isMizan){
-  // Sadece biri mizansa uyarı ver
-  if(pA?.isMizan!==pB?.isMizan){
-    const mizanAd=pA?.isMizan?nameA:nameB;
-    const normalAd=pA?.isMizan?nameB:nameA;
+function rCmp(el){
+  if(S.periods.length<2){
+    el.innerHTML='<div class="card"><div class="card-b" style="text-align:center;color:var(--tm);padding:36px">En az <b>2 dönem</b> gerekli.<br><br><button class="btn btn-p" onclick="openMo(\'add\')">+ Dönem Ekle</button></div></div>';
+    return;
   }
-  const acA=pA?.mizanAccts||{};const acB=pB?.mizanAccts||{};
-  const tumKodlar=[...new Set([...Object.keys(acA),...Object.keys(acB)])].sort();
-  const GRUP_ADLARI={'1':'Dönen Varlıklar','2':'Duran Varlıklar','3':'Kısa Vadeli Yük.','4':'Uzun Vadeli Yük.','5':'Özsermaye','6':'Gelir Tablosu','7':'Maliyet Hesapları'};
-  let h=`<div class="card"><div class="card-h"><div class="card-t">⚖️ Detay Mizan Karşılaştırması</div>${selH}</div><div class="card-b" style="padding:0;overflow:auto;max-height:72vh">`;
-  let sonGrup='';
-  h+=`<table class="ctb"><thead><tr><th>Kod</th><th>Hesap Adı</th><th>${nameA}</th><th>${nameB}</th><th>Değişim</th><th>Δ%</th></tr></thead><tbody>`;
-  tumKodlar.forEach(k=>{
-    const grup=k.charAt(0);
-    if(grup!==sonGrup){
-      sonGrup=grup;
-      h+=`<tr style="background:rgba(59,130,246,.08)"><td colspan="6" style="font-size:9px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:1px;padding:6px 11px">${GRUP_ADLARI[grup]||'Diğer'}</td></tr>`;
-    }
-    const a=acA[k],b=acB[k];
-    const ad=(a?.n||b?.n||'').substring(0,35);
-    const getBak=(ac,tip)=>{
-      if(!ac)return 0;
-      if(['1','2','6','7'].includes(tip))return ac.d-ac.c;
-      return ac.c-ac.d;
-    };
-    const vA=getBak(a,grup),vB=getBak(b,grup);
-    if(Math.abs(vA)<1&&Math.abs(vB)<1)return; // sıfır satırları atla
-    const delta=vB-vA;
-    const deltaPct=vA!==0?((delta/Math.abs(vA))*100):null;
-    const dCol=delta>0?'var(--gn)':delta<0?'var(--rd)':'var(--t2)';
-    h+=`<tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ac)">${k}</td>
-      <td>${ad}</td>
-      <td style="text-align:right;font-family:'JetBrains Mono',monospace">${fC(vA)}</td>
-      <td style="text-align:right;font-family:'JetBrains Mono',monospace">${fC(vB)}</td>
-      <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:${dCol}">${delta>0?'+':''}${fC(delta)}</td>
-      <td style="text-align:right;font-family:'JetBrains Mono',monospace;color:${dCol}">${deltaPct!==null?(delta>0?'+':'')+deltaPct.toFixed(1)+'%':'—'}</td>
-    </tr>`;
-  });
-  h+=`</tbody></table></div></div>`;
-  el.innerHTML=h;return;
-}
 
-// Birisi veya ikisi de normal dönem → rasyo karşılaştırması
-const aR=Object.values(RATIOS).flatMap(c=>c.items);
-const dA=nd(pA),dB=nd(pB);
-let h=`<div class="card"><div class="card-h"><div class="card-t">⚖️ Karşılaştırma</div>${selH}</div><div class="card-b" style="padding:0;overflow:auto;max-height:66vh"><table class="ctb"><thead><tr><th>Rasyo</th><th>${nameA}</th><th>${nameB}</th><th>Δ (${nameB} vs ${nameA})</th></tr></thead><tbody>`;
-aR.forEach(r=>{const vA=r.calc(dA),vB=r.calc(dB);if(vA===null&&vB===null)return;
-const ch=(vB!=null&&vA!=null&&vA!==0)?((vB-vA)/Math.abs(vA))*100:null;
-h+=`<tr><td>${r.name}</td><td>${vA!==null?(r.pct?fP(vA):r.cur?fC(vA):fR(vA)):"—"}</td><td>${vB!==null?(r.pct?fP(vB):r.cur?fC(vB):fR(vB)):"—"}</td>`;
-h+=`<td class="${ch>0?'cp':ch<0?'cn':''}">${ch!=null?`${ch>0?'▲':'▼'}${Math.abs(ch).toFixed(1)}%`:"—"}</td></tr>`});
-h+=`</tbody></table></div></div>`;el.innerHTML=h}
+  // Tüm dönemleri kronolojik sırala
+  const siraliBolum=[...S.periods.keys()].sort((a,b)=>{
+    const yA=parseInt((S.periods[a].name?.match(/(\d{4})/)||[])[1])||a;
+    const yB=parseInt((S.periods[b].name?.match(/(\d{4})/)||[])[1])||b;
+    return yA-yB;
+  });
+  const sirali=siraliBolum.map(i=>({idx:i,p:S.periods[i]}));
+
+  // Mizan mı rasyo mu?
+  const herhangiMizan=sirali.some(x=>x.p?.isMizan);
+
+  if(herhangiMizan){
+    // ── Çok dönemli Mizan karşılaştırması ──
+    const GRUP_ADLARI={'1':'Dönen Varlıklar','2':'Duran Varlıklar','3':'Kısa Vadeli Yük.','4':'Uzun Vadeli Yük.','5':'Özsermaye','6':'Gelir Tablosu','7':'Maliyet Hesapları'};
+    const tumKodlar=[...new Set(sirali.flatMap(x=>Object.keys(x.p?.mizanAccts||{})))].sort();
+
+    let h=`<div class="card"><div class="card-h"><div class="card-t">⚖️ Detay Mizan Karşılaştırması</div>
+      <span style="font-size:10px;color:var(--tm)">${sirali.length} dönem</span>
+    </div><div class="card-b" style="padding:0;overflow:auto;max-height:75vh">
+    <table class="ctb"><thead><tr>
+      <th style="min-width:50px">Kod</th><th style="min-width:140px">Hesap Adı</th>
+      ${sirali.map((x,i)=>`<th style="text-align:right;min-width:110px">${x.p.name||'D'+(i+1)}</th>`).join('')}
+      ${sirali.length>=2?`<th style="text-align:right;min-width:80px">Δ Son</th><th style="text-align:right;min-width:60px">Δ%</th>`:''}
+    </tr></thead><tbody>`;
+
+    let sonGrup='';
+    tumKodlar.forEach(k=>{
+      const grup=k.charAt(0);
+      if(grup!==sonGrup){
+        sonGrup=grup;
+        h+=`<tr style="background:rgba(59,130,246,.08)"><td colspan="${3+sirali.length+(sirali.length>=2?2:0)}" style="font-size:9px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:1px;padding:6px 11px">${GRUP_ADLARI[grup]||'Diğer'}</td></tr>`;
+      }
+      const getBak=(ac,tip)=>{if(!ac)return null;return['1','2','6','7'].includes(tip)?ac.d-ac.c:ac.c-ac.d;};
+      const vals=sirali.map(x=>getBak(x.p?.mizanAccts?.[k],grup));
+      if(vals.every(v=>v===null||Math.abs(v)<1))return;
+      const ad=(sirali.find(x=>x.p?.mizanAccts?.[k])?.p?.mizanAccts?.[k]?.n||'').substring(0,30);
+      const ilk=vals.find(v=>v!==null&&Math.abs(v)>=1)??0;
+      const son=vals.filter(v=>v!==null).pop()??0;
+      const delta=son-ilk;
+      const deltaPct=ilk!==0?(delta/Math.abs(ilk)*100):null;
+      const dCol=delta>0?'var(--gn)':delta<0?'var(--rd)':'var(--t2)';
+      h+=`<tr>
+        <td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ac)">${k}</td>
+        <td style="font-size:11px">${ad}</td>
+        ${vals.map(v=>`<td style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px">${v!==null&&Math.abs(v)>=1?fC(v):'—'}</td>`).join('')}
+        ${sirali.length>=2?`
+          <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:${dCol}">${delta!==0?(delta>0?'+':'')+fC(delta):'—'}</td>
+          <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:${dCol}">${deltaPct!==null?(delta>0?'+':'')+deltaPct.toFixed(1)+'%':'—'}</td>
+        `:''}
+      </tr>`;
+    });
+    h+=`</tbody></table></div></div>`;
+    el.innerHTML=h;
+    return;
+  }
+
+  // ── Çok dönemli Rasyo karşılaştırması ──
+  const aR=Object.values(RATIOS).flatMap(c=>c.items);
+  const datalar=sirali.map(x=>nd(x.p));
+
+  let h=`<div class="card"><div class="card-h">
+    <div class="card-t">⚖️ Çok Dönemli Karşılaştırma</div>
+    <span style="font-size:10px;color:var(--tm)">${sirali.length} dönem — tüm değişimler</span>
+  </div><div class="card-b" style="padding:0;overflow:auto;max-height:75vh">
+  <table class="ctb"><thead><tr>
+    <th style="min-width:140px">Rasyo</th>
+    ${sirali.map((x,i)=>`<th style="text-align:right;min-width:110px">${x.p.name||'D'+(i+1)}</th>`).join('')}
+    ${sirali.length>=2?`
+      <th style="text-align:right;min-width:80px" title="Son dönem - İlk dönem">Δ Toplam</th>
+      <th style="text-align:right;min-width:60px">Δ%</th>
+    `:''}
+  </tr></thead><tbody>`;
+
+  // Bölüm başlıkları ekle
+  Object.entries(RATIOS).forEach(([,cat])=>{
+    const items=cat.items.filter(r=>datalar.some(d=>r.calc(d)!==null));
+    if(!items.length)return;
+    h+=`<tr style="background:rgba(59,130,246,.06)"><td colspan="${2+sirali.length+(sirali.length>=2?2:0)}" style="font-size:9px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:1.5px;padding:7px 11px">${cat.icon} ${cat.label}</td></tr>`;
+    items.forEach(r=>{
+      const vals=datalar.map(d=>r.calc(d));
+      if(vals.every(v=>v===null))return;
+      const fmt=v=>v===null?'—':r.pct?fP(v):r.cur?fC(v):fR(v);
+      const geçerli=vals.filter(v=>v!==null);
+      const ilk=geçerli[0]??0, son=geçerli[geçerli.length-1]??0;
+      const delta=son-ilk;
+      const deltaPct=ilk!==0?(delta/Math.abs(ilk)*100):null;
+      const dCol=delta>0?'var(--gn)':delta<0?'var(--rd)':'var(--t2)';
+
+      h+=`<tr>
+        <td style="font-size:11px;font-weight:500">${r.name}</td>
+        ${vals.map((v,vi)=>{
+          // Ardışık dönemler arası küçük delta göster
+          const prev=vi>0?vals[vi-1]:null;
+          const d2=v!==null&&prev!==null?v-prev:null;
+          const d2Col=d2===null?'':d2>0?'var(--gn)':d2<0?'var(--rd)':'';
+          const d2Txt=d2!==null&&Math.abs(d2)>0.01
+            ?`<span style="font-size:9px;color:${d2Col};margin-left:4px">${d2>0?'▲':'▼'}${r.pct?Math.abs(d2).toFixed(1)+'%':fR(Math.abs(d2))}</span>`
+            :'';
+          return `<td style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:${rColS(r.key,v)}">${fmt(v)}${d2Txt}</td>`;
+        }).join('')}
+        ${sirali.length>=2?`
+          <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:${dCol}">${geçerli.length>=2?(delta>0?'+':'')+fmt(delta):'—'}</td>
+          <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:${dCol}">${deltaPct!==null?(delta>0?'+':'')+deltaPct.toFixed(1)+'%':'—'}</td>
+        `:''}
+      </tr>`;
+    });
+  });
+
+  h+=`</tbody></table></div></div>`;
+  el.innerHTML=h;
+}
 function rAI(el){const has=S.periods.some(p=>Object.values(p.data).some(v=>v));let body='';
 if(S.aiLd)body=`<div class="aip-ld"><div class="dp"><span></span><span></span><span></span></div> Finansal veriler analiz ediliyor...</div>`;
 else if(S.aiRes)body=`<div class="aip-b">${S.aiRes}</div>`;
@@ -1310,7 +1355,18 @@ function sSTab(t){S.stab=t;rSB()}
 function tglSB(){S.sbo=!S.sbo;document.getElementById('sidebar').classList.toggle('collapsed',!S.sbo);uT()}
 function tCat(c){S.ecat=S.ecat===c?null:c;rSB()}
 function setAP(i){S.ap=i;render()}
-function remP(i){if(S.periods.length<=1)return;S.periods.splice(i,1);if(S.ap>=i&&S.ap>0)S.ap--;render()}
+function remP(i){
+  if(S.periods.length===1){
+    // Tek dönemde sıfırla
+    if(!confirm('Bu dönemi sıfırlamak istiyor musunuz?'))return;
+    S.periods[0]={name:'',data:eD(),fileName:null,parseLog:[],missingFields:[]};
+    S.ap=0;
+  } else {
+    S.periods.splice(i,1);
+    if(S.ap>=i&&S.ap>0)S.ap--;
+  }
+  render();
+}
 
 function openMo(mode,cb,prefill){
   moMode=mode||'add';moCallback=cb||null;
@@ -1761,7 +1817,36 @@ function loadSaved(id){
   const item=S.savedList.find(x=>x.id===id);
   if(!item)return;
   const donemAdi=item.donem||item.sirket_adi||'Kayıtlı Analiz';
-  // Mevcut dönemde veri varsa yeni dönem ekle
+
+  // ── e-Defter kaydı mı? ──
+  if(item.rasyo_json&&item.rasyo_json['__tip']==='edefter'){
+    try{
+      S.ed.fisler=[];
+      S.ed.dosyaAdi=item.dosya_adi||'e-Defter';
+      S.ed.aiYorum=item.ai_yorum||'';
+      S.ed.sirket={ad:item.sirket_adi||''};
+      S.ed.baslik={donemBas:item.rasyo_json['__donemBas']||'',donemBit:item.rasyo_json['__donemBit']||''};
+      S.ed.anomaliler=JSON.parse(item.rasyo_json['__anomaliler']||'[]');
+      S.ed.hesapOzet=JSON.parse(item.rasyo_json['__hesapOzet']||'[]');
+      S.ed.ozet={
+        toplamFis:item.rasyo_json['__fisler']||0,
+        toplamSatir:item.rasyo_json['__satirlar']||0,
+        toplamBorç:item.rasyo_json['__borc']||0,
+        toplamAlacak:item.rasyo_json['__alacak']||0,
+        anomaliSayisi:item.rasyo_json['__anomali']||0,
+        donemBas:item.rasyo_json['__donemBas']||'',
+        donemBit:item.rasyo_json['__donemBit']||'',
+      };
+      S.ed.log=[{t:'ok',m:'📂 Kayıtlı e-Defter analizi yüklendi: '+donemAdi}];
+      // Fiş listesi kayıtta yok — özet verilerle çalışır
+      S.ed.fisler=Array(S.ed.ozet.toplamFis).fill(null).map((_,i)=>({fisNo:String(i+1),tarih:'',aciklama:'',satirlar:[],mesaiDisi:false,saat:null}));
+    }catch(e){console.warn('e-Defter yükleme hatası:',e)}
+    S.tab='edefter';
+    render();
+    return;
+  }
+
+  // ── Normal analiz ──
   const mevcutDolu=S.periods[S.ap]&&Object.values(S.periods[S.ap].data).some(v=>v&&v!=='0');
   if(mevcutDolu){
     S.periods.push({name:donemAdi,data:eD(),fileName:null,parseLog:[],missingFields:[]});
@@ -1769,45 +1854,27 @@ function loadSaved(id){
   } else {
     S.periods[S.ap].name=donemAdi;
   }
-  // S.ap bu noktada doğru index — direkt index ile eriş
   const idx=S.ap;
-  S.periods[idx].data=eD(); // önce temizle
-  // rasyo_json'dan ham veri alanlarını yükle
+  S.periods[idx].data=eD();
   const fieldKeys=new Set(FIELDS.flatMap(s=>s.fields).map(f=>f.key));
   if(item.rasyo_json){
     Object.keys(item.rasyo_json).forEach(k=>{
       if(fieldKeys.has(k)){
         const v=item.rasyo_json[k];
-        if(v!==undefined&&v!==null&&v!==''){
-          S.periods[idx].data[k]=String(v);
-        }
+        if(v!==undefined&&v!==null&&v!=='') S.periods[idx].data[k]=String(v);
       }
     });
   }
-  // Sektör
-  if(item.sektor){
-    S.sektor=item.sektor;
-    const sel=document.getElementById('sektorSel');
-    if(sel)sel.value=item.sektor;
-    updateSectorBadge();
-  }
+  if(item.sektor){S.sektor=item.sektor;const sel=document.getElementById('sektorSel');if(sel)sel.value=item.sektor;updateSectorBadge();}
   S.aiRes=item.ai_yorum||'';
   S.periods[idx].parseLog=[{t:'ok',m:'📂 Kayıtlı analiz yüklendi: '+donemAdi}];
   if(item.dosya_adi)S.periods[idx].parseLog.push({t:'info',m:'📎 Orijinal dosya: '+item.dosya_adi});
-  S.periods[idx].fileName=null;
-  S.periods[idx].missingFields=[];
-  // Dolu alan sayısını kontrol et
+  S.periods[idx].fileName=null;S.periods[idx].missingFields=[];
   const dolular=Object.values(S.periods[idx].data).filter(v=>v&&v!=='0').length;
   S.periods[idx].parseLog.push({t:'ok',m:dolular+' alan yüklendi'});
-  // Detay mizan verilerini geri yükle
   if(item.rasyo_json&&item.rasyo_json['__isMizan']){
     S.periods[idx].isMizan=true;
-    try{
-      const acctsStr=item.rasyo_json['__accts'];
-      if(acctsStr)S.periods[idx].mizanAccts=JSON.parse(acctsStr);
-      S.periods[idx].mizanDetay={};// Alt hesap detayı kayıtta yok, boş bırak
-      S.periods[idx].parseLog.push({t:'info',m:'🔍 Detay mizan verileri yüklendi (hesap kodları özeti)'});
-    }catch(e){console.warn('Mizan accts parse hatası:',e)}
+    try{const acctsStr=item.rasyo_json['__accts'];if(acctsStr)S.periods[idx].mizanAccts=JSON.parse(acctsStr);S.periods[idx].mizanDetay={};}catch(e){}
   }
   S.tab='input';
   render();
