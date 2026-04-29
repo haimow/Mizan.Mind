@@ -1,10 +1,11 @@
 // Netlify Function — Google OAuth redirect interceptor
 // GoTrue /authorize zincirini takip eder, Google OAuth URL'sini bulur,
-// prompt=select_account ekler → kullanıcı hesap seçim ekranını görür.
+// prompt=select_account ekler. redirect_to=/app/ ile token app'e düşer.
 
 export default async function handler(req, context) {
   const siteUrl = process.env.URL || 'https://mizanmind.netlify.app';
-  const gotrueStart = `${siteUrl}/.netlify/identity/authorize?provider=google`;
+  const redirectTo = encodeURIComponent(`${siteUrl}/app/`);
+  const gotrueStart = `${siteUrl}/.netlify/identity/authorize?provider=google&redirect_to=${redirectTo}`;
 
   try {
     // GoTrue birden fazla redirect yapabilir — Google URL'sini bulana kadar takip et
@@ -40,7 +41,7 @@ export default async function handler(req, context) {
       });
     }
 
-    // Fallback: GoTrue URL'ye yönlendir (prompt'u GoTrue'ya bırak)
+    // Fallback
     return new Response(null, {
       status: 302,
       headers: { 'Location': `${gotrueStart}&prompt=select_account` }
