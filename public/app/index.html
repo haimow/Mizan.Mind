@@ -2666,14 +2666,36 @@ function rDetay(el){
 
 function rKredi(el){
   const aktifP=S.periods[S.ap];
+  if(aktifP.isMizan){
+    const bilancoVarMi=S.periods.some(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0'));
+    el.innerHTML=`<div class="card"><div class="card-b" style="text-align:center;padding:36px">
+      <div style="font-size:32px;margin-bottom:12px">🏦</div>
+      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">Mizan'dan Kredi Analizi Yapılamaz</div>
+      <div style="font-size:11px;color:var(--t2);line-height:1.8;max-width:420px;margin:0 auto">
+        Kredi ve rasyo analizi için <b>Beyanname</b> verisi gereklidir.<br>
+        ${bilancoVarMi
+          ? '<b style="color:var(--am)">⚡ Yüklü beyanname dönemleriniz var!</b><br>Üstteki dönem butonlarından bir beyanname dönemi seçin.'
+          : 'Beyanname yükleyerek kredi analizi yapabilirsiniz.'}
+      </div>
+      ${bilancoVarMi
+        ? `<div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
+            ${S.periods.filter(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0')).map(pp=>{
+              const idx=S.periods.indexOf(pp);
+              return `<button class="btn btn-p" onclick="S.ap=${idx};rC()" style="font-size:11px">${pp.name||'Dönem '+(idx+1)}</button>`;
+            }).join('')}
+          </div>`
+        : `<button class="btn btn-p" onclick="sTab('input')" style="margin-top:16px">📥 Veri Girişi</button>`}
+    </div></div>`;
+    return;
+  }
   const bilancoDonemler=S.periods.filter(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0'));
-  const p=(!aktifP.isMizan&&Object.values(aktifP.data||{}).some(v=>v&&v!=='0'))
+  const p=Object.values(aktifP.data||{}).some(v=>v&&v!=='0')
     ? aktifP : (bilancoDonemler[bilancoDonemler.length-1]||null);
   if(!p){
     el.innerHTML=`<div class="card"><div class="card-b" style="text-align:center;padding:36px">
       <div style="font-size:32px;margin-bottom:12px">🏦</div>
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">Bilanço Verisi Yüklenmedi</div>
-      <div style="font-size:11px;color:var(--t2)">Kredi analizi için bilanço veya beyanname yükleyin.</div>
+      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">Beyanname Verisi Yüklenmedi</div>
+      <div style="font-size:11px;color:var(--t2)">Kredi analizi için beyanname yükleyin.</div>
       <button class="btn btn-p" onclick="sTab('input')" style="margin-top:16px">📥 Veri Girişi</button>
     </div></div>`;
     return;
