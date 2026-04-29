@@ -581,10 +581,22 @@ async function authForgot(){
 
 function authGoogle(){
   try{
-    const url = getGoTrue().loginExternalUrl('google');
-    // prompt=select_account her seferinde hesap seçimi ekranı açar
-    const sep = url.includes('?') ? '&' : '?';
-    window.location.href = url + sep + 'prompt=select_account';
+    // Mevcut oturumu kapat — önceki kullanıcı bilgisi temizlenir
+    const gt = getGoTrue();
+    const cu = gt.currentUser();
+    const doRedirect = () => {
+      const url = gt.loginExternalUrl('google');
+      // GoTrue redirect_to'ya prompt parametresi ekle
+      const sep = url.includes('?') ? '&' : '?';
+      // OAuth state ile Google'a prompt=select_account gönder
+      window.location.href = url + sep + 'prompt=select_account';
+    };
+    if(cu){
+      // Önce logout yap, sonra Google'a yönlendir
+      cu.logout().catch(()=>{}).finally(doRedirect);
+    } else {
+      doRedirect();
+    }
   }catch(e){
     authShowMsg('Google girişi başlatılamadı: '+e.message,'err');
   }
