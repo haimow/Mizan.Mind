@@ -1883,8 +1883,9 @@ function rEDefter(el){
     ${ed.log.length?`<div class="plog">${ed.log.map(l=>`<div class="${l.t}">${l.t==='ok'?'✓':l.t==='warn'?'⚠':l.t==='err'?'✗':'ℹ'} ${l.m}</div>`).join('')}</div>`:''}
   </div></div>`;
 
-  // Veri yoksa bilgi kartı göster
-  if(!ed.fisler||!ed.fisler.length){
+  // Veri yoksa bilgi kartı göster — fisler VEYA ozet verisi kontrol
+  const hasEDData=!!(ed.fisler?.length||ed.ozet?.toplamFis||ed.dosyaAdi);
+  if(!hasEDData){
     h+=`<div class="card"><div class="card-b" style="text-align:center;padding:32px;color:var(--tm)">
       <div style="font-size:28px;margin-bottom:12px">📋</div>
       <div style="font-size:13px;font-weight:500;margin-bottom:8px">e-Defter XML dosyası bekleniyor</div>
@@ -2521,15 +2522,18 @@ function rRat(el){
 }
 
 // ─── DETAY MİZAN ─────────────────────────────────────────────────────────────
+
 function rDetay(el){
-  const mizanP=S.periods.find(p=>p.isMizan&&Object.keys(p.mizanAccts||{}).length>0);
+  const aktifP=S.periods[S.ap];
+  const mizanlar=S.periods.filter(p=>p.isMizan&&Object.keys(p.mizanAccts||{}).length>0);
+  const mizanP=aktifP?.isMizan&&Object.keys(aktifP.mizanAccts||{}).length>0
+    ? aktifP : mizanlar[mizanlar.length-1]||null;
   if(!mizanP){
     el.innerHTML=`<div class="card"><div class="card-b" style="text-align:center;padding:36px">
       <div style="font-size:32px;margin-bottom:12px">📋</div>
       <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">Detay Mizan Yüklenmedi</div>
       <div style="font-size:11px;color:var(--t2);line-height:1.8;max-width:400px;margin:0 auto">
-        Bu sekme yalnızca <b>Detay Mizan</b> (Excel THP formatı) verisiyle çalışır.<br>
-        Bilanço veya beyanname için <b>Rasyolar</b> sekmesini kullanın.
+        Bu sekme yalnızca <b>Detay Mizan</b> (Excel THP formatı) verisiyle çalışır.
       </div>
       <button class="btn btn-p" onclick="sTab('input')" style="margin-top:16px">📥 Mizan Yükle</button>
     </div></div>`;
@@ -2538,42 +2542,76 @@ function rDetay(el){
   const accts=mizanP.mizanAccts||{};
   const bD=(k)=>accts[k]?(accts[k].d-accts[k].c):0;
   const bC=(k)=>accts[k]?(accts[k].c-accts[k].d):0;
-  const totalAktif=bD('1');
-  const totalSatis=bD('600');
-  // Anomaliler
-  const anomaliler=[];
-  const sipariAvans159=bD('159'), alacakSen121=bD('121'), uzunAlac232=bD('232')+bD('231');
-  const personelAvans196=bD('196'), borcSen321=bC('321'), supheli128=bD('128');
+  const totalAktif=Object.keys(accts).filter(k=>k.startsWith('1')).reduce((s,k)=>s+Math.max(0,accts[k].d-accts[k].c),0);
+  const totalSatis=bD('600')||bD('60');
   const borc320=bC('320')+bC('321')+bC('322')+bC('329');
-  if(supheli128>0&&totalAktif>0) anomaliler.push({sev:'rd',msg:`Şüpheli Alacak (128): ${fC(supheli128)} — aktiften düşülür`,detay:'Bankacılar bu tutarı aktiften siler, net alacak daha düşüktür.'});
-  if(sipariAvans159>0&&totalAktif>0&&sipariAvans159/totalAktif>0.03) anomaliler.push({sev:sipariAvans159/totalAktif>0.08?'rd':'am',msg:`Verilen Sipariş Avansları (159): ${fC(sipariAvans159)} — aktifin %${(sipariAvans159/totalAktif*100).toFixed(1)}'i`,detay:'Uzun süre kapanmayan avanslar para transferi sayılır, aktif şişkinliği riski.'});
-  if(alacakSen121>0&&totalSatis>0&&alacakSen121/totalSatis>0.3) anomaliler.push({sev:'am',msg:`Alacak Senetleri (121): Cironun %${(alacakSen121/totalSatis*100).toFixed(0)}'i senetli (${fC(alacakSen121)})`,detay:'Hatır senedi şüphesi — bankalar likidite analizine dahil etmez.'});
-  if(uzunAlac232>0&&totalAktif>0&&uzunAlac232/totalAktif>0.05) anomaliler.push({sev:uzunAlac232/totalAktif>0.1?'rd':'am',msg:`Uzun Vadeli Diğer Alacaklar (231/232): ${fC(uzunAlac232)}`,detay:'Atıl para veya ortak finansmanı riski — cari oranı olumsuz etkiler.'});
-  if(personelAvans196>0&&totalAktif>0&&personelAvans196/totalAktif>0.01) anomaliler.push({sev:'am',msg:`Personel Avansları (196): ${fC(personelAvans196)}`,detay:'Kurumsallıktan uzak yapı sinyali — operasyonel risk puanını artırır.'});
-  if(borcSen321>0&&borc320>0&&borcSen321/borc320>0.5) anomaliler.push({sev:'am',msg:`Borç Senetleri (321): Ticari borcun %${(borcSen321/borc320*100).toFixed(0)}'i senetli`,detay:'Finansal stres göstergesi — tedarikçi nezdinde kredi itibarı düşük.'});
+  const anomaliler=[];
+  // Fiktif kasa
+  const kasa100=bD('100'),kredi300=bC('300')+bC('400');
+  if(kasa100>0&&kredi300>0&&kasa100/kredi300>0.3)
+    anomaliler.push({sev:'rd',msg:`Fiktif Kasa Riski (100): ${fC(kasa100)} — Banka kredisi ${fC(kredi300)}`,detay:'Yüklü kredi kullanırken yüksek kasa bakiyesi ortakların parayı çektiğine işaret eder.'});
+  // Şüpheli alacak
+  const supheli128=bD('128'),karsil129=bD('129');
+  if(supheli128>0){const ko=karsil129>0?(karsil129/supheli128*100):0;
+    anomaliler.push({sev:ko<50?'rd':'am',msg:`Şüpheli Alacak (128): ${fC(supheli128)} — karşılık %${ko.toFixed(0)}`,detay:'%100 karşılık ayrılmamışsa zarar gizleniyordur. Bankalar bu tutarı aktiften düşer.'});}
+  // Alacak senetleri
+  const alacakSen121=bD('121');
+  if(alacakSen121>0&&totalSatis>0&&alacakSen121/totalSatis>0.3)
+    anomaliler.push({sev:'am',msg:`Alacak Senetleri (121): Cironun %${(alacakSen121/totalSatis*100).toFixed(0)}'i — ${fC(alacakSen121)}`,detay:'Hatır senedi şüphesi — bankalar likidite analizine dahil etmez.'});
+  // Ortaklardan alacak
+  const ortak131=bD('131')+bD('231');
+  if(ortak131>0&&totalAktif>0)
+    anomaliler.push({sev:ortak131/totalAktif>0.1?'rd':'am',msg:`Ortaklardan Alacak (131/231): ${fC(ortak131)} — aktifin %${(ortak131/totalAktif*100).toFixed(1)}'i`,detay:'Bankanın şirkete verdiği kredi ortakların şahsi işlerine akıyor olabilir.'});
+  // Ortaklara borç
+  const ortak331=bC('331')+bC('431');
+  if(ortak331>0&&totalAktif>0&&ortak331/totalAktif>0.15)
+    anomaliler.push({sev:'am',msg:`Ortaklara Borç (331/431): ${fC(ortak331)} — aktifin %${(ortak331/totalAktif*100).toFixed(1)}'i`,detay:'Örtülü sermaye göstergesi — şirket dışarıdan fon bulamadığı için ortak şirketi fonluyor.'});
+  // Stok yoğunluğu
+  const stok=bD('150')+bD('151')+bD('152')+bD('153')+bD('157');
+  if(stok>0&&totalSatis>0&&stok/totalSatis>0.6)
+    anomaliler.push({sev:'am',msg:`Stok Yoğunluğu: ${fC(stok)} — cironun %${(stok/totalSatis*100).toFixed(0)}'i`,detay:'Düşük stok devir hızı. Satılamayan stok bilançoda değerli gösteriliyor olabilir.'});
+  // MDV yeniden değerleme
+  const yenilenDeger=bD('522');
+  if(yenilenDeger>0){const ozk=bC('500')+bC('501')+bC('570')+bC('580')+bC('590');
+    if(ozk>0&&yenilenDeger/ozk>0.3)
+      anomaliler.push({sev:'am',msg:`MDV Yeniden Değerleme (522): ${fC(yenilenDeger)} — özkaynağın %${(yenilenDeger/ozk*100).toFixed(0)}'i`,detay:'Kağıt zenginliği — nakit yaratmayan özkaynak borç ödeyemez.'});}
+  // Vade uyumsuzluğu
+  const kvsaKredi=bC('300'),duranV=bD('250')+bD('252')+bD('253')+bD('254');
+  if(kvsaKredi>0&&duranV>0&&kvsaKredi/duranV>0.5)
+    anomaliler.push({sev:'rd',msg:`Vade Uyumsuzluğu: Duran varlığın %${(kvsaKredi/duranV*100).toFixed(0)}'i kısa vadeli krediyle finanse`,detay:'Fabrika/makine kısa vadeli banka kredisiyle finanse edilmişse ciddi likidite riski vardır.'});
+  // Borç senetleri
+  const borcSen321=bC('321');
+  if(borcSen321>0&&borc320>0&&borcSen321/borc320>0.5)
+    anomaliler.push({sev:'am',msg:`Borç Senetleri (321): Ticari borcun %${(borcSen321/borc320*100).toFixed(0)}'i senetli`,detay:'Finansal stres — tedarikçiler artık açık kredi veremiyor.'});
+  // Sipariş avansı
+  const sav159=bD('159');
+  if(sav159>0&&totalAktif>0&&sav159/totalAktif>0.05)
+    anomaliler.push({sev:sav159/totalAktif>0.12?'rd':'am',msg:`Verilen Sipariş Avansları (159): ${fC(sav159)} — aktifin %${(sav159/totalAktif*100).toFixed(1)}'i`,detay:'Uzun süre kapanmayan avanslar para transferi sayılır ve aktiften düşülür.'});
 
   let h='<div style="display:flex;flex-direction:column;gap:12px">';
-  // Başlık
-  h+=`<div class="card"><div class="card-h"><div class="card-t">🔍 Detay Mizan Analizi — ${mizanP.name||'Dönem'}</div>
-    <span style="font-size:10px;color:var(--tm)">${Object.keys(accts).length} hesap kodu</span>
+  if(mizanlar.length>1){
+    h+=`<div style="display:flex;gap:6px;flex-wrap:wrap">`;
+    mizanlar.forEach(mp=>{
+      const isAkt=mp===mizanP;const mpIdx=S.periods.indexOf(mp);
+      h+=`<button onclick="S.ap=${mpIdx};rC()" style="padding:6px 14px;border-radius:8px;border:1px solid ${isAkt?'var(--ac)':'var(--brd)'};background:${isAkt?'var(--acd)':'transparent'};color:${isAkt?'var(--ac)':'var(--t2)'};font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">${mp.name||'Dönem'}</button>`;
+    });
+    h+=`</div>`;
+  }
+  h+=`<div class="card"><div class="card-h">
+    <div class="card-t">🔍 Detay Mizan Analizi — ${mizanP.name||'Dönem'}</div>
+    <span style="font-size:10px;color:var(--tm)">${Object.keys(accts).length} hesap · ${anomaliler.filter(a=>a.sev==='rd').length} kritik · ${anomaliler.filter(a=>a.sev==='am').length} uyarı</span>
   </div></div>`;
-  // Anomaliler
   if(anomaliler.length){
-    h+=`<div class="card"><div class="card-h"><div class="card-t">⚠️ Risk & Anomali Tespitleri</div><span style="font-size:10px;color:var(--rd);font-weight:600">${anomaliler.length} uyarı</span></div><div class="card-b" style="padding:8px">`;
+    h+=`<div class="card"><div class="card-h"><div class="card-t">⚠️ Risk & Anomali Tespitleri</div></div><div class="card-b" style="padding:8px">`;
     anomaliler.forEach(a=>{
-      const bg=a.sev==='rd'?'rgba(239,68,68,.07)':'rgba(245,158,11,.07)';
-      const bc=a.sev==='rd'?'rgba(239,68,68,.2)':'rgba(245,158,11,.2)';
-      const icon=a.sev==='rd'?'🔴':'🟡';
-      h+=`<div style="padding:10px 12px;background:${bg};border:1px solid ${bc};border-radius:8px;margin-bottom:6px">
-        <div style="font-size:12px;font-weight:600;color:var(--t1)">${icon} ${a.msg}</div>
-        <div style="font-size:10px;color:var(--tm);margin-top:4px">${a.detay}</div>
-      </div>`;
+      h+=`<div style="padding:10px 12px;background:${a.sev==='rd'?'rgba(239,68,68,.07)':'rgba(245,158,11,.07)'};border:1px solid ${a.sev==='rd'?'rgba(239,68,68,.2)':'rgba(245,158,11,.2)'};border-radius:8px;margin-bottom:6px">
+        <div style="font-size:12px;font-weight:600;color:var(--t1)">${a.sev==='rd'?'🔴':'🟡'} ${a.msg}</div>
+        <div style="font-size:10px;color:var(--tm);margin-top:4px">${a.detay}</div></div>`;
     });
     h+=`</div></div>`;
   } else {
     h+=`<div class="card"><div class="card-b" style="padding:16px;text-align:center;color:var(--gn)">✅ Kritik anomali tespit edilmedi</div></div>`;
   }
-  // Hesap tablosu
   const GRUP={'1':'Dönen Varlıklar','2':'Duran Varlıklar','3':'Kısa Vadeli Yük.','4':'Uzun Vadeli Yük.','5':'Özsermaye','6':'Gelir Tablosu','7':'Maliyet'};
   h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Hesap Bakiyeleri</div></div><div class="card-b" style="padding:0;overflow:auto;max-height:60vh">
   <table class="ctb"><thead><tr><th>Kod</th><th>Hesap Adı</th><th style="text-align:right">Borç</th><th style="text-align:right">Alacak</th><th style="text-align:right">Bakiye</th></tr></thead><tbody>`;
@@ -2581,9 +2619,9 @@ function rDetay(el){
   Object.keys(accts).sort().forEach(k=>{
     const g=k.charAt(0);
     if(g!==sg){sg=g;h+=`<tr style="background:var(--acd)"><td colspan="5" style="font-size:9px;font-weight:700;color:var(--ac);padding:5px 10px;text-transform:uppercase">${GRUP[g]||'Diğer'}</td></tr>`;}
-    const a=accts[k]; if(!a)return;
+    const a=accts[k];if(!a)return;
     const bak=['1','2','6','7'].includes(g)?a.d-a.c:a.c-a.d;
-    if(Math.abs(bak)<1&&Math.abs(a.d)<1)return;
+    if(Math.abs(bak)<1&&Math.abs(a.d)<1&&Math.abs(a.c)<1)return;
     h+=`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ac)">${k}</td>
       <td style="font-size:11px">${(a.n||'').substring(0,30)}</td>
       <td style="text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px">${a.d>0?fC(a.d):'—'}</td>
@@ -2594,78 +2632,110 @@ function rDetay(el){
   el.innerHTML=h;
 }
 
-// ─── KREDİ ANALİZİ ──────────────────────────────────────────────────────────
 function rKredi(el){
-  const p=S.periods[S.ap]; const d=nd(p);
-  if(p.isMizan){
+  const aktifP=S.periods[S.ap];
+  const bilancoDonemler=S.periods.filter(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0'));
+  const p=(!aktifP.isMizan&&Object.values(aktifP.data||{}).some(v=>v&&v!=='0'))
+    ? aktifP : (bilancoDonemler[bilancoDonemler.length-1]||null);
+  if(!p){
     el.innerHTML=`<div class="card"><div class="card-b" style="text-align:center;padding:36px">
       <div style="font-size:32px;margin-bottom:12px">🏦</div>
-      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">Mizan'dan Kredi Analizi Yapılamaz</div>
-      <div style="font-size:11px;color:var(--t2)">Bilanço veya beyanname yükleyin.</div>
+      <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">Bilanço Verisi Yüklenmedi</div>
+      <div style="font-size:11px;color:var(--t2)">Kredi analizi için bilanço veya beyanname yükleyin.</div>
       <button class="btn btn-p" onclick="sTab('input')" style="margin-top:16px">📥 Veri Girişi</button>
     </div></div>`;
     return;
   }
+  const d=nd(p);
   if(!d.totalAssets&&!d.currentAssets){
-    el.innerHTML=`<div class="card"><div class="card-b" style="text-align:center;padding:36px;color:var(--tm)">
-      Bilanço verisi yüklenmedi.
-      <button class="btn btn-p" onclick="sTab('input')" style="display:block;margin:12px auto 0">📥 Veri Girişi</button>
-    </div></div>`;
+    el.innerHTML=`<div class="card"><div class="card-b" style="text-align:center;padding:36px;color:var(--tm)">Bilanço verisi eksik.<button class="btn btn-p" onclick="sTab('input')" style="display:block;margin:12px auto 0">📥 Veri Girişi</button></div></div>`;
     return;
   }
-  // Altman Z-Score
   const X1=d.currentAssets&&d.shortTermLiabilities&&d.totalAssets?(d.currentAssets-d.shortTermLiabilities)/d.totalAssets:null;
   const X2=d.equity&&d.totalAssets?d.equity/d.totalAssets:null;
   const X3=d.operatingProfit!=null&&d.totalAssets?d.operatingProfit/d.totalAssets:null;
   const X4=d.equity&&d.totalLiabilities?d.equity/d.totalLiabilities:null;
   const X5=d.netSales&&d.totalAssets?d.netSales/d.totalAssets:null;
-  const zScore=(X1!==null&&X2!==null&&X3!==null&&X4!==null&&X5!==null)?
-    6.56*X1+3.26*X2+6.72*X3+1.05*X4:null;
-  const zLabel=zScore===null?'—':zScore>2.6?'Güvenli Bölge':zScore>1.1?'Gri Bölge (Dikkat)':'Tehlikeli Bölge';
+  const zScore=(X1!==null&&X2!==null&&X3!==null&&X4!==null&&X5!==null)?6.56*X1+3.26*X2+6.72*X3+1.05*X4:null;
+  const zLabel=zScore===null?'—':zScore>2.6?'Güvenli Bölge':zScore>1.1?'Gri Bölge':'Tehlikeli Bölge';
   const zRenk=zScore===null?'var(--tm)':zScore>2.6?'var(--gn)':zScore>1.1?'var(--am)':'var(--rd)';
-
-  // BDDK kriterleri
-  const BDDK_ITEMS=[
-    {name:'Cari Oran',key:'cr',ideal:'≥ 1.5',good:v=>v>=1.5,bad:v=>v<1.0},
-    {name:'Borç/Özsermaye',key:'de',ideal:'≤ 2.0',good:v=>v<=2.0,bad:v=>v>3.0},
-    {name:'Faiz Karşılama',key:'ic',ideal:'≥ 3.0',good:v=>v>=3.0,bad:v=>v<1.5},
-    {name:'Net Kâr Marjı',key:'nm',ideal:'≥ %5',good:v=>v>=5,bad:v=>v<0},
-    {name:'Borç Oranı',key:'dr',ideal:'≤ 0.60',good:v=>v<=0.6,bad:v=>v>0.75},
-    {name:'ROA',key:'roa',ideal:'≥ %5',good:v=>v>=5,bad:v=>v<2},
+  // Ağırlıklı puan sistemi — gerçekçi eşikler
+  const KRITERLER=[
+    {name:'Likidite (Cari Oran)',key:'cr',ideal:'≥ 1.2',agirlik:20,
+     puan:v=>v===null?0:v>=2.0?20:v>=1.5?17:v>=1.2?13:v>=1.0?8:v>=0.8?4:0,
+     fmt:(r,v)=>v===null?'—':fR(v)},
+    {name:'Finansal Kaldıraç',key:'dr',ideal:'≤ 0.75',agirlik:20,
+     puan:v=>v===null?0:v<=0.5?20:v<=0.6?17:v<=0.75?13:v<=0.85?7:v<=0.9?3:0,
+     fmt:(r,v)=>v===null?'—':fR(v)},
+    {name:'Borç/Özsermaye',key:'de',ideal:'≤ 3.0',agirlik:20,
+     puan:v=>v===null?0:v<=1.0?20:v<=2.0?16:v<=3.0?11:v<=4.0?6:v<=5.0?2:0,
+     fmt:(r,v)=>v===null?'—':fR(v)},
+    {name:'Faiz Karşılama',key:'ic',ideal:'≥ 1.5',agirlik:20,
+     puan:v=>v===null?10:v>=5.0?20:v>=3.0?16:v>=1.5?11:v>=1.0?5:0,
+     fmt:(r,v)=>v===null?'Veri yok':fR(v)},
+    {name:'Net Kâr Marjı',key:'nm',ideal:'≥ 0%',agirlik:20,
+     puan:v=>v===null?8:v>=10?20:v>=5?16:v>=2?12:v>=0?7:0,
+     fmt:(r,v)=>v===null?'—':fP(v)},
   ];
-
+  const itemRatios=Object.values(RATIOS).flatMap(c=>c.items);
+  let toplamPuan=0;
+  const sonuclar=KRITERLER.map(k=>{
+    const r=itemRatios.find(x=>x.key===k.key);
+    const v=r?r.calc(d):null;
+    const p=k.puan(v);
+    toplamPuan+=p;
+    return{...k,v,p,fmtV:k.fmt(r,v)};
+  });
+  const pct=Math.min(100,Math.round(toplamPuan));
+  const kredinot=pct>=80?'AA — Çok İyi':pct>=65?'A — İyi':pct>=50?'BB — Orta':pct>=35?'B — Zayıf':'CC — Riskli';
+  const kRenk=pct>=65?'var(--gn)':pct>=50?'var(--am)':pct>=35?'#f97316':'var(--rd)';
+  const kAcik=pct>=80?'Güçlü yapı — kredi uygun':pct>=65?'Yeterli güç — koşullu uygun':pct>=50?'Orta risk — teminat gerekli':pct>=35?'Yüksek risk — sınırlı limit':'Çok yüksek risk — dikkatli';
   let h='<div style="display:flex;flex-direction:column;gap:12px">';
-  // Z-Score kart
   h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
     <div class="card"><div class="card-b" style="text-align:center;padding:20px">
       <div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Altman Z-Score</div>
-      <div style="font-size:36px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${zRenk}">${zScore!==null?zScore.toFixed(2):'—'}</div>
+      <div style="font-size:40px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${zRenk}">${zScore!==null?zScore.toFixed(2):'—'}</div>
       <div style="font-size:11px;color:${zRenk};margin-top:6px;font-weight:600">${zLabel}</div>
-      <div style="font-size:10px;color:var(--tm);font-style:italic;margin-top:10px;line-height:1.6">
-        <b style="font-style:normal;color:var(--t2)">Altman Z-Score nedir?</b> 1968'de geliştirilen iflas tahmin modelidir.
-        <span style="color:var(--gn)">≥2.6 Güvenli</span> · <span style="color:var(--am)">1.1–2.6 Gri</span> · <span style="color:var(--rd)">≤1.1 Tehlikeli</span>
+      <div style="height:4px;background:var(--bgi);border-radius:2px;margin:10px 0 6px;overflow:hidden">
+        <div style="height:100%;width:${zScore!==null?Math.min(100,zScore/4*100):0}%;background:${zRenk};border-radius:2px"></div>
+      </div>
+      <div style="font-size:9px;color:var(--tm);text-align:left;line-height:1.6">
+        <span style="color:var(--gn)">≥2.6 Güvenli</span> · <span style="color:var(--am)">1.1–2.6 Gri</span> · <span style="color:var(--rd)">≤1.1 Tehlikeli</span><br>
+        <i>Edward Altman (1968) — non-manufacturing modeli</i>
       </div>
     </div></div>
-    <div class="card"><div class="card-b" style="padding:16px">
-      <div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px">Kredi Skoru</div>
-      ${(()=>{const good=BDDK_ITEMS.filter(k=>{const r=Object.values(RATIOS).flatMap(c=>c.items).find(x=>x.key===k.key);return r&&k.good(r.calc(d)||0);}).length;const pct=Math.round(good/BDDK_ITEMS.length*100);const col=pct>=70?'var(--gn)':pct>=40?'var(--am)':'var(--rd)';return`<div style="font-size:36px;font-weight:800;color:${col};font-family:'JetBrains Mono',monospace">${pct}%</div><div style="font-size:11px;color:var(--tm);margin-top:4px">${good}/${BDDK_ITEMS.length} BDDK kriteri karşılandı</div>`;})()}
+    <div class="card"><div class="card-b" style="text-align:center;padding:20px">
+      <div style="font-size:9px;color:var(--tm);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">Kredi Notu</div>
+      <div style="font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${kRenk}">${kredinot.split(' — ')[0]}</div>
+      <div style="font-size:12px;color:${kRenk};margin-top:4px;font-weight:600">${kredinot.split(' — ')[1]||''}</div>
+      <div style="height:4px;background:var(--bgi);border-radius:2px;margin:10px 0 6px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${kRenk};border-radius:2px;transition:width .5s"></div>
+      </div>
+      <div style="font-size:10px;color:var(--tm)">${kAcik}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:4px">Ağırlıklı skor: ${pct}/100</div>
     </div></div>
   </div>`;
-
-  // BDDK tablo
-  h+=`<div class="card"><div class="card-h"><div class="card-t">BDDK Kriter Değerlendirmesi</div></div><div class="card-b" style="padding:0;overflow:auto">
-  <table class="ctb"><thead><tr><th>Kriter</th><th>Değer</th><th>İdeal</th><th>Durum</th></tr></thead><tbody>`;
-  BDDK_ITEMS.forEach(k=>{
-    const r=Object.values(RATIOS).flatMap(c=>c.items).find(x=>x.key===k.key);
-    if(!r)return;
-    const v=r.calc(d);
-    const isGood=v!==null&&k.good(v); const isBad=v!==null&&k.bad(v);
-    const col=isGood?'var(--gn)':isBad?'var(--rd)':'var(--am)';
-    const fmt=v===null?'—':r.pct?fP(v):r.cur?fC(v):fR(v);
-    const lbl=isGood?'✓ Uygun':isBad?'✗ Yetersiz':'⚠ Sınırda';
-    h+=`<tr><td>${k.name}</td><td style="font-family:'JetBrains Mono',monospace;color:${col};font-weight:700">${fmt}</td><td style="color:var(--tm)">${k.ideal}</td><td style="color:${col};font-weight:600">${lbl}</td></tr>`;
+  h+=`<div class="card"><div class="card-h"><div class="card-t">🏦 BDDK Kriter Değerlendirmesi</div>
+    <span style="font-size:10px;color:var(--tm)">${p.name||'Dönem'}</span>
+  </div><div class="card-b" style="padding:0;overflow:auto">
+  <table class="ctb"><thead><tr><th>Kriter</th><th>Değer</th><th>İdeal</th><th>Puan</th></tr></thead><tbody>`;
+  sonuclar.forEach(k=>{
+    const pBar=Math.round(k.p/k.agirlik*100);
+    const col=pBar>=80?'var(--gn)':pBar>=55?'var(--am)':'var(--rd)';
+    h+=`<tr><td style="font-weight:500">${k.name}</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:${col};font-weight:700">${k.fmtV}</td>
+      <td style="color:var(--tm);font-size:10px">${k.ideal}</td>
+      <td style="white-space:nowrap">
+        <b style="color:${col}">${k.p}/${k.agirlik}</b>
+        <span style="display:inline-block;width:50px;height:3px;background:var(--bgi);border-radius:2px;margin-left:6px;vertical-align:middle;overflow:hidden">
+          <span style="display:block;height:100%;width:${pBar}%;background:${col};border-radius:2px"></span>
+        </span>
+      </td></tr>`;
   });
-  h+=`</tbody></table></div></div></div>`;
+  h+=`</tbody></table></div></div>
+  <div style="padding:10px 14px;background:var(--acd);border:1px solid rgba(59,130,246,.15);border-radius:8px;font-size:10px;color:var(--tm);line-height:1.7">
+    ℹ️ Faiz karşılama verisi yoksa 10/20 puan varsayılan verilir. Bu analiz yatırım tavsiyesi niteliği taşımaz.
+  </div></div>`;
   el.innerHTML=h;
 }
 
