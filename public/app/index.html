@@ -507,8 +507,8 @@ if(!window.GoTrue)window.GoTrue=module.exports.default||module.exports.GoTrue||m
 --bg0:#080c14;--bg1:#0f1623;--bg2:#161e30;--bg2h:#1c2740;--bgi:#0b1020;
 --brd:#232e48;--brdf:#3b82f6;
 --t1:#e2e8f4;--t2:#8494b2;--tm:#546078;--t3:#2a3347;
---ac:#3b82f6;--acd:var(--acd);
---gn:#10b981;--gnd:var(--gnd);
+--ac:#3b82f6;--acd:rgba(59,130,246,.1);
+--gn:#10b981;--gnd:rgba(16,185,129,.1);
 --rd:#ef4444;--am:#f59e0b;--pu:#8b5cf6;
 --sw:360px;--hh:54px;
 --shadow:0 2px 8px rgba(0,0,0,.3);
@@ -3291,79 +3291,13 @@ function raporOnizle(){
   body=body.replace(/<\/div>\s*$/, dipnot+'</div>');
 
   const win=window.open('','_blank','width=960,height=750');
-  win.document.write(`<!DOCTYPE html><html lang="tr"><head>
-<meta charset="UTF-8">
-<title>Mizan Mind — Yapay Zeka Destekli Finansal Analiz</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;font-size:9pt;line-height:1.5}
-.page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 8mm;padding:14mm 14mm 12mm;box-shadow:0 2px 12px rgba(0,0,0,.08);position:relative;page-break-after:always}
-
-/* KAPAK */
-.cover-page{background:linear-gradient(160deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:16mm}
-.cover-header{display:flex;justify-content:space-between;align-items:center}
-.brand{font-size:18pt;font-weight:800;color:#fff;letter-spacing:-1px}.brand-pro{color:#3b82f6}
-.cover-badge{font-size:7pt;color:#93c5fd;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(147,197,253,.3);padding:3px 8px;border-radius:16px}
-.cover-center{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10mm 0 6mm}
-.cover-eyebrow{font-size:7pt;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:8px}
-.cover-company{font-size:24pt;font-weight:800;line-height:1.1;margin-bottom:6px;color:#f8fafc}
-.cover-sector{font-size:12pt;color:#93c5fd;font-weight:400}
-.cover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border-top:1px solid rgba(255,255,255,.1);padding-top:6mm}
-.cover-cell{}.cell-label{font-size:6pt;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.cell-val{font-size:9pt;font-weight:600;color:#e2e8f0}
-.cover-footer{font-size:6.5pt;color:#475569;margin-top:4mm;padding-top:3mm;border-top:1px solid rgba(255,255,255,.06)}
-.cover-logo{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 10px;display:flex;align-items:center;justify-content:center}
-.footnote{font-size:6.5pt;color:#94a3b8;margin-top:10mm;padding-top:4mm;border-top:1px solid #e2e8f0;line-height:1.6}
-
-/* SAYFA */
-.ph{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:6px;border-bottom:3px solid #1e40af;margin-bottom:14px}
-.ph-title{font-size:14pt;font-weight:700;color:#0f172a}.ph-sub{font-size:7.5pt;color:#94a3b8}
-.pb{}
-
-/* SKOR KUTULARI */
-.scores-row{display:flex;gap:10px;margin-bottom:14px}
-.sbox{flex:1;border-radius:8px;padding:12px 14px;text-align:center;border:1px solid}
-.sbox.good{background:#f0fdf4;border-color:#86efac}.sbox.mid{background:#fffbeb;border-color:#fcd34d}.sbox.bad{background:#fef2f2;border-color:#fca5a5}.sbox.neu{background:#f8fafc;border-color:#e2e8f0}
-.snum{font-size:22pt;font-weight:800;line-height:1}
-.sbox.good .snum{color:#16a34a}.sbox.mid .snum{color:#d97706}.sbox.bad .snum{color:#dc2626}.sbox.neu .snum{color:#64748b}
-.slbl{font-size:7pt;color:#64748b;margin-top:4px}small{font-size:6.5pt}
-
-/* BÖLÜM BAŞLIĞI */
-.stitle{font-size:8pt;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #dbeafe}
-
-/* TABLO — taşma yok, daraltılmış padding */
-.rt{width:100%;border-collapse:collapse;font-size:7.5pt;margin-bottom:12px;table-layout:fixed}
-.rt thead tr{background:#1e3a5f;color:#fff}
-.rt th{padding:5px 6px;font-size:7pt;font-weight:700;text-align:center;overflow:hidden;white-space:nowrap}
-.rt th:first-child{text-align:left;padding-left:8px}
-.rt tbody tr:nth-child(even){background:#f8fafc}
-.rt td{padding:5px 6px;border-bottom:1px solid #e2e8f0;vertical-align:middle;text-align:center;overflow:hidden;white-space:nowrap;font-size:7.5pt}
-.rn{font-weight:500;color:#1e293b;text-align:left!important;white-space:normal!important;word-break:break-word;padding-left:8px!important;font-size:8pt}.rf{display:block;font-size:6pt;color:#94a3b8;font-family:monospace;font-weight:400;margin-top:1px}.ri{font-size:7pt;color:#94a3b8;text-align:center!important}.rs{font-size:7pt;font-weight:700;text-align:center!important}
-.rv{font-weight:700;text-align:center!important;font-size:7.5pt}
-.good{color:#16a34a}.mid{color:#d97706}.bad{color:#dc2626}.neu{color:#64748b}
-.rs.good{color:#16a34a}.rs.mid{color:#d97706}.rs.bad{color:#dc2626}
-
-/* ÖNERİLER */
-.oneriler{background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:10px 12px;margin-top:6px}
-.oneri{font-size:8pt;color:#92400e;padding:4px 0;border-bottom:1px solid rgba(253,230,138,.4)}.oneri:last-child{border:none}
-
-/* AI */
-.ai-box{background:#f8fafc;border-left:4px solid #3b82f6;border-radius:0 6px 6px 0;padding:12px 14px;font-size:9pt;line-height:1.8;color:#334155}
-
-/* PRINT */
-@media print{
-  body{background:#fff}
-  .page{box-shadow:none;margin:0;page-break-after:always}
-  .page:last-child{page-break-after:avoid}
-  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-}
-@page{size:A4;margin:0}
-</style></head><body>
-${body}
-<scr${'ipt'}>setTimeout(()=>{window.focus();window.print()},600)<\/script>
-</body></html>`);
+  const _pdfCSS=`*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;font-size:9pt;line-height:1.5}.page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 8mm;padding:14mm 14mm 12mm;box-shadow:0 2px 12px rgba(0,0,0,.08);position:relative;page-break-after:always}.cover-page{background:linear-gradient(160deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:16mm}.cover-header{display:flex;justify-content:space-between;align-items:center}.brand{font-size:18pt;font-weight:800;color:#fff;letter-spacing:-1px}.cover-badge{font-size:7pt;color:#93c5fd;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(147,197,253,.3);padding:3px 8px;border-radius:16px}.cover-center{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10mm 0 6mm}.cover-eyebrow{font-size:7pt;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:8px}.cover-company{font-size:24pt;font-weight:800;line-height:1.1;margin-bottom:6px;color:#f8fafc}.cover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border-top:1px solid rgba(255,255,255,.1);padding-top:6mm}.cover-cell{}.cell-label{font-size:6pt;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.cell-val{font-size:9pt;font-weight:600;color:#e2e8f0}.cover-footer{font-size:6.5pt;color:#475569;margin-top:4mm;padding-top:3mm;border-top:1px solid rgba(255,255,255,.06)}.cover-logo{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 10px;display:flex;align-items:center;justify-content:center}.footnote{font-size:6.5pt;color:#94a3b8;margin-top:10mm;padding-top:4mm;border-top:1px solid #e2e8f0;line-height:1.6}.ph{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:6px;border-bottom:3px solid #1e40af;margin-bottom:14px}.ph-title{font-size:14pt;font-weight:700;color:#0f172a}.ph-sub{font-size:7.5pt;color:#94a3b8}.scores-row{display:flex;gap:10px;margin-bottom:14px}.sbox{flex:1;border-radius:8px;padding:12px 14px;text-align:center;border:1px solid}.sbox.good{background:#f0fdf4;border-color:#86efac}.sbox.mid{background:#fffbeb;border-color:#fcd34d}.sbox.bad{background:#fef2f2;border-color:#fca5a5}.sbox.neu{background:#f8fafc;border-color:#e2e8f0}.snum{font-size:22pt;font-weight:800;line-height:1}.sbox.good .snum{color:#16a34a}.sbox.mid .snum{color:#d97706}.sbox.bad .snum{color:#dc2626}.sbox.neu .snum{color:#64748b}.slbl{font-size:7pt;color:#64748b;margin-top:4px}small{font-size:6.5pt}.stitle{font-size:8pt;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:1px;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #dbeafe}.rt{width:100%;border-collapse:collapse;font-size:7.5pt;margin-bottom:12px;table-layout:fixed}.rt thead tr{background:#1e3a5f;color:#fff}.rt th{padding:5px 6px;font-size:7pt;font-weight:700;text-align:center;overflow:hidden;white-space:nowrap}.rt th:first-child{text-align:left;padding-left:8px}.rt tbody tr:nth-child(even){background:#f8fafc}.rt td{padding:5px 6px;border-bottom:1px solid #e2e8f0;vertical-align:middle;text-align:center;overflow:hidden;white-space:nowrap;font-size:7.5pt}.rn{font-weight:500;color:#1e293b;text-align:left!important;white-space:normal!important;word-break:break-word;padding-left:8px!important;font-size:8pt}.rf{display:block;font-size:6pt;color:#94a3b8;font-family:monospace;font-weight:400;margin-top:1px}.ri{font-size:7pt;color:#94a3b8;text-align:center!important}.rs{font-size:7pt;font-weight:700;text-align:center!important}.rv{font-weight:700;text-align:center!important;font-size:7.5pt}.good{color:#16a34a}.mid{color:#d97706}.bad{color:#dc2626}.neu{color:#64748b}.rs.good{color:#16a34a}.rs.mid{color:#d97706}.rs.bad{color:#dc2626}.oneriler{background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:10px 12px;margin-top:6px}.oneri{font-size:8pt;color:#92400e;padding:4px 0;border-bottom:1px solid rgba(253,230,138,.4)}.oneri:last-child{border:none}.ai-box{background:#f8fafc;border-left:4px solid #3b82f6;border-radius:0 6px 6px 0;padding:12px 14px;font-size:9pt;line-height:1.8;color:#334155}@media print{body{background:#fff}.page{box-shadow:none;margin:0;page-break-after:always}.page:last-child{page-break-after:avoid}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}@page{size:A4;margin:0}`;
+  const _pdfDoc='<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>Mizan Mind \u2014 Rapor<\/title><style>'+_pdfCSS+'<\/style><\/head><body>'+body+'<scr'+'ipt>setTimeout(()=>{window.focus();window.print()},600)<\/scr'+'ipt><\/body><\/html>';
+  win.document.write(_pdfDoc);
   win.document.close();
   S.ap = _origAP; // aktif dönemi geri yükle
 }
+
 
 // ─── MİZAN PDF RAPORU ────────────────────────────────────────────────────────
 function toggleTheme(){
