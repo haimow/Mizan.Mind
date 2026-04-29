@@ -1,42 +1,54 @@
 // Netlify Function — Google OAuth redirect interceptor
-// GoTrue /authorize'dan Google OAuth URL'sini yakalar,
+// GoTrue /authorize zincirini takip eder, Google OAuth URL'sini bulur,
 // prompt=select_account ekler → kullanıcı hesap seçim ekranını görür.
 
 export default async function handler(req, context) {
   const siteUrl = process.env.URL || 'https://mizanmind.netlify.app';
-  const gotrueUrl = `${siteUrl}/.netlify/identity/authorize?provider=google`;
+  const gotrueStart = `${siteUrl}/.netlify/identity/authorize?provider=google`;
 
   try {
-    // GoTrue'dan redirect URL'sini al ama takip etme
-    const res = await fetch(gotrueUrl, { redirect: 'manual' });
-    const location = res.headers.get('location');
+    // GoTrue birden fazla redirect yapabilir — Google URL'sini bulana kadar takip et
+    let currentUrl = gotrueStart;
+    let googleOAuthUrl = null;
 
-    if (location && location.includes('accounts.google.com')) {
-      // Google OAuth URL'ye prompt=select_account ekle
-      const googleUrl = new URL(location);
-      googleUrl.searchParams.set('prompt', 'select_account');
+    for (let i = 0; i < 6; i++) {
+      const res = await fetch(currentUrl, { redirect: 'manual' });
+      const location = res.headers.get('location');
 
+      if (!location) break;
+
+      if (location.includes('accounts.google.com')) {
+        googleOAuthUrl = location;
+        break;
+      }
+
+      // Göreceli URL'yi mutlak yap
+      currentUrl = location.startsWith('http')
+        ? location
+        : `${siteUrl}${location.startsWith('/') ? '' : '/'}${location}`;
+    }
+
+    if (googleOAuthUrl) {
+      const url = new URL(googleOAuthUrl);
+      url.searchParams.set('prompt', 'select_account');
       return new Response(null, {
         status: 302,
         headers: {
-          'Location': googleUrl.toString(),
+          'Location': url.toString(),
           'Cache-Control': 'no-store, no-cache'
         }
       });
     }
 
-    // GoTrue zaten doğru URL döndürdüyse (fallback)
+    // Fallback: GoTrue URL'ye yönlendir (prompt'u GoTrue'ya bırak)
     return new Response(null, {
       status: 302,
-      headers: {
-        'Location': location || `${gotrueUrl}&prompt=select_account`
-      }
+      headers: { 'Location': `${gotrueStart}&prompt=select_account` }
     });
   } catch {
-    // Hata durumunda standart GoTrue akışına dön
     return new Response(null, {
       status: 302,
-      headers: { 'Location': `${gotrueUrl}&prompt=select_account` }
+      headers: { 'Location': `${gotrueStart}&prompt=select_account` }
     });
   }
 }

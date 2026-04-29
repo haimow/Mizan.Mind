@@ -627,12 +627,9 @@ function rC(){
   document.querySelectorAll('.mtab').forEach(t=>{
     const mt=t.dataset.mt;
     t.classList.toggle('on',mt===S.tab);
-    // Mizan seçili iken detay=aktif, kredi=deaktif
-    // e-Defter sekmesi — sadece yüklüyse aktif
-    const isDisabled=(mt==='edefter'&&!hasEdefter);
-    t.style.opacity=isDisabled?'0.35':'';
-    t.style.cursor=isDisabled?'not-allowed':'';
-    t.title=isDisabled?'Önce e-Defter XML yükleyin':'';
+    t.style.opacity='';
+    t.style.cursor='';
+    t.title='';
   });const el=document.getElementById('cont');if(S.tab==='input')rInp(el);else if(S.tab==='ratios')rRat(el);else if(S.tab==='compare')rCmp(el);else if(S.tab==='detay')rDetay(el);else if(S.tab==='kredi')rKredi(el);else if(S.tab==='rapor')rRapor(el);else if(S.tab==='takvim')rTakvim(el);else if(S.tab==='edefter')rEDefter(el);else if(S.tab==='checklist')rChecklist(el);else rAI(el)}
 function rInp(el){const p=S.periods[S.ap];const logH=p.parseLog.length?`<div class="plog">${p.parseLog.map(l=>`<div class="${l.t}">${l.t==='ok'?'✓':l.t==='warn'?'⚠':l.t==='err'?'✗':'ℹ'} ${l.m}</div>`).join('')}</div>`:'';
 const hasData=p.fileName&&Object.values(p.data).some(v=>v);
@@ -990,13 +987,6 @@ let moCallback=null;
 let pendingFile=null;
 
 function sTab(t){
-  const hasMizan=S.periods.some(p=>p.isMizan&&Object.keys(p.mizanAccts||{}).length>0);
-  const hasBilanco=S.periods.some(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0'));
-  const hasEdefter=!!(S.ed?.dosyaAdi||S.ed?.fisler?.length||S.ed?.ozet?.toplamFis);
-  // Deaktif tab kontrolü
-  if(t==='edefter'&&!hasEdefter){
-    showToast('e-Defter sekmesi için önce e-Defter XML yükleyin','warning',3000);return;
-  }
   S.tab=t;rC();
 }
 function sSTab(t){S.stab=t;rSB()}

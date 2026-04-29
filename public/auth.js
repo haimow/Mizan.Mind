@@ -583,12 +583,12 @@ async function authGoogle(){
   try{
     const gt = getGoTrue();
     const cu = gt.currentUser();
-    // Sunucu oturumunu arka planda kapat (token geçerliyken başlatılmalı)
-    if(cu) cu.logout().catch(()=>{});
-    // Yerel oturumu hemen senkron sil
+    // Hem sunucu hem yerel oturumu tamamen kapat
+    if(cu){
+      try{ await cu.logout(); }catch(_){}
+    }
     localStorage.removeItem('gotrue.user');
-    // Netlify Function: GoTrue redirect'ini yakalar, prompt=select_account ekler
-    // (GoTrue doğrudan bu parametreyi Google'a iletmez)
+    // Netlify Function: GoTrue→Google redirect'ini yakalar, prompt=select_account ekler
     window.location.assign('/api/google-auth');
   }catch(e){
     authShowMsg('Google girişi başlatılamadı: '+e.message,'err');
