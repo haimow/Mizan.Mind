@@ -582,7 +582,9 @@ async function authForgot(){
 function authGoogle(){
   try{
     const url = getGoTrue().loginExternalUrl('google');
-    window.location.href = url;
+    // prompt=select_account her seferinde hesap seçimi ekranı açar
+    const sep = url.includes('?') ? '&' : '?';
+    window.location.href = url + sep + 'prompt=select_account';
   }catch(e){
     authShowMsg('Google girişi başlatılamadı: '+e.message,'err');
   }
