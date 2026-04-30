@@ -140,7 +140,7 @@ function buildEmailHTML(user, urgentItems) {
     </p>
     ${itemsHTML}
     <div style="margin-top:28px;text-align:center">
-      <a href="https://finanaliz.netlify.app/app" 
+      <a href="https://mizanmind.netlify.app/app"
          style="display:inline-block;background:#4f8ef7;color:#fff;text-decoration:none;padding:12px 28px;border-radius:9px;font-size:14px;font-weight:500">
         Takvimi Aç →
       </a>
@@ -190,6 +190,10 @@ export const handler = async () => {
     `${SUPABASE_URL}/rest/v1/analizler?select=user_email&order=user_email`,
     { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
   );
+  if (!usersRes.ok) {
+    console.error('Supabase kullanıcı listesi alınamadı:', await usersRes.text());
+    return { statusCode: 500, body: 'Supabase error' };
+  }
   const usersRaw = await usersRes.json();
 
   // Unique email'leri al (plan kontrolü için users tablosu eklenebilir)

@@ -1,6 +1,8 @@
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://mizanmind.netlify.app';
+
 const handler = async (event) => {
   const headers = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Content-Type": "application/json",
@@ -36,7 +38,7 @@ const handler = async (event) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: body.model || "claude-sonnet-4-20250514",
+        model: body.model || "claude-sonnet-4-6",
         max_tokens: Math.min(body.max_tokens || 2000, 2000),
         messages: body.messages,
       }),

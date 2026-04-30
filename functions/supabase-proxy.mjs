@@ -48,20 +48,10 @@ function isValidUUID(id) {
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 }
 
-// ─── JWT doğrulama — Netlify Identity token ──────────────────────────────────
-async function verifyNetlifyToken(token) {
-  if (!token) return null;
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
-    if (!payload.email || !payload.sub) return null;
-    return { email: payload.email, sub: payload.sub };
-  } catch { return null; }
-}
+// JWT doğrulama Netlify'ın context.clientContext.user üzerinden yapılır —
+// imza doğrulaması Netlify altyapısı tarafından garanti edilir.
 
-const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://dijitalmizan.netlify.app';
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://mizanmind.netlify.app';
 
 const CORS = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
@@ -70,7 +60,7 @@ const CORS = {
   "Content-Type": "application/json",
 };
 
-export const handler = async (event) => {
+export const handler = async (event, context) => {
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers: CORS, body: "" };
   if (event.httpMethod !== "POST") return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: "Method not allowed" }) };
 
@@ -103,16 +93,15 @@ export const handler = async (event) => {
     }
 
     // ─── Diğer tüm işlemler için JWT zorunlu
-    const authHeader = event.headers['authorization'] || event.headers['Authorization'] || '';
-    const token = authHeader.replace(/^Bearer\s+/i, '');
-    const tokenPayload = await verifyNetlifyToken(token);
-
-    if (!tokenPayload) {
+    // Netlify, Authorization header'daki Identity token'ı doğrulayarak
+    // context.clientContext.user'ı doldurur — imza sunucu tarafında garanti edilir.
+    const netlifyUser = context.clientContext?.user;
+    if (!netlifyUser?.email || !netlifyUser?.sub) {
       return { statusCode: 401, headers: CORS, body: JSON.stringify({ error: "Kimlik doğrulama gerekli" }) };
     }
 
-    const verifiedEmail = tokenPayload.email;
-    const verifiedSub = tokenPayload.sub; // Netlify Identity UUID
+    const verifiedEmail = netlifyUser.email;
+    const verifiedSub = netlifyUser.sub; // Netlify Identity UUID
 
     if (!isValidEmail(verifiedEmail)) {
       return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Geçersiz hesap" }) };
@@ -268,12 +257,18 @@ export const handler = async (event) => {
       }
 
       // Orijinal adı DB'de sakla (kullanıcı görmesi için), ama path gizli
-      await sbFetch(
+      const patchRes = await sbFetch(
         `/analizler?id=eq.${analizId}&user_email=eq.${encodeURIComponent(verifiedEmail)}`,
         "PATCH",
         { dosya_path: securePath, dosya_adi: String(dosyaAdi || '').substring(0, 255) },
         { "Prefer": "" }
       );
+      if (!patchRes.ok) {
+        const err = await patchRes.text();
+        console.error('DB patch error after upload:', err);
+        // Storage'a yüklendi ama DB güncellenemedi — hata döndür
+        return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Dosya kaydedildi ama kayıt güncellenemedi" }) };
+      }
 
       return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true }) };
       // NOT: securePath client'a döndürülmüyor — sadece DB'de
