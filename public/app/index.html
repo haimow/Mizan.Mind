@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
@@ -972,10 +972,10 @@ function remP(i){
 
 function openMo(mode,cb,prefill){
   moMode=mode||'add';moCallback=cb||null;
-  document.getElementById('moTitle').textContent=mode==='rename'?'Dönem Adını Düzenle':mode==='fileUpload'?'Dönem Bilgisi':'Yeni Dönem Ekle';
-  document.getElementById('moLabel').textContent=mode==='fileUpload'?'Bu dosya hangi döneme ait?':'Dönem Adı';
+  document.getElementById('moTitle').textContent=mode==='rename'?'Dönem Adını Düzenle':mode==='fileUpload'?'Dönem Bilgisi':mode==='save'?'Analizi Kaydet':'Yeni Dönem Ekle';
+  document.getElementById('moLabel').textContent=mode==='fileUpload'?'Bu dosya hangi döneme ait?':mode==='save'?'Şirket Adı':'Dönem Adı';
   document.getElementById('moInp').value=prefill||'';
-  document.getElementById('moInp').placeholder='ör: 2024, 2023 3.Dönem, 2024 Q2';
+  document.getElementById('moInp').placeholder=mode==='save'?'Şirket adı girin...':'ör: 2024, 2023 3.Dönem, 2024 Q2';
   document.getElementById('moOv').style.display='flex';
   setTimeout(()=>document.getElementById('moInp').focus(),100);
 }
@@ -993,6 +993,9 @@ function moConfirm(){
       processFile(pendingFile);
       pendingFile=null;
     }
+  }
+  else if(moMode==='save'){
+    const name=n;const cb=moCallback;closeMo();if(cb)cb(name);
   }
 }
 function renamePeriod(i){S.ap=i;openMo('rename',null,S.periods[i].name)}
@@ -2295,6 +2298,104 @@ function clearLogo(){
   if(inp)inp.value='';
 }
 
+// ─── DOSYA YÜKLEME ───────────────────────────────────────────────────────────
+async function uploadFile(file, analizId){
+  try{
+    const buf=await file.arrayBuffer();
+    const bytes=new Uint8Array(buf);
+    let bin='';for(let i=0;i<bytes.length;i++)bin+=String.fromCharCode(bytes[i]);
+    const b64=btoa(bin);
+    const ext=file.name.split('.').pop().toLowerCase();
+    const mimeMap={xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',xls:'application/vnd.ms-excel',csv:'text/csv',pdf:'application/pdf'};
+    const mimeType=mimeMap[ext]||'application/octet-stream';
+    const res=await sbCall('uploadFile',{analizId,dosyaAdi:file.name,base64Data:b64,mimeType});
+    if(res&&!res.error)showToast('Dosya buluta yüklendi ✓','success',2500);
+    else console.warn('Dosya yüklenemedi:',res?.error);
+  }catch(e){console.warn('uploadFile hata:',e.message);}
+}
+
+// ─── ANALİZ KAYDET ───────────────────────────────────────────────────────────
+async function saveAnaliz(){
+  if(!S.user){showToast('Kaydetmek için giriş yapın','error');return;}
+  const p=S.periods[S.ap];
+  const hasData=Object.values(p.data).some(v=>v&&v!=='0');
+  if(!hasData){showToast('Kaydedecek veri yok — önce dosya yükleyin veya değer girin','warning');return;}
+  const suggested=p.name||(p.fileName?p.fileName.replace(/\.[^/.]+$/,''):'');
+  openMo('save',async(sirketAdi)=>{
+    const btn=document.getElementById('saveBtn');
+    if(btn){btn.disabled=true;btn.textContent='Kaydediliyor...';}
+    try{
+      const rasyoJson={...p.data};
+      if(p.isMizan){rasyoJson['__isMizan']=1;if(p.mizanAccts)rasyoJson['__accts']=JSON.stringify(p.mizanAccts);}
+      const res=await sbCall('save',{
+        sirketAdi,
+        sektor:S.sektor||'',
+        donem:p.name||'',
+        rasyoJson,
+        aiYorum:S.aiRes||'',
+        dosyaAdi:p.fileName||'',
+      });
+      if(res&&!res.error){
+        showToast('Analiz kaydedildi ✓','success',3000);
+        await loadSavedList();render();
+        if(p.rawFile&&res.id)uploadFile(p.rawFile,res.id);
+      }else{
+        showToast('Kayıt hatası: '+(res?.error||'Bilinmeyen hata'),'error');
+      }
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='💾 Kaydet';}
+    }
+  },suggested);
+}
+
+// ─── AI YORUM OLUŞTUR ────────────────────────────────────────────────────────
+async function runAI(){
+  const p=S.periods[S.ap];
+  const hasData=Object.values(p.data).some(v=>v&&v!=='0');
+  if(!hasData||S.aiLd)return;
+  S.aiLd=true;render();
+  const d=nd(p);
+  const fmtN=v=>v!==null&&v!==undefined?new Intl.NumberFormat('tr-TR',{maximumFractionDigits:2}).format(v)+' ₺':'—';
+  const lines=[];
+  FIELDS.forEach(s=>s.fields.forEach(f=>{const v=d[f.key];if(v!==undefined&&v!==null)lines.push(`${f.label}: ${fmtN(v)}`)}));
+  const ratioLines=[];
+  Object.values(RATIOS).forEach(cat=>cat.items.forEach(r=>{const v=r.calc(d);if(v!==null)ratioLines.push(`${r.name}: ${r.pct?'%'+v.toFixed(2):r.cur?fmtN(v):v.toFixed(2)} (İdeal: ${r.ideal})`)}));
+  const sirket=p.name||(p.fileName?p.fileName.replace(/\.[^/.]+$/,''):'Şirket');
+  const sektor=S.sektor||'genel';
+  const prompt=`Sen deneyimli bir Türk mali müşavirisin. Aşağıdaki finansal verileri analiz et ve profesyonel bir değerlendirme raporu hazırla.
+
+Şirket: ${sirket}
+Dönem: ${p.name||'—'}
+Sektör: ${sektor}
+
+FİNANSAL VERİLER:
+${lines.join('\n')}
+
+HESAPLANAN RASYOLAR:
+${ratioLines.join('\n')}
+
+Lütfen şunları kapsa:
+1. Genel finansal sağlık değerlendirmesi
+2. Likidite durumu
+3. Kârlılık analizi
+4. Borçluluk ve kaldıraç riski
+5. Güçlü yönler ve riskler
+6. Somut iyileştirme önerileri
+
+Yanıtı Türkçe, profesyonel ve anlaşılır yaz. Başlıklar ve madde işaretleri kullan.`;
+  try{
+    const resp=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]})});
+    if(!resp.ok){const err=await resp.json().catch(()=>({}));showToast('AI hatası: '+(err.error||resp.status),'error');}
+    else{
+      const data=await resp.json();
+      const text=data.content?.map(b=>b.text||'').join('')||'';
+      if(text){S.aiRes=text;showToast('AI analizi tamamlandı ✓','success',3000);}
+      else showToast('AI boş yanıt döndürdü','warning');
+    }
+  }catch(e){showToast('Bağlantı hatası: '+e.message,'error');}
+  S.aiLd=false;render();
+}
+
 // ─── GLOBAL BAĞLAMA ──────────────────────────────────────────────────────────
 window.sTab             = sTab;
 window.render           = render;
@@ -2317,6 +2418,8 @@ window.handleLogoUpload = handleLogoUpload;
 window.clearLogo        = clearLogo;
 window.uF               = uF;
 window.initTheme        = initTheme;
+window.saveAnaliz       = saveAnaliz;
+window.runAI            = runAI;
 </script>
 </body>
 </html>
