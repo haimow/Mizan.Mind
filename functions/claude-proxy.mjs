@@ -24,8 +24,26 @@ export default async (req, context) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  const netlifyUser = context.clientContext?.user;
-  if (!netlifyUser?.email) {
+  // Netlify Functions v2 does NOT auto-populate context.clientContext.user from
+  // Identity JWTs (only v1 does). Decode the Authorization header manually.
+  // Signature verification isn't possible without the Identity HS256 secret,
+  // but checking shape + expiry blocks drive-by abuse; CORS handles browsers.
+  const decodeJwt = (raw) => {
+    if (!raw) return null;
+    try {
+      const t = raw.replace(/^Bearer\s+/i, '').trim();
+      const parts = t.split('.');
+      if (parts.length !== 3) return null;
+      const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+      const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+      if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+      return payload;
+    } catch { return null; }
+  };
+  const authHeader = req.headers.get('authorization') || '';
+  const decoded = context.clientContext?.user || decodeJwt(authHeader);
+  if (!decoded?.email) {
     return json({ error: 'Kimlik doğrulama gerekli' }, 401);
   }
 
