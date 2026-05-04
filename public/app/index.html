@@ -44,13 +44,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t1);min-he
 .tgl{width:24px;height:24px;background:var(--bg2);border:1px solid var(--brd);border-radius:5px;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .3s;flex-shrink:0;align-self:center}.tgl:hover{background:var(--ac);color:#fff}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .pbar{display:flex;align-items:center;gap:8px;padding:10px 18px;background:var(--bg1);border-bottom:1px solid var(--brd);flex-wrap:wrap;flex-shrink:0}.plab{font-size:9px;color:var(--tm);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:1.5px;margin-right:4px}
-.chip{padding:4px 12px;border-radius:16px;font-size:11px;font-weight:500;border:1px solid var(--brd);background:transparent;color:var(--t2);cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}.chip:hover{border-color:var(--ac);color:var(--ac)}.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}.chip.add{border-style:dashed;color:var(--tm)}.chip.add:hover{border-color:var(--gn);color:var(--gn)}.chip .x{font-size:8px;opacity:.5;cursor:pointer}.chip .x:hover{opacity:1;color:var(--rd)}
+.chip{padding:4px 12px;border-radius:16px;font-size:11px;font-weight:500;border:1px solid var(--brd);background:transparent;color:var(--t2);cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}.chip:hover{border-color:var(--ac);color:var(--ac)}.chip.on{background:var(--ac);border-color:var(--ac);color:#fff;box-shadow:0 2px 8px rgba(59,130,246,.35)}.chip[data-saved="1"]::before{content:'';display:inline-block;width:5px;height:5px;background:var(--gn);border-radius:50%;margin-right:3px;flex-shrink:0}.chip.add{border-style:dashed;color:var(--tm)}.chip.add:hover{border-color:var(--gn);color:var(--gn)}.chip .x{font-size:8px;opacity:.5;cursor:pointer}.chip .x:hover{opacity:1;color:var(--rd)}
 .mtabs{display:flex;background:var(--bg1);border-bottom:1px solid var(--brd);padding:0 16px;flex-shrink:0;overflow-x:auto;scrollbar-width:none}.mtabs::-webkit-scrollbar{display:none}.mtab{padding:12px 14px;font-size:12px;font-weight:500;color:var(--tm);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;font-family:'Inter',sans-serif;white-space:nowrap;flex-shrink:0}.mtab:hover{color:var(--t1)}.mtab.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
+.mtab-overflow{display:none}.mtabs.more-open .mtab-overflow{display:inline-flex}.mtab-more{border-left:1px solid var(--brd);margin-left:4px;padding-left:16px}
+.subtabs{display:flex;gap:2px;margin-bottom:14px;border-bottom:1px solid var(--brd);padding-bottom:0}.subtab{padding:8px 14px;font-size:12px;font-weight:500;color:var(--tm);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;white-space:nowrap}.subtab:hover{color:var(--t1)}.subtab.on{color:var(--ac);border-bottom-color:var(--ac);font-weight:600}
 .cont{flex:1;overflow-y:auto;padding:18px}
 .card{background:var(--bg2);border:1px solid var(--brd);border-radius:12px;overflow:hidden;margin-bottom:16px;animation:fi .35s ease;transition:border-color .2s}.card-h{padding:14px 16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between}.card-t{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}.card-b{padding:16px}
 .uz{border:2px dashed var(--brd);border-radius:10px;padding:26px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px}.uz:hover{border-color:var(--ac);background:var(--acd)}.uz.dov{border-color:var(--gn);background:var(--gnd)}.uz-i{font-size:26px;margin-bottom:4px}.uz-t{font-size:12px;color:var(--t2)}.uz-h{font-size:10px;color:var(--tm);margin-top:2px}
-.st{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ac);font-family:'JetBrains Mono',monospace;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--brd)}.st:first-child{margin-top:0}
-.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}.igr{display:flex;flex-direction:column;gap:2px}.igl{font-size:10px;color:var(--t2);font-weight:500}.inp{background:var(--bgi);border:1px solid var(--brd);border-radius:6px;padding:7px 10px;color:var(--t1);font-size:12px;font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acd)}.inp::placeholder{color:var(--tm);font-size:10px}.inp.filled{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.04)}
+.st{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ac);font-family:'JetBrains Mono',monospace;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--brd);cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}.st:first-child{margin-top:0}.st:hover{color:var(--t1)}
+.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.igr{display:flex;flex-direction:column;gap:3px}.igl{font-size:11px;color:var(--t2);font-weight:500}.inp{background:var(--bgi);border:1px solid var(--brd);border-radius:6px;padding:8px 10px;color:var(--t1);font-size:13px;font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}.inp:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--acd)}.inp::placeholder{color:var(--tm);font-size:11px}.inp.filled{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.04)}
 .rcat{margin-bottom:20px}.rcat-h{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
 .rc{background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:11px;border-left:3px solid var(--tm);transition:all .2s}.rc:hover{background:var(--bg2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}.rc-n{font-size:10px;color:var(--t2);font-weight:500;margin-bottom:4px}.rc-v{font-size:19px;font-weight:700;font-family:'JetBrains Mono',monospace}.rc-s{font-size:9px;color:var(--tm);margin-top:3px;font-family:'JetBrains Mono',monospace}
 .ctb{width:100%;border-collapse:separate;border-spacing:0;font-size:11px}.ctb th,.ctb td{padding:8px 11px;text-align:right;border-bottom:1px solid var(--brd)}.ctb th{background:var(--bgi);color:var(--tm);font-size:9px;text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace;position:sticky;top:0;z-index:2}.ctb th:first-child,.ctb td:first-child{text-align:left;color:var(--t1);font-weight:500}.ctb td{font-family:'JetBrains Mono',monospace;color:var(--t2)}.ctb tr:hover td{background:var(--acd)}.cp{color:var(--gn)!important}.cn{color:var(--rd)!important}
@@ -61,8 +63,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t1);min-he
 .plog{margin-top:10px;padding:10px;background:var(--bgi);border:1px solid var(--brd);border-radius:6px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--t2);max-height:150px;overflow-y:auto;line-height:1.6}.plog .ok{color:var(--gn)}.plog .warn{color:var(--am)}.plog .err{color:var(--rd)}.plog .info{color:var(--ac)}
 .score-c{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px}.score-ring{width:90px;height:90px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;border:4px solid var(--brd);color:var(--t1)}.score-l{font-size:10px;color:var(--tm);text-transform:uppercase;letter-spacing:1px;font-family:'JetBrains Mono',monospace}
 @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-@keyframes blink{0%,100%{border-color:var(--rd);background:rgba(239,68,68,.08)}50%{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.02)}}
-.inp.missing{animation:blink 1.5s ease-in-out infinite;border-color:var(--rd)}
+.inp.missing{border-color:var(--rd);background:rgba(239,68,68,.04)}
 .loading-overlay{position:fixed;inset:0;background:var(--mo-bg);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
 .toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast{padding:12px 18px;border-radius:10px;font-size:12px;font-weight:500;color:#fff;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:toastIn .25s ease;pointer-events:auto;max-width:340px;line-height:1.4}
@@ -208,7 +209,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t1);min-he
 <div class="sector-bar" style="position:relative">
 <button class="tgl" id="tglBtn" onclick="tglSB()" style="margin-right:6px;flex-shrink:0">◀</button>
   <span class="sector-lbl">Sektör:</span>
-  <select class="sector-sel" id="sektorSel" onchange="S.sektor=this.value;rRatIfActive();updateSectorBadge()">
+  <select class="sector-sel" id="sektorSel" onchange="S.periods[S.ap].sektor=this.value;rRatIfActive();updateSectorBadge()">
     <option value="">— Sektör Seçin —</option>
     <option value="genel">🏢 Genel</option>
     <option value="insaat">🏗️ İnşaat</option>
@@ -223,10 +224,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t1);min-he
   </select>
   <span class="sector-badge" id="sektorBadge" style="display:none"></span>
   <div style="flex:1"></div>
-  <button class="btn" id="saveBtn" onclick="saveAnaliz()" style="font-size:11px" title="Bu analizi kaydet">💾 Kaydet</button>
 </div>
 <div class="pbar" id="pBar"></div>
-<div class="mtabs"><button class="mtab on" data-mt="input" onclick="sTab('input')">📥 Veri Girişi</button><button class="mtab" data-mt="ratios" onclick="sTab('ratios')">📊 Rasyolar</button><button class="mtab" data-mt="compare" onclick="sTab('compare')">⚖️ Karşılaştırma</button><button class="mtab" data-mt="ai" onclick="sTab('ai')">🤖 Uzman Yorum</button><button class="mtab" data-mt="detay" onclick="sTab('detay')">🔍 Detay Mizan</button><button class="mtab" data-mt="kredi" onclick="sTab('kredi')">🏦 Kredi Analizi</button><button class="mtab" data-mt="rapor" onclick="sTab('rapor')">📄 PDF Rapor</button><button class="mtab" data-mt="takvim" onclick="sTab('takvim')">📅 Takvim</button><button class="mtab" data-mt="checklist" onclick="sTab('checklist')">✅ Checklist</button></div>
+<div class="mtabs" id="mainTabs"><button class="mtab on" data-mt="input" onclick="sTab('input')">📥 Veri Girişi</button><button class="mtab" data-mt="analiz" onclick="sTab('ratios')">📊 Analiz</button><button class="mtab" data-mt="ai" onclick="sTab('ai')">🤖 Uzman Yorum</button><button class="mtab" data-mt="kredi" onclick="sTab('kredi')">🏦 Kredi Analizi</button><button class="mtab" data-mt="rapor" onclick="sTab('rapor')">📄 PDF Rapor</button><button class="mtab mtab-more" data-mt="more" onclick="tglMoreTabs()">⋯ Daha</button><button class="mtab mtab-overflow" data-mt="detay" onclick="sTab('detay')">🔍 Detay Mizan</button><button class="mtab mtab-overflow" data-mt="takvim" onclick="sTab('takvim')">📅 Takvim</button><button class="mtab mtab-overflow" data-mt="checklist" onclick="sTab('checklist')">✅ Checklist</button></div>
 <div class="cont" id="cont"></div>
 </div>
 </div>
@@ -306,8 +306,11 @@ valuation:{label:"Değerleme",icon:"🏷️",items:[
 ]},
 };
 
+// HTML ESCAPE HELPER
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
 // STATE
-const S={periods:[{name:"",data:{},fileName:null,parseLog:[]}],ap:0,tab:"input",stab:"formulas",sbo:true,ecat:null,aiRes:"",aiLd:false,sektor:"",user:null,savedList:[],logoDataUrl:null,cl:{aktifListe:'kurumlar',kaydedilen:{}}};
+const S={periods:[{name:"",data:{},fileName:null,parseLog:[],sektor:"",aiRes:""}],ap:0,tab:"input",stab:"formulas",sbo:true,ecat:null,aiLd:false,dirty:false,openSections:null,user:null,savedList:[],logoDataUrl:null,cl:{aktifListe:'kurumlar',kaydedilen:{}}};
 function eD(){const d={};FIELDS.forEach(s=>s.fields.forEach(f=>d[f.key]=""));return d}
 S.periods[0].data=eD();
 
@@ -451,7 +454,7 @@ async function parsePDFAI(file){
   log.push({t:'info',m:`${(bytes.length/1024).toFixed(0)} KB → API'ye gönderiliyor...`});
   const fL=FIELDS.flatMap(s=>s.fields).map(f=>`"${f.key}":"${f.label}"`).join(',\n');
   try{
-    const resp=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:`Bu PDF bir Türk şirketinin finansal belgesidir. CARİ DÖNEM verilerini çıkar. Enflasyon düzeltmesi SONRASI sütun varsa onu tercih et.\n\nSADECE JSON:\n{${fL}}\n\nKRİTİK KURALLAR:\n- Tutarları BİNLİK AYIRICI OLMADAN düz sayı olarak yaz. Örnek: 495493963.13 (nokta ondalık ayracı)\n- 495.493.963,13 YAZMA, 495493963.13 YAZ\n- Giderleri pozitif yaz\n- Dipnottaki amortisman bilgisini depreciation alanına yaz\n- Bulunamayan alanları "" yap`}]}]})});
+    const resp=await claudeFetch({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:`Bu PDF bir Türk şirketinin finansal belgesidir. CARİ DÖNEM verilerini çıkar. Enflasyon düzeltmesi SONRASI sütun varsa onu tercih et.\n\nSADECE JSON:\n{${fL}}\n\nKRİTİK KURALLAR:\n- Tutarları BİNLİK AYIRICI OLMADAN düz sayı olarak yaz. Örnek: 495493963.13 (nokta ondalık ayracı)\n- 495.493.963,13 YAZMA, 495493963.13 YAZ\n- Giderleri pozitif yaz\n- Dipnottaki amortisman bilgisini depreciation alanına yaz\n- Bulunamayan alanları "" yap`}]}]});
     if(!resp.ok){log.push({t:'err',m:`Sunucu hatası: ${resp.status}`});return{data:eD(),log}}
     const text=await resp.text();
     let res;try{res=JSON.parse(text)}catch(e){log.push({t:'err',m:'API yanıtı okunamadı'});return{data:eD(),log}}
@@ -469,7 +472,7 @@ async function parsePDFAI(file){
 }
 async function parseExcelAI(rawText){
   const log=[{t:'info',m:'🤖 AI ile parse ediliyor...'}];const fL=FIELDS.flatMap(s=>s.fields).map(f=>`"${f.key}":"${f.label}"`).join(',\n');
-  try{const resp=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:`Türk şirketi finansal tablosu:\n${rawText}\n\nSADECE JSON:\n{${fL}}\nTutarlar düz sayı string.`}]})});
+  try{const resp=await claudeFetch({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:`Türk şirketi finansal tablosu:\n${rawText}\n\nSADECE JSON:\n{${fL}}\nTutarlar düz sayı string.`}]});
   if(!resp.ok){log.push({t:'err',m:`Sunucu hatası: ${resp.status}`});return{data:eD(),log}}
   const text=await resp.text();let res;try{res=JSON.parse(text)}catch(e){log.push({t:'err',m:'API yanıtı okunamadı'});return{data:eD(),log}}
   const txt2=res.content?.map(b=>b.text||'').join('')||'';const jm2=txt2.match(/\{[\s\S]*\}/);
@@ -515,10 +518,11 @@ function rPB(){
   // Normal dönemler
   S.periods.forEach((p,i)=>{
     const label=p.name||'Dönem '+(i+1);
-    h+=`<button class="chip ${i===S.ap?'on':''}" onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span></button>`;
+    h+=`<button class="chip ${i===S.ap?'on':''}" ${p.saved?'data-saved="1"':''} onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span></button>`;
   });
 
   h+='<button class="chip add" onclick="openMo(\'add\')">+ Dönem Ekle</button>';
+  h+='<button class="btn btn-p" id="saveBtn" onclick="saveAnaliz()" style="font-size:11px;margin-left:auto;flex-shrink:0" title="Bu analizi kaydet">💾 Kaydet</button>';
   b.innerHTML=h;
 }
 function rSB(){const el=document.getElementById('sbCont');document.querySelectorAll('.sb-tab').forEach(t=>t.classList.toggle('on',t.dataset.st===S.stab));if(S.stab==='formulas'){let h='';Object.entries(RATIOS).forEach(([ck,cat])=>{const op=S.ecat===ck;h+=`<div class="sb-cat"><div class="sb-cat-h ${op?'open':''}" onclick="tCat('${ck}')"><span>${cat.icon}</span> ${cat.label}<span class="arr">▶</span></div>`;if(op)cat.items.forEach(r=>{h+=`<div class="fc"><div class="fc-n">${r.name}</div><div class="fc-f">${r.formula}</div><div class="fc-i">İdeal: ${r.ideal}</div></div>`});h+=`</div>`});el.innerHTML=h}else if(S.stab==='charts')rSBC(el);else rSBSaved(el)}
@@ -529,12 +533,12 @@ function rSBSaved(el){
   S.savedList.forEach(item=>{
     const d=new Date(item.olusturma_tarihi);
     const tarih=d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const sektor=item.sektor?` · ${SEKTOR_LABELS[item.sektor]||item.sektor}`:'';
-    const dosyaBtn=item.dosya_path?`<button class="saved-del" onclick="event.stopPropagation();downloadSaved('${item.id}')" title="Dosyayı İndir" style="color:var(--ac)">⬇</button>`:'';
+    const sektor=item.sektor?` · ${esc(SEKTOR_LABELS[item.sektor]||item.sektor)}`:'';
+    const dosyaBtn=item.has_file?`<button class="saved-del" onclick="event.stopPropagation();downloadSaved('${item.id}')" title="Dosyayı İndir" style="color:var(--ac)">⬇</button>`:'';
     h+=`<div class="saved-item" onclick="loadSaved('${item.id}')">
-      <div class="saved-dot" style="${item.dosya_path?'background:var(--gn)':''}"></div>
+      <div class="saved-dot" style="${item.has_file?'background:var(--gn)':''}"></div>
       <div class="saved-info">
-        <div class="saved-name">${item.sirket_adi||item.donem||'Adsız Analiz'}</div>
+        <div class="saved-name">${esc(item.sirket_adi||item.donem||'Adsız Analiz')}</div>
         <div class="saved-meta">${tarih}${sektor}${item.dosya_adi?' 📎':''}</div>
       </div>
       ${dosyaBtn}
@@ -610,16 +614,25 @@ if(c3&&activePeriod){
 }
 }
 function rC(){
-  const hasMizan=S.periods.some(p=>p.isMizan&&Object.keys(p.mizanAccts||{}).length>0);
-  const hasBilanco=S.periods.some(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0'));
-
+  const isAnaliz=S.tab==='ratios'||S.tab==='compare';
+  const isOverflow=S.tab==='detay'||S.tab==='takvim'||S.tab==='checklist';
   document.querySelectorAll('.mtab').forEach(t=>{
     const mt=t.dataset.mt;
-    t.classList.toggle('on',mt===S.tab);
-    t.style.opacity='';
-    t.style.cursor='';
-    t.title='';
-  });const el=document.getElementById('cont');if(S.tab==='input')rInp(el);else if(S.tab==='ratios')rRat(el);else if(S.tab==='compare')rCmp(el);else if(S.tab==='detay')rDetay(el);else if(S.tab==='kredi')rKredi(el);else if(S.tab==='rapor')rRapor(el);else if(S.tab==='takvim')rTakvim(el);else if(S.tab==='checklist')rChecklist(el);else rAI(el)}
+    const on=mt==='analiz'?isAnaliz:mt==='more'?isOverflow:mt===S.tab;
+    t.classList.toggle('on',on);
+    t.style.opacity='';t.style.cursor='';t.title='';
+  });
+  const mainTabs=document.getElementById('mainTabs');
+  if(mainTabs)mainTabs.classList.toggle('more-open',isOverflow);
+  const el=document.getElementById('cont');
+  if(S.tab==='input'){rInp(el);}
+  else if(isAnaliz){
+    el.innerHTML=`<div class="subtabs"><button class="subtab ${S.tab==='ratios'?'on':''}" onclick="sTab('ratios')">📊 Rasyolar</button><button class="subtab ${S.tab==='compare'?'on':''}" onclick="sTab('compare')">⚖️ Karşılaştırma</button></div><div id="subCont"></div>`;
+    if(S.tab==='ratios')rRat(document.getElementById('subCont'));else rCmp(document.getElementById('subCont'));
+  }
+  else if(S.tab==='detay')rDetay(el);else if(S.tab==='kredi')rKredi(el);else if(S.tab==='rapor')rRapor(el);else if(S.tab==='takvim')rTakvim(el);else if(S.tab==='checklist')rChecklist(el);else rAI(el);
+}
+function tglMoreTabs(){document.getElementById('mainTabs')?.classList.toggle('more-open');}
 function rInp(el){const p=S.periods[S.ap];const logH=p.parseLog.length?`<div class="plog">${p.parseLog.map(l=>`<div class="${l.t}">${l.t==='ok'?'✓':l.t==='warn'?'⚠':l.t==='err'?'✗':'ℹ'} ${l.m}</div>`).join('')}</div>`:'';
 const hasData=p.fileName&&Object.values(p.data).some(v=>v);
 const guidance=hasData?`<div style="margin-top:10px;padding:10px 14px;background:var(--acd);border:1px solid rgba(var(--ac-rgb,59 130 246)/.2);border-radius:6px;font-size:11px;color:var(--ac)">💡 Farklı bir dönem analiz etmek için yukarıdaki <strong>"+ Dönem Ekle"</strong> butonunu kullanın. Dönem adını çift tıklayarak düzenleyebilirsiniz.</div>`:'';
@@ -761,7 +774,16 @@ if(p.isMizan){
 }else{
   // Normal manuel giriş
   h+=`<div class="card"><div class="card-h"><div class="card-t">✏️ Manuel Giriş${p.name?' — '+p.name:''}</div><button class="btn btn-g" onclick="sTab('ratios')">Rasyoları Hesapla →</button></div><div class="card-b">`;
-  FIELDS.forEach(s=>{h+=`<div class="st">${s.section}</div><div class="ig">`;s.fields.forEach(f=>{const v=p.data[f.key]||'';const n=parseTR(v);const hasVal=!isNaN(n)&&n!==0&&v!=='';const disp=hasVal?fC(n):'';const isMissing=p.missingFields&&p.missingFields.includes(f.key)&&p.fileName;h+=`<div class="igr"><label class="igl">${f.label} ${disp?`<span style="color:var(--gn);font-size:9px">${disp}</span>`:isMissing?`<span style="color:var(--rd);font-size:9px">⚠ Okunamadı</span>`:''}</label><input class="inp ${hasVal?'filled':''} ${isMissing?'missing':''}" value="${hasVal?fmtTR(n):''}" placeholder="0,00 ₺" onchange="uF('${f.key}',this.value)" oninput="uF('${f.key}',this.value)"></div>`});h+=`</div>`});
+  if(!S.openSections){S.openSections={};S.openSections[FIELDS[0].section]=true;}
+  FIELDS.forEach((s,si)=>{
+    const isOpen=!!S.openSections[s.section];
+    const hasMissing=s.fields.some(f=>p.missingFields&&p.missingFields.includes(f.key)&&p.fileName);
+    const filledCount=s.fields.filter(f=>{const n=parseTR(p.data[f.key]||'');return!isNaN(n)&&n!==0}).length;
+    const badge=filledCount?`<span style="font-size:9px;font-family:'Inter',sans-serif;font-weight:400;text-transform:none;letter-spacing:0;color:var(--gn);margin-left:6px">${filledCount}/${s.fields.length}</span>`:'';
+    const warn=hasMissing?`<span style="font-size:9px;color:var(--rd);margin-left:4px">⚠</span>`:'';
+    h+=`<div class="st" onclick="toggleSection('${s.section.replace(/'/g,"\\'")}')"><span>${s.section}${badge}${warn}</span><span style="font-size:10px;transition:transform .2s;display:inline-block;transform:rotate(${isOpen?'90':'0'}deg)">▶</span></div>`;
+    if(isOpen){h+=`<div class="ig">`;s.fields.forEach(f=>{const v=p.data[f.key]||'';const n=parseTR(v);const hasVal=!isNaN(n)&&n!==0&&v!=='';const disp=hasVal?fC(n):'';const isMissing=p.missingFields&&p.missingFields.includes(f.key)&&p.fileName;h+=`<div class="igr"><label class="igl">${f.label} ${disp?`<span style="color:var(--gn);font-size:9px">${disp}</span>`:isMissing?`<span style="color:var(--rd);font-size:9px">⚠ Okunamadı</span>`:''}</label><input class="inp ${hasVal?'filled':''} ${isMissing?'missing':''}" value="${hasVal?fmtTR(n):''}" placeholder="0,00 ₺" onchange="uF('${f.key}',this.value)" oninput="uF('${f.key}',this.value)"></div>`});h+=`</div>`;}
+  });
   h+=`</div></div>`;
 }
 
@@ -939,9 +961,9 @@ function rCmp(el){
   h+='</div>';
   el.innerHTML=h;
 }
-function rAI(el){const has=S.periods.some(p=>Object.values(p.data).some(v=>v));let body='';
+function rAI(el){const has=S.periods.some(p=>Object.values(p.data).some(v=>v));const ap=S.periods[S.ap];let body='';
 if(S.aiLd)body=`<div class="aip-ld"><div class="dp"><span></span><span></span><span></span></div> Finansal veriler analiz ediliyor...</div>`;
-else if(S.aiRes)body=`<div class="aip-b">${S.aiRes}</div>`;
+else if(ap.aiRes)body=`<div class="aip-b">${ap.aiRes.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>`;
 else body=`<div class="aip-ph">${has?'"Analiz Oluştur" butonuna tıklayın.':'Önce veri girin.'}</div>`;
 el.innerHTML=`<div class="aip"><div class="aip-h"><div class="aip-t"><span style="font-size:15px">🤖</span> AI Uzman Finansal Değerlendirme</div><button class="btn btn-p" onclick="runAI()" ${S.aiLd||!has?'disabled':''}>${S.aiLd?'Analiz ediliyor...':'Analiz Oluştur'}</button></div>${body}</div>`}
 
@@ -953,15 +975,20 @@ let pendingFile=null;
 function sTab(t){
   S.tab=t;rC();
 }
+function toggleSection(name){
+  if(!S.openSections)S.openSections={};
+  S.openSections[name]=!S.openSections[name];
+  rC();
+}
 function sSTab(t){S.stab=t;rSB()}
 function tglSB(){S.sbo=!S.sbo;document.getElementById('sidebar').classList.toggle('collapsed',!S.sbo);uT()}
 function tCat(c){S.ecat=S.ecat===c?null:c;rSB()}
-function setAP(i){S.ap=i;render()}
+function setAP(i){S.ap=i;const sel=document.getElementById('sektorSel');if(sel)sel.value=S.periods[i].sektor||'';updateSectorBadge();render()}
 function remP(i){
   if(S.periods.length===1){
     // Tek dönemde sıfırla
     if(!confirm('Bu dönemi sıfırlamak istiyor musunuz?'))return;
-    S.periods[0]={name:'',data:eD(),fileName:null,parseLog:[],missingFields:[]};
+    S.periods[0]={name:'',data:eD(),fileName:null,parseLog:[],missingFields:[],sektor:'',aiRes:''};
     S.ap=0;
   } else {
     S.periods.splice(i,1);
@@ -983,7 +1010,7 @@ function closeMo(){document.getElementById('moOv').style.display='none';document
 function moConfirm(){
   const n=document.getElementById('moInp').value.trim();
   if(!n)return;
-  if(moMode==='add'){S.periods.push({name:n,data:eD(),fileName:null,parseLog:[]});S.ap=S.periods.length-1;closeMo();render()}
+  if(moMode==='add'){S.periods.push({name:n,data:eD(),fileName:null,parseLog:[],sektor:'',aiRes:''});S.ap=S.periods.length-1;closeMo();render()}
   else if(moMode==='rename'){S.periods[S.ap].name=n;closeMo();render()}
   else if(moMode==='fileUpload'){
     S.periods[S.ap].name=n;
@@ -1000,7 +1027,7 @@ function moConfirm(){
 }
 function renamePeriod(i){S.ap=i;openMo('rename',null,S.periods[i].name)}
 
-function uF(k,v){S.periods[S.ap].data[k]=v;if(S.stab==='charts')rSB()}
+function uF(k,v){S.dirty=true;S.periods[S.ap].saved=false;S.periods[S.ap].data[k]=v;if(S.stab==='charts')rSB()}
 function showToast(msg, type='info', duration=4000){
   const container=document.getElementById('toastContainer');
   if(!container)return;
@@ -1085,7 +1112,7 @@ if(filled===0){
     if(tab){tab.style.background='var(--acd)';tab.style.color='var(--ac)';setTimeout(()=>{tab.style.background='';tab.style.color='';},1200);}
   },300);
 }
-render();}
+if(filled>0)S.dirty=true;render();}
 else if(ext==='pdf'){const res=await parsePDFAI(file);p.parseLog=[...p.parseLog,...res.log];mergeD(p,res.data);
 p.missingFields=getMissing(p);
 const filled=FIELDS.flatMap(s=>s.fields).filter(f=>p.data[f.key]&&p.data[f.key]!=='0').length;
@@ -1110,7 +1137,7 @@ if(filled===0){
     if(tab){tab.style.background='var(--acd)';tab.style.color='var(--ac)';setTimeout(()=>{tab.style.background='';tab.style.color='';},1200);}
   },300);
 }
-render();}
+if(filled>0)S.dirty=true;render();}
 else{hideLoading();p.parseLog.push({t:'err',m:'Desteklenmeyen format: '+ext});render()}}
 
 // ─── SEKTÖR BENCHMARK'LARI ──────────────────────────────────────────────────
@@ -1129,7 +1156,7 @@ const SEKTOR_BM={
   enerji:{cr:{iyi:[1.2,99],orta:[0.8,1.2],kotu:[0,0.8]},at:{iyi:[0.5,99],orta:[0.3,0.5],kotu:[0,0.3]},cashr:{iyi:[0.2,99],orta:[0.1,0.2],kotu:[0,0.1]},gm:{iyi:[35,99],orta:[18,35],kotu:[0,18]},om:{iyi:[22,99],orta:[10,22],kotu:[-99,10]},nm:{iyi:[14,99],orta:[5,14],kotu:[-99,5]},em:{iyi:[40,99],orta:[22,40],kotu:[-99,22]},roe:{iyi:[12,99],orta:[5,12],kotu:[-99,5]},roa:{iyi:[4,99],orta:[1.5,4],kotu:[-99,1.5]},dr:{iyi:[0,0.6],orta:[0.6,0.78],kotu:[0.78,99]},de:{iyi:[0,1.5],orta:[1.5,2.8],kotu:[2.8,99]},ic:{iyi:[2.5,99],orta:[1.2,2.5],kotu:[0,1.2]}},
 };
 
-function getBM(rKey){const s=S.sektor&&SEKTOR_BM[S.sektor]?S.sektor:'genel';return SEKTOR_BM[s][rKey]||SEKTOR_BM.genel[rKey]||null}
+function getBM(rKey){const cur=S.periods[S.ap]?.sektor||'';const s=cur&&SEKTOR_BM[cur]?cur:'genel';return SEKTOR_BM[s][rKey]||SEKTOR_BM.genel[rKey]||null}
 
 function rColS(k,v){
   if(v==null||isNaN(v))return"var(--tm)";
@@ -1144,9 +1171,8 @@ function rColS(k,v){
 function updateSectorBadge(){
   const b=document.getElementById('sektorBadge');
   if(!b)return;
-  if(S.sektor&&S.sektor!==''){b.textContent=SEKTOR_LABELS[S.sektor]||S.sektor;b.style.display='inline-block'}
+  const _s=S.periods[S.ap]?.sektor||'';if(_s){b.textContent=SEKTOR_LABELS[_s]||_s;b.style.display='inline-block'}
   else b.style.display='none';
-  if(S.tab==='ratios')rC();
 }
 
 function rRatIfActive(){if(S.tab==='ratios')rC()}
@@ -1173,7 +1199,7 @@ let _authMode = 'login';
 function getGoTrue(){
   if(_goTrue) return _goTrue;
   _goTrue = new GoTrue({
-    APIUrl: 'https://mizanmind.netlify.app/.netlify/identity',
+    APIUrl: window.location.origin + '/.netlify/identity',
     setCookie: true,
   });
   return _goTrue;
@@ -1708,16 +1734,24 @@ function rRat(el){
     <div>
       <div style="font-size:13px;font-weight:600;color:var(--t1)">${pct>=70?'İyi':pct>=40?'Gelişime Açık':'Zayıf'}</div>
       <div style="font-size:11px;color:var(--tm)">${goodC}/${total} rasyo hedef aralığında</div>
-      <div style="margin-top:8px;height:6px;width:200px;background:var(--bgi);border-radius:3px;overflow:hidden">
+      <div style="margin-top:8px;height:6px;width:100%;max-width:280px;background:var(--bgi);border-radius:3px;overflow:hidden">
         <div style="height:100%;width:${pct}%;background:${sColor};border-radius:3px;transition:width .5s"></div>
       </div>
     </div>
   </div></div>`;
   // Rasyo kategorileri
+  const _colW={'var(--rd)':0,'var(--am)':1,'var(--gn)':2};
   Object.entries(RATIOS).forEach(([,cat])=>{
     const items=cat.items.filter(r=>r.calc(d)!==null);
     if(!items.length)return;
-    h+=`<div class="card"><div class="card-h"><div class="card-t">${cat.icon} ${cat.label}</div></div><div class="card-b" style="padding:0">
+    items.sort((a,b)=>(_colW[rColS(a.key,a.calc(d))]??2)-(_colW[rColS(b.key,b.calc(d))]??2));
+    const badC=items.filter(r=>rColS(r.key,r.calc(d))==='var(--rd)').length;
+    const midC=items.filter(r=>rColS(r.key,r.calc(d))==='var(--am)').length;
+    const goodC=items.length-badC-midC;
+    const summary=(badC?`<span style="color:var(--rd);font-weight:600">${badC} zayıf</span> · `:'')
+      +(midC?`<span style="color:var(--am);font-weight:600">${midC} orta</span> · `:'')
+      +`<span style="color:var(--gn);font-weight:600">${goodC} iyi</span>`;
+    h+=`<div class="card"><div class="card-h"><div class="card-t">${cat.icon} ${cat.label}</div><div style="font-size:11px">${summary}</div></div><div class="card-b" style="padding:0">
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">`;
     items.forEach(r=>{
       const v=r.calc(d); const col=rColS(r.key,v);
@@ -2008,7 +2042,7 @@ function rRapor(el){
       ${[['rpr_ratios',hasRasyo,'📊 Finansal Rasyolar',''],
          ['rpr_kredi',hasKredi,'🏦 Kredi Analizi',''],
          ['rpr_compare',hasCmp,'⚖️ Dönemsel Karşılaştırma','2+ dönem gerekli'],
-         ['rpr_ai',!!S.aiRes,'🤖 AI Uzman Yorum','Önce AI yorum oluşturun']
+         ['rpr_ai',!!aktifP.aiRes,'🤖 AI Uzman Yorum','Önce AI yorum oluşturun']
         ].map(([id,avail,lbl,hint])=>`<label style="display:flex;align-items:center;gap:8px;background:var(--bgi);border:1px solid var(--brd);border-radius:7px;padding:10px 12px;cursor:${avail?'pointer':'default'};opacity:${avail?1:.4}">
         <input type="checkbox" id="${id}" ${avail?'checked':''} ${avail?'':'disabled'} style="accent-color:var(--ac);width:14px;height:14px">
         <span style="font-size:12px">${lbl}</span>
@@ -2050,17 +2084,23 @@ async function sbCall(action, data={}){
     const cu = getGoTrue ? getGoTrue().currentUser() : null;
     if(cu) token = await cu.jwt();
   }catch(e){}
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(),15000);
   try{
     const r = await fetch('/api/supabase',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body: JSON.stringify({action, data})
+      body: JSON.stringify({action, data}),
+      signal: ctrl.signal
     });
+    clearTimeout(tid);
     if(!r.ok) return {error:'HTTP '+r.status};
     return r.json();
   }catch(e){
-    showToast('Bağlantı hatası: '+e.message,'error');
-    return {error:e.message};
+    clearTimeout(tid);
+    const msg=e.name==='AbortError'?'İstek zaman aşımına uğradı (15s)':e.message;
+    showToast('Bağlantı hatası: '+msg,'error');
+    return {error:msg};
   }
 }
 
@@ -2090,7 +2130,7 @@ function loadSaved(id){
   // Normal analiz
   const mevcutDolu = S.periods[S.ap]&&Object.values(S.periods[S.ap].data).some(v=>v&&v!=='0');
   if(mevcutDolu){
-    S.periods.push({name:donemAdi,data:eD(),fileName:null,parseLog:[],missingFields:[]});
+    S.periods.push({name:donemAdi,data:eD(),fileName:null,parseLog:[],missingFields:[],sektor:'',aiRes:''});
     S.ap = S.periods.length-1;
   } else {
     S.periods[S.ap].name = donemAdi;
@@ -2106,8 +2146,8 @@ function loadSaved(id){
       }
     });
   }
-  if(item.sektor){S.sektor=item.sektor;const sel=document.getElementById('sektorSel');if(sel)sel.value=item.sektor;updateSectorBadge();}
-  S.aiRes = item.ai_yorum||'';
+  S.periods[idx].sektor = item.sektor||'';
+  S.periods[idx].aiRes = item.ai_yorum||'';
   S.periods[idx].parseLog = [{t:'ok',m:'📂 Kayıtlı analiz yüklendi: '+donemAdi}];
   if(item.dosya_adi) S.periods[idx].parseLog.push({t:'info',m:'📎 '+item.dosya_adi});
   S.periods[idx].fileName = null; S.periods[idx].missingFields = [];
@@ -2117,7 +2157,8 @@ function loadSaved(id){
     S.periods[idx].isMizan=true;
     try{const acctsStr=item.rasyo_json['__accts'];if(acctsStr)S.periods[idx].mizanAccts=JSON.parse(acctsStr);S.periods[idx].mizanDetay={};}catch(e){}
   }
-  S.tab='input'; render();
+  const _sel=document.getElementById('sektorSel');if(_sel)_sel.value=S.periods[idx].sektor||'';
+  S.periods[idx].saved=true;S.dirty=false;S.tab='input'; updateSectorBadge(); render();
 }
 
 async function deleteSaved(id){
@@ -2132,25 +2173,13 @@ async function deleteSaved(id){
   }
 }
 
-window.sTab          = sTab;
-window.render        = render;
-window.rC            = rC;
-window.openMo        = openMo;
-window.closeMo       = closeMo;
-window.setAP         = setAP;
-window.remP          = remP;
-window.clToggle      = clToggle;
-window.clSifirla     = clSifirla;
-window.clTumunuSec   = clTumunuSec;
-window.toggleTheme   = toggleTheme;
 // ─── PDF RAPOR ───────────────────────────────────────────────────────────────
 function raporOnizle(){
   const aktifDonemler=S.periods.filter(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0'));
   if(!aktifDonemler.length){showToast('Bilanço/Gelir Tablosu verisi bulunamadı','error');return;}
-  const _origAP=S.ap;
-  const bilancoIdx=S.periods.indexOf(aktifDonemler[0]);
-  S.ap=bilancoIdx;
-  const p=S.periods[S.ap];const d=nd(p);
+  const curP=S.periods[S.ap];
+  const p=(!curP.isMizan&&Object.values(curP.data).some(v=>v&&v!=='0'))?curP:aktifDonemler[0];
+  const d=nd(p);
   const sirket=document.getElementById('rpr_sirket')?.value||p.fileName?.replace(/\.[^/.]+$/,'')||'';
   const hazir=document.getElementById('rpr_hazirlayan')?.value||'';
   const donem=document.getElementById('rpr_donem')?.value||p.name||'';
@@ -2158,14 +2187,17 @@ function raporOnizle(){
   const incRatios=document.getElementById('rpr_ratios')?.checked!==false;
   const incKredi=document.getElementById('rpr_kredi')?.checked!==false;
   const incCompare=document.getElementById('rpr_compare')?.checked&&aktifDonemler.length>=2;
-  const incAI=document.getElementById('rpr_ai')?.checked&&!!S.aiRes;
+  const incAI=document.getElementById('rpr_ai')?.checked&&!!p.aiRes;
   const logoHtml=S.logoDataUrl?`<img src="${S.logoDataUrl}" style="max-height:50px;max-width:150px;object-fit:contain">`:'';
 
   // Rasyo formatlama yardımcıları
   const fR2=v=>{if(v===null||v===undefined)return'—';return Number(v).toFixed(2)};
   const fP2=v=>{if(v===null||v===undefined)return'—';return'%'+Number(v).toFixed(2)};
   const fC2=v=>{if(!v&&v!==0)return'—';return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(v))+' ₺'};
-  const rCls=((k,v)=>{const r=Object.values(RATIOS).flatMap(c=>c.items).find(x=>x.key===k);if(!r||v===null)return'neu';if(r.good){if(r.good(v))return'good';if(r.bad&&r.bad(v))return'bad';return'mid';}return'neu';});
+  const _cssToClass={'var(--gn)':'good','var(--am)':'mid','var(--rd)':'bad'};
+  const _getBMForPDF=rKey=>{const s=p.sektor&&SEKTOR_BM[p.sektor]?p.sektor:'genel';return SEKTOR_BM[s][rKey]||SEKTOR_BM.genel[rKey]||null};
+  const _inR=(v,r)=>r&&v>=r[0]&&v<=r[1];
+  const rCls=(k,v)=>{if(v===null||v===undefined||isNaN(v))return'neu';const bm=_getBMForPDF(k);if(!bm)return _cssToClass[rColS(k,v)]||'neu';if(_inR(v,bm.iyi))return'good';if(_inR(v,bm.orta))return'mid';return'bad';};
 
   let body='';
 
@@ -2177,7 +2209,7 @@ function raporOnizle(){
       <div class="cover-cell"><div class="cell-label">Dönem</div><div class="cell-val">${donem||'—'}</div></div>
       <div class="cover-cell"><div class="cell-label">Tarih</div><div class="cell-val">${tarih}</div></div>
       <div class="cover-cell"><div class="cell-label">Hazırlayan</div><div class="cell-val">${hazir||'—'}</div></div>
-      <div class="cover-cell"><div class="cell-label">Sektör</div><div class="cell-val">${S.sektor||'Genel'}</div></div>
+      <div class="cover-cell"><div class="cell-label">Sektör</div><div class="cell-val">${p.sektor||'Genel'}</div></div>
     </div>
     <div class="cover-footer">Bu rapor Mizan Mind platformu tarafından otomatik oluşturulmuştur. Yatırım tavsiyesi niteliği taşımaz.</div>
   </div>`;
@@ -2206,10 +2238,10 @@ function raporOnizle(){
   // Kredi
   if(incKredi){
     const BDDK=[
-      {n:'Cari Oran',key:'currentRatio',ideal:'≥ 1.5'},
-      {n:'Borç/Özsermaye',key:'debtToEquity',ideal:'≤ 2.0'},
-      {n:'Faiz Karşılama',key:'interestCoverage',ideal:'≥ 3.0'},
-      {n:'Net Kâr Marjı',key:'netProfitMargin',ideal:'≥ %5'},
+      {n:'Cari Oran',key:'cr',ideal:'≥ 1.5'},
+      {n:'Borç/Özsermaye',key:'de',ideal:'≤ 2.0'},
+      {n:'Faiz Karşılama',key:'ic',ideal:'≥ 3.0'},
+      {n:'Net Kâr Marjı',key:'nm',ideal:'≥ %5'},
     ];
     body+=`<div class="page"><div class="ph"><div class="ph-title">🏦 Kredi Analizi</div><div class="ph-sub">${sirket}</div></div><div class="pb">`;
     body+=`<table class="rt"><colgroup><col style="width:36%"><col style="width:20%"><col style="width:20%"><col style="width:24%"></colgroup>
@@ -2254,9 +2286,9 @@ function raporOnizle(){
   }
 
   // AI Yorum
-  if(incAI&&S.aiRes){
+  if(incAI&&p.aiRes){
     body+=`<div class="page"><div class="ph"><div class="ph-title">🤖 AI Uzman Değerlendirmesi</div><div class="ph-sub">${sirket}</div></div><div class="pb">
-      <div class="ai-box">${S.aiRes.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+      <div class="ai-box">${p.aiRes.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
     </div></div>`;
   }
 
@@ -2264,9 +2296,9 @@ function raporOnizle(){
   const _pdfCSS=`*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Inter',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;font-size:9pt;line-height:1.5}.page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 8mm;padding:14mm;box-shadow:0 2px 12px rgba(0,0,0,.08);page-break-after:always}.cover-page{background:linear-gradient(160deg,#0f172a 0%,#1e3a5f 60%,#0f172a 100%);color:#fff;display:flex;flex-direction:column;justify-content:space-between;padding:16mm}.cover-header{display:flex;justify-content:space-between;align-items:center}.brand{font-size:18pt;font-weight:800;color:#fff}.cover-badge{font-size:7pt;color:#93c5fd;letter-spacing:2px;text-transform:uppercase;border:1px solid rgba(147,197,253,.3);padding:3px 8px;border-radius:16px}.cover-center{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10mm 0 6mm}.cover-eyebrow{font-size:7pt;letter-spacing:4px;text-transform:uppercase;color:#64748b;margin-bottom:8px}.cover-company{font-size:24pt;font-weight:800;line-height:1.1;color:#f8fafc}.cover-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border-top:1px solid rgba(255,255,255,.1);padding-top:6mm}.cover-cell{}.cell-label{font-size:6pt;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}.cell-val{font-size:9pt;font-weight:600;color:#e2e8f0}.cover-footer{font-size:6.5pt;color:#475569;margin-top:4mm;padding-top:3mm;border-top:1px solid rgba(255,255,255,.06)}.cover-logo{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:6px 10px}.ph{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:6px;border-bottom:3px solid #1e40af;margin-bottom:14px}.ph-title{font-size:14pt;font-weight:700;color:#0f172a}.ph-sub{font-size:7.5pt;color:#94a3b8}.rt{width:100%;border-collapse:collapse;font-size:7.5pt;margin-bottom:12px;table-layout:fixed}.rt thead tr{background:#1e3a5f;color:#fff}.rt th{padding:5px 6px;font-size:7pt;font-weight:700;text-align:center;overflow:hidden;white-space:nowrap}.rt th:first-child{text-align:left;padding-left:8px}.rt tbody tr:nth-child(even){background:#f8fafc}.rt td{padding:5px 6px;border-bottom:1px solid #e2e8f0;vertical-align:middle;text-align:center;overflow:hidden;white-space:nowrap;font-size:7.5pt}.rn{font-weight:500;color:#1e293b;text-align:left!important;white-space:normal!important;word-break:break-word;padding-left:8px!important}.rf{display:block;font-size:6pt;color:#94a3b8;font-family:monospace}.ri{font-size:7pt;color:#94a3b8;text-align:center!important}.rs{font-size:7pt;font-weight:700;text-align:center!important}.rv{font-weight:700;text-align:center!important}.good{color:#16a34a}.mid{color:#d97706}.bad{color:#dc2626}.neu{color:#64748b}.ai-box{background:#f8fafc;border-left:4px solid #3b82f6;border-radius:0 6px 6px 0;padding:12px 14px;font-size:9pt;line-height:1.8;color:#334155}@media print{body{background:#fff}.page{box-shadow:none;margin:0;page-break-after:always}.page:last-child{page-break-after:avoid}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}@page{size:A4;margin:0}`;
   const _pdfDoc='<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><title>'+sirket+' \u2014 Rapor<\/title><style>'+_pdfCSS+'<\/style><\/head><body>'+body+'<scr'+'ipt>setTimeout(()=>{window.focus();window.print()},600)<\/scr'+'ipt><\/body><\/html>';
   const win=window.open('','_blank','width=960,height=750');
+  if(!win){showToast('Popup engellendi — tarayıcı ayarlarından bu site için izin verin','error',6000);return;}
   win.document.write(_pdfDoc);
   win.document.close();
-  S.ap=_origAP;
 }
 
 function handleLogoUpload(input){
@@ -2296,6 +2328,16 @@ function clearLogo(){
   if(clearBtn)clearBtn.style.display='none';
   const inp=document.getElementById('rpr_logo_inp');
   if(inp)inp.value='';
+}
+
+// ─── CLAUDE API FETCH (auth-gated) ───────────────────────────────────────────
+async function claudeFetch(body){
+  let token='';
+  try{const cu=getGoTrue?getGoTrue().currentUser():null;if(cu)token=await cu.jwt();}catch(e){}
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(),55000);
+  return fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body),signal:ctrl.signal})
+    .finally(()=>clearTimeout(tid));
 }
 
 // ─── DOSYA YÜKLEME ───────────────────────────────────────────────────────────
@@ -2329,13 +2371,14 @@ async function saveAnaliz(){
       if(p.isMizan){rasyoJson['__isMizan']=1;if(p.mizanAccts)rasyoJson['__accts']=JSON.stringify(p.mizanAccts);}
       const res=await sbCall('save',{
         sirketAdi,
-        sektor:S.sektor||'',
+        sektor:p.sektor||'',
         donem:p.name||'',
         rasyoJson,
-        aiYorum:S.aiRes||'',
+        aiYorum:p.aiRes||'',
         dosyaAdi:p.fileName||'',
       });
       if(res&&!res.error){
+        S.dirty=false;S.periods[S.ap].saved=true;
         showToast('Analiz kaydedildi ✓','success',3000);
         await loadSavedList();render();
         if(p.rawFile&&res.id)uploadFile(p.rawFile,res.id);
@@ -2361,7 +2404,7 @@ async function runAI(){
   const ratioLines=[];
   Object.values(RATIOS).forEach(cat=>cat.items.forEach(r=>{const v=r.calc(d);if(v!==null)ratioLines.push(`${r.name}: ${r.pct?'%'+v.toFixed(2):r.cur?fmtN(v):v.toFixed(2)} (İdeal: ${r.ideal})`)}));
   const sirket=p.name||(p.fileName?p.fileName.replace(/\.[^/.]+$/,''):'Şirket');
-  const sektor=S.sektor||'genel';
+  const sektor=p.sektor||'genel';
   const prompt=`Sen deneyimli bir Türk mali müşavirisin. Aşağıdaki finansal verileri analiz et ve profesyonel bir değerlendirme raporu hazırla.
 
 Şirket: ${sirket}
@@ -2384,12 +2427,12 @@ Lütfen şunları kapsa:
 
 Yanıtı Türkçe, profesyonel ve anlaşılır yaz. Başlıklar ve madde işaretleri kullan.`;
   try{
-    const resp=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]})});
+    const resp=await claudeFetch({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]});
     if(!resp.ok){const err=await resp.json().catch(()=>({}));showToast('AI hatası: '+(err.error||resp.status),'error');}
     else{
       const data=await resp.json();
       const text=data.content?.map(b=>b.text||'').join('')||'';
-      if(text){S.aiRes=text;showToast('AI analizi tamamlandı ✓','success',3000);}
+      if(text){p.aiRes=text;S.dirty=true;showToast('AI analizi tamamlandı ✓','success',3000);}
       else showToast('AI boş yanıt döndürdü','warning');
     }
   }catch(e){showToast('Bağlantı hatası: '+e.message,'error');}
@@ -2398,6 +2441,8 @@ Yanıtı Türkçe, profesyonel ve anlaşılır yaz. Başlıklar ve madde işaret
 
 // ─── GLOBAL BAĞLAMA ──────────────────────────────────────────────────────────
 window.sTab             = sTab;
+window.tglMoreTabs      = tglMoreTabs;
+window.toggleSection    = toggleSection;
 window.render           = render;
 window.rC               = rC;
 window.openMo           = openMo;
@@ -2420,6 +2465,10 @@ window.uF               = uF;
 window.initTheme        = initTheme;
 window.saveAnaliz       = saveAnaliz;
 window.runAI            = runAI;
+
+window.addEventListener('beforeunload',e=>{
+  if(S.dirty){e.preventDefault();e.returnValue='';}
+});
 </script>
 </body>
 </html>
