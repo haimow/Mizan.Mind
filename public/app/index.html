@@ -460,11 +460,7 @@ async function parsePDFAI(file){
   log.push({t:'info',m:`${(bytes.length/1024).toFixed(0)} KB → API'ye gönderiliyor...`});
   const fL=FIELDS.flatMap(s=>s.fields).map(f=>`"${f.key}":"${f.label}"`).join(',\n');
   try{
-    const resp=await claudeFetch({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:`Bu PDF bir Türk şirketinin finansal belgesidir. CARİ DÖNEM verilerini çıkar. Enflasyon düzeltmesi SONRASI sütun varsa onu tercih et.\n\nSADECE JSON:\n{${fL}}\n\nKRİTİK KURALLAR:\n- Tutarları BİNLİK AYIRICI OLMADAN düz sayı olarak yaz. Örnek: 495493963.13 (nokta ondalık ayracı)\n- 495.493.963,13 YAZMA, 495493963.13 YAZ\n- Giderleri pozitif yaz\n- Dipnottaki amortisman bilgisini depreciation alanına yaz\n- Bulunamayan alanları "" yap`}]}]});
-    if(!resp.ok){log.push({t:'err',m:`Sunucu hatası: ${resp.status}`});return{data:eD(),log}}
-    const text=await resp.text();
-    let res;try{res=JSON.parse(text)}catch(e){log.push({t:'err',m:'API yanıtı okunamadı'});return{data:eD(),log}}
-    const txt=res.content?.map(b=>b.text||'').join('')||'';
+    const txt=await claudeStream({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:[{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}},{type:'text',text:`Bu PDF bir Türk şirketinin finansal belgesidir. CARİ DÖNEM verilerini çıkar. Enflasyon düzeltmesi SONRASI sütun varsa onu tercih et.\n\nSADECE JSON:\n{${fL}}\n\nKRİTİK KURALLAR:\n- Tutarları BİNLİK AYIRICI OLMADAN düz sayı olarak yaz. Örnek: 495493963.13 (nokta ondalık ayracı)\n- 495.493.963,13 YAZMA, 495493963.13 YAZ\n- Giderleri pozitif yaz\n- Dipnottaki amortisman bilgisini depreciation alanına yaz\n- Bulunamayan alanları "" yap`}]}]},null);
     const jm=txt.match(/\{[\s\S]*\}/);
     if(jm){const p=JSON.parse(jm[0]);const data=eD();Object.keys(p).forEach(k=>{if(data.hasOwnProperty(k)&&p[k]){const n=parseTR(String(p[k]));if(!isNaN(n)&&n!==0)data[k]=String(n)}});
     const filled=Object.values(data).filter(v=>v).length;log.push({t:'ok',m:`AI ${filled} alan başarıyla doldurdu`});
@@ -478,12 +474,12 @@ async function parsePDFAI(file){
 }
 async function parseExcelAI(rawText){
   const log=[{t:'info',m:'🤖 AI ile parse ediliyor...'}];const fL=FIELDS.flatMap(s=>s.fields).map(f=>`"${f.key}":"${f.label}"`).join(',\n');
-  try{const resp=await claudeFetch({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:`Türk şirketi finansal tablosu:\n${rawText}\n\nSADECE JSON:\n{${fL}}\nTutarlar düz sayı string.`}]});
-  if(!resp.ok){log.push({t:'err',m:`Sunucu hatası: ${resp.status}`});return{data:eD(),log}}
-  const text=await resp.text();let res;try{res=JSON.parse(text)}catch(e){log.push({t:'err',m:'API yanıtı okunamadı'});return{data:eD(),log}}
-  const txt2=res.content?.map(b=>b.text||'').join('')||'';const jm2=txt2.match(/\{[\s\S]*\}/);
-  if(jm2){const p=JSON.parse(jm2[0]);const data=eD();Object.keys(p).forEach(k=>{if(data.hasOwnProperty(k)&&p[k]){const n=parseTR(String(p[k]));if(!isNaN(n)&&n!==0)data[k]=String(n)}});log.push({t:'ok',m:`AI ${Object.values(data).filter(v=>v).length} alan doldurdu`});return{data,log}}
-  log.push({t:'err',m:'AI parse başarısız'});return{data:eD(),log}}catch(err){log.push({t:'err',m:'API: '+err.message});return{data:eD(),log}}
+  try{
+    const txt2=await claudeStream({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:`Türk şirketi finansal tablosu:\n${rawText}\n\nSADECE JSON:\n{${fL}}\nTutarlar düz sayı string.`}]},null);
+    const jm2=txt2.match(/\{[\s\S]*\}/);
+    if(jm2){const p=JSON.parse(jm2[0]);const data=eD();Object.keys(p).forEach(k=>{if(data.hasOwnProperty(k)&&p[k]){const n=parseTR(String(p[k]));if(!isNaN(n)&&n!==0)data[k]=String(n)}});log.push({t:'ok',m:`AI ${Object.values(data).filter(v=>v).length} alan doldurdu`});return{data,log}}
+    log.push({t:'err',m:'AI parse başarısız'});return{data:eD(),log};
+  }catch(err){log.push({t:'err',m:'API: '+err.message});return{data:eD(),log}}
 }
 
 // HELPERS
@@ -2337,13 +2333,48 @@ function clearLogo(){
 }
 
 // ─── CLAUDE API FETCH (auth-gated) ───────────────────────────────────────────
-async function claudeFetch(body){
+// Streams Claude responses through /api/claude as SSE, returns full assembled text.
+// Bypasses Lambda timeout — tokens flow through as they arrive from Anthropic.
+// onDelta(deltaText, fullSoFar) is called for each text_delta chunk; pass null to skip.
+async function claudeStream(body,onDelta){
   let token='';
   try{const cu=getGoTrue?getGoTrue().currentUser():null;if(cu)token=await cu.jwt();}catch(e){}
-  const ctrl=new AbortController();
-  const tid=setTimeout(()=>ctrl.abort(),55000);
-  return fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(body),signal:ctrl.signal})
-    .finally(()=>clearTimeout(tid));
+  const resp=await fetch('/api/claude',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({...body,stream:true})
+  });
+  if(!resp.ok){
+    let msg='HTTP '+resp.status;
+    try{const e=await resp.json();if(e.error)msg=e.error;}catch{}
+    throw new Error(msg);
+  }
+  const reader=resp.body.getReader();
+  const dec=new TextDecoder();
+  let buf='',full='',streamErr=null;
+  while(true){
+    const{done,value}=await reader.read();
+    if(done)break;
+    buf+=dec.decode(value,{stream:true});
+    const events=buf.split('\n\n');
+    buf=events.pop()||'';
+    for(const evt of events){
+      let dataStr='';
+      for(const ln of evt.split('\n')){
+        if(ln.startsWith('data: '))dataStr+=ln.slice(6);
+      }
+      if(!dataStr)continue;
+      let data;try{data=JSON.parse(dataStr);}catch{continue;}
+      if(data.type==='error'){streamErr=data.error?.message||'Stream error';continue;}
+      if(data.type==='content_block_delta'&&data.delta?.type==='text_delta'){
+        const t=data.delta.text||'';
+        full+=t;
+        if(onDelta)try{onDelta(t,full);}catch{}
+      }
+    }
+  }
+  if(streamErr)throw new Error(streamErr);
+  return full;
 }
 
 // ─── DOSYA YÜKLEME ───────────────────────────────────────────────────────────
@@ -2432,16 +2463,24 @@ Lütfen şunları kapsa:
 6. Somut iyileştirme önerileri
 
 Yanıtı Türkçe, profesyonel ve anlaşılır yaz. Başlıklar ve madde işaretleri kullan.`;
-  try{
-    const resp=await claudeFetch({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]});
-    if(!resp.ok){const err=await resp.json().catch(()=>({}));showToast('AI hatası: '+(err.error||resp.status),'error');}
-    else{
-      const data=await resp.json();
-      const text=data.content?.map(b=>b.text||'').join('')||'';
-      if(text){p.aiRes=text;S.dirty=true;showToast('AI analizi tamamlandı ✓','success',3000);}
-      else showToast('AI boş yanıt döndürdü','warning');
+  const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  let bodyEl=null;
+  const onDelta=(_,full)=>{
+    if(!bodyEl||!bodyEl.isConnected){
+      const aip=document.querySelector('.aip');
+      if(!aip)return;
+      const target=aip.querySelector('.aip-b, .aip-ld');
+      if(!target)return;
+      target.className='aip-b';
+      bodyEl=target;
     }
-  }catch(e){showToast('Bağlantı hatası: '+e.message,'error');}
+    bodyEl.innerHTML=esc(full);
+  };
+  try{
+    const text=await claudeStream({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]},onDelta);
+    if(text){p.aiRes=text;S.dirty=true;showToast('AI analizi tamamlandı ✓','success',3000);}
+    else showToast('AI boş yanıt döndürdü','warning');
+  }catch(e){showToast('AI hatası: '+e.message,'error');}
   S.aiLd=false;render();
 }
 
