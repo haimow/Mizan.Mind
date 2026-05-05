@@ -3071,28 +3071,21 @@ function rDefter(el){
     </div>`;
   if(s.by_category&&Object.keys(s.by_category).length){
     const cats=Object.entries(s.by_category).sort((a,b)=>b[1].count-a[1].count);
-    h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Kategori Dağılımı</div></div><div class="card-b" style="padding:0">`;
+    h+=`<div class="card"><div class="card-h"><div class="card-t">⚠️ Anomali İçeren Bölümler</div><span style="font-size:11px;color:var(--tm)">${cats.length} kategori</span></div><div class="card-b" style="padding:12px 14px"><div style="display:flex;flex-wrap:wrap;gap:6px">`;
     for(const [cat,v] of cats){
-      const segs=[];
-      if(v.HIGH)segs.push(`<div style="flex:${v.HIGH};background:var(--rd)" title="Yüksek: ${v.HIGH}"></div>`);
-      if(v.MEDIUM)segs.push(`<div style="flex:${v.MEDIUM};background:var(--am)" title="Orta: ${v.MEDIUM}"></div>`);
-      if(v.LOW)segs.push(`<div style="flex:${v.LOW};background:var(--ac)" title="Düşük: ${v.LOW}"></div>`);
-      const badges=[];
-      if(v.HIGH)badges.push(`<span style="font-size:10px;background:rgba(239,68,68,.15);color:var(--rd);padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace">${v.HIGH} Y</span>`);
-      if(v.MEDIUM)badges.push(`<span style="font-size:10px;background:rgba(245,158,11,.15);color:var(--am);padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace">${v.MEDIUM} O</span>`);
-      if(v.LOW)badges.push(`<span style="font-size:10px;background:rgba(59,130,246,.15);color:var(--ac);padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace">${v.LOW} D</span>`);
-      h+=`<div style="padding:14px 18px;border-bottom:1px solid var(--brd);display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center">
-        <div style="min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">${_DEF_CAT_LBL[cat]||cat}</div>
-          <div style="display:flex;height:6px;background:var(--bgi);border-radius:3px;overflow:hidden">${segs.join('')}</div>
-        </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-          ${badges.join('')}
-          <span style="font-size:15px;font-weight:700;color:var(--t1);font-family:'JetBrains Mono',monospace;margin-left:8px;min-width:20px;text-align:right">${v.count}</span>
-        </div>
-      </div>`;
+      const dom=v.HIGH?'var(--rd)':v.MEDIUM?'var(--am)':'var(--ac)';
+      const tip=`Yüksek: ${v.HIGH} · Orta: ${v.MEDIUM} · Düşük: ${v.LOW}`;
+      const sev=[];
+      if(v.HIGH)sev.push(`<span style="color:var(--rd);font-weight:600">${v.HIGH}Y</span>`);
+      if(v.MEDIUM)sev.push(`<span style="color:var(--am);font-weight:600">${v.MEDIUM}O</span>`);
+      if(v.LOW)sev.push(`<span style="color:var(--ac);font-weight:600">${v.LOW}D</span>`);
+      h+=`<span title="${tip}" style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px;background:var(--bgi);border:1px solid var(--brd);border-left:3px solid ${dom};border-radius:8px;font-size:11px;color:var(--t1);white-space:nowrap;font-family:'Inter',sans-serif">
+        <span style="font-weight:500">${_DEF_CAT_LBL[cat]||cat}</span>
+        <span style="font-weight:700;color:var(--t1);font-family:'JetBrains Mono',monospace">${v.count}</span>
+        <span style="font-size:10px;font-family:'JetBrains Mono',monospace;display:inline-flex;gap:4px;color:var(--tm)">${sev.join('·')}</span>
+      </span>`;
     }
-    h+='</div></div>';
+    h+='</div></div></div>';
   }
   if(r.anomalies&&r.anomalies.length){
     const byCat={};
