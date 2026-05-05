@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -232,7 +233,7 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
   <div style="flex:1"></div>
 </div>
 <div class="pbar" id="pBar"></div>
-<div class="mtabs" id="mainTabs"><button class="mtab on" data-mt="input" onclick="sTab('input')">📥 Veri Girişi</button><button class="mtab" data-mt="analiz" onclick="sTab('ratios')">📊 Analiz</button><button class="mtab" data-mt="ai" onclick="sTab('ai')">🤖 Uzman Yorum</button><button class="mtab" data-mt="kredi" onclick="sTab('kredi')">🏦 Kredi Analizi</button><button class="mtab" data-mt="rapor" onclick="sTab('rapor')">📄 PDF Rapor</button><button class="mtab" data-mt="detay" onclick="sTab('detay')">🔍 Detay Mizan</button><button class="mtab" data-mt="takvim" onclick="sTab('takvim')">📅 Takvim</button><button class="mtab" data-mt="checklist" onclick="sTab('checklist')">✅ Checklist</button></div>
+<div class="mtabs" id="mainTabs"><button class="mtab on" data-mt="input" onclick="sTab('input')">📥 Veri Girişi</button><button class="mtab" data-mt="analiz" onclick="sTab('ratios')">📊 Analiz</button><button class="mtab" data-mt="ai" onclick="sTab('ai')">🤖 Uzman Yorum</button><button class="mtab" data-mt="kredi" onclick="sTab('kredi')">🏦 Kredi Analizi</button><button class="mtab" data-mt="rapor" onclick="sTab('rapor')">📄 PDF Rapor</button><button class="mtab" data-mt="detay" onclick="sTab('detay')">🔍 Detay Mizan</button><button class="mtab" data-mt="takvim" onclick="sTab('takvim')">📅 Takvim</button><button class="mtab" data-mt="checklist" onclick="sTab('checklist')">✅ Checklist</button><button class="mtab" data-mt="defter" onclick="sTab('defter')">🔍 e-Defter</button></div>
 <div class="cont" id="cont"></div>
 </div>
 </div>
@@ -629,7 +630,7 @@ function rC(){
     el.innerHTML=`<div class="subtabs"><button class="subtab ${S.tab==='ratios'?'on':''}" onclick="sTab('ratios')">📊 Rasyolar</button><button class="subtab ${S.tab==='compare'?'on':''}" onclick="sTab('compare')">⚖️ Karşılaştırma</button></div><div id="subCont"></div>`;
     if(S.tab==='ratios')rRat(document.getElementById('subCont'));else rCmp(document.getElementById('subCont'));
   }
-  else if(S.tab==='detay')rDetay(el);else if(S.tab==='kredi')rKredi(el);else if(S.tab==='rapor')rRapor(el);else if(S.tab==='takvim')rTakvim(el);else if(S.tab==='checklist')rChecklist(el);else rAI(el);
+  else if(S.tab==='detay')rDetay(el);else if(S.tab==='kredi')rKredi(el);else if(S.tab==='rapor')rRapor(el);else if(S.tab==='takvim')rTakvim(el);else if(S.tab==='checklist')rChecklist(el);else if(S.tab==='defter')rDefter(el);else rAI(el);
 }
 function rInp(el){const p=S.periods[S.ap];const logH=p.parseLog.length?`<div class="plog">${p.parseLog.map(l=>`<div class="${l.t}">${l.t==='ok'?'✓':l.t==='warn'?'⚠':l.t==='err'?'✗':'ℹ'} ${l.m}</div>`).join('')}</div>`:'';
 const hasData=p.fileName&&Object.values(p.data).some(v=>v);
@@ -2484,6 +2485,570 @@ Yanıtı Türkçe, profesyonel ve anlaşılır yaz. Başlıklar ve madde işaret
   S.aiLd=false;render();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// E-DEFTER ANOMALİ TESPİT MODÜLÜ
+// XBRL GL bazlı yevmiye dosyalarında muhasebe anomalilerini tespit eder.
+// HİÇ rasyo / mali tablo analizi yapmaz — sadece yevmiye bütünlüğü.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DEFTER_CFG={
+  outlierStdMult:3,bulkWindowMs:60000,bulkThreshold:50,
+  workHourStart:9,workHourEnd:18,highValueWeekend:100000,
+  roundFlagThresholds:[1000,5000,10000,50000,100000,500000,1000000,5000000],
+  vatRates:[0.01,0.08,0.10,0.18,0.20],shortDescMaxLen:10,maxAnomalyDetailRows:200
+};
+
+S.defter={file:null,fileName:'',entries:[],report:null,loading:false,savedList:[],holidays:null,_listLoaded:false};
+
+async function loadDefterHolidays(){
+  if(S.defter.holidays)return S.defter.holidays;
+  try{
+    const r=await fetch('tr-holidays-2026.json');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    S.defter.holidays=new Set((j.holidays||[]).map(h=>h.date));
+  }catch(e){
+    console.warn('Tatil listesi yüklenemedi:',e.message);
+    S.defter.holidays=new Set();
+  }
+  return S.defter.holidays;
+}
+
+// ─── XML → ENTRY[] (XBRL GL: gl-cor:entryHeader → entryDetail) ───────────────
+function _dxText(el,name){
+  if(!el)return'';
+  const n=el.getElementsByTagNameNS('*',name)[0];
+  return n?n.textContent.trim():'';
+}
+function parseDefterXML(xmlText,sourceFile){
+  const dp=new DOMParser();
+  const doc=dp.parseFromString(xmlText,'text/xml');
+  const err=doc.querySelector('parsererror');
+  if(err)throw new Error('XML parse hatası: '+err.textContent.slice(0,200));
+  const headers=doc.getElementsByTagNameNS('*','entryHeader');
+  if(!headers.length)throw new Error('e-Defter formatı tanınmadı (entryHeader yok)');
+  const entries=[];
+  for(let i=0;i<headers.length;i++){
+    const h=headers[i];
+    const date=_dxText(h,'postingDate');
+    const entryNo=_dxText(h,'entryNumberCounter')||_dxText(h,'entryNumber');
+    const enteredBy=_dxText(h,'enteredByName')||_dxText(h,'enteredBy');
+    const stamp=_dxText(h,'enteredDate')||date;
+    const details=h.getElementsByTagNameNS('*','entryDetail');
+    for(let j=0;j<details.length;j++){
+      const d=details[j];
+      const acct=_dxText(d,'accountMainID')||_dxText(d,'accountSub');
+      const acctName=_dxText(d,'accountMainDescription');
+      const amount=parseFloat(_dxText(d,'amount')||'0')||0;
+      const dc=(_dxText(d,'debitCreditCode')||'').toUpperCase();
+      const desc=_dxText(d,'detailComment')||_dxText(d,'comment')||'';
+      const docNo=_dxText(d,'documentNumber')||'';
+      const docType=_dxText(d,'documentType')||'';
+      entries.push({
+        id:`${entryNo||i}-${j}`,entry_no:entryNo||String(i+1),date,timestamp:stamp,
+        account_code:acct,account_name:acctName,
+        debit:dc==='D'?amount:0,credit:dc==='C'?amount:0,
+        description:desc,doc_no:docNo,doc_type:docType,
+        source:enteredBy||'sistem',file:sourceFile||''
+      });
+    }
+  }
+  return entries;
+}
+
+// ─── ZIP → ENTRY[] (JSZip; zip-slip guarded) ─────────────────────────────────
+async function parseDefterZIP(file){
+  if(!window.JSZip)throw new Error('JSZip yüklenmedi');
+  const zip=await window.JSZip.loadAsync(file);
+  const xmls=Object.keys(zip.files).filter(n=>{
+    if(n.includes('..')||n.startsWith('/'))return false;
+    return /\.xml$/i.test(n)&&!zip.files[n].dir;
+  });
+  if(!xmls.length)throw new Error('ZIP içinde XML dosyası bulunamadı');
+  const all=[];
+  for(const name of xmls){
+    try{
+      const txt=await zip.files[name].async('string');
+      all.push(...parseDefterXML(txt,name));
+    }catch(e){console.warn(`${name}: ${e.message}`);}
+  }
+  if(!all.length)throw new Error('Hiçbir XML başarıyla ayrıştırılamadı');
+  return all;
+}
+
+// ─── DOSYA HANDLER ───────────────────────────────────────────────────────────
+async function hDefterFile(file){
+  if(!file)return;
+  if(file.size>50*1024*1024){showToast('Dosya 50 MB sınırını aşıyor','error');return;}
+  S.defter.loading=true;S.defter.file=file;S.defter.fileName=file.name;render();
+  try{
+    await loadDefterHolidays();
+    let entries;
+    if(/\.zip$/i.test(file.name)){entries=await parseDefterZIP(file);}
+    else if(/\.xml$/i.test(file.name)){entries=parseDefterXML(await file.text(),file.name);}
+    else throw new Error('Yalnızca .xml veya .zip kabul edilir');
+    S.defter.entries=entries;
+    S.defter.report=runDefterAnomali(entries,S.defter.holidays);
+    showToast(`${entries.length} kayıt analiz edildi · ${S.defter.report.summary.anomalies_found} anomali`,'success',4000);
+  }catch(e){
+    showToast('Hata: '+e.message,'error',6000);
+    S.defter.entries=[];S.defter.report=null;
+  }
+  S.defter.loading=false;render();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ANOMALİ TESPİT MOTORU — 9 KATEGORİ, saf fonksiyonlar
+// ═══════════════════════════════════════════════════════════════════════════
+const _SEV_W={LOW:2,MEDIUM:5,HIGH:10};
+const _mkA=(type,severity,confidence,description,affected,category)=>({
+  type,severity,confidence:Math.max(0,Math.min(100,Math.round(confidence))),description,
+  affected_entries:Array.isArray(affected)?affected.slice(0,DEFTER_CFG.maxAnomalyDetailRows):[affected],
+  affected_count:Array.isArray(affected)?affected.length:1,category
+});
+
+function detBalance(entries){
+  const out=[];const byNo={};
+  for(const e of entries){
+    if(!byNo[e.entry_no])byNo[e.entry_no]={debit:0,credit:0,ids:[]};
+    byNo[e.entry_no].debit+=e.debit;byNo[e.entry_no].credit+=e.credit;
+    byNo[e.entry_no].ids.push(e.id);
+  }
+  for(const [no,v] of Object.entries(byNo)){
+    if(Math.abs(v.debit-v.credit)>0.01){
+      out.push(_mkA('UNBALANCED_ENTRY','HIGH',95,
+        `Yevmiye No ${no}: borç ${v.debit.toFixed(2)} ≠ alacak ${v.credit.toFixed(2)} (fark: ${(v.debit-v.credit).toFixed(2)})`,
+        v.ids,'BALANCE'));
+    }
+  }
+  const td=entries.reduce((s,e)=>s+e.debit,0);
+  const tc=entries.reduce((s,e)=>s+e.credit,0);
+  if(Math.abs(td-tc)>0.01){
+    out.push(_mkA('TRIAL_BALANCE_MISMATCH','HIGH',98,
+      `Genel mizan dengesizliği: borç ${td.toFixed(2)} ≠ alacak ${tc.toFixed(2)}`,[],'BALANCE'));
+  }
+  return out;
+}
+
+function detDuplicates(entries){
+  const out=[];const seen={};
+  for(const e of entries){
+    const key=`${e.date}|${e.account_code}|${e.debit}|${e.credit}|${e.description}|${e.doc_no}`;
+    (seen[key]=seen[key]||[]).push(e.id);
+  }
+  for(const [k,ids] of Object.entries(seen)){
+    if(ids.length>1)out.push(_mkA('DUPLICATE_ENTRY','HIGH',90,
+      `Birebir aynı kayıt ${ids.length} kez: ${k.slice(0,80)}…`,ids,'DUPLICATION'));
+  }
+  const byDoc={};
+  for(const e of entries){
+    if(!e.doc_no)continue;
+    (byDoc[e.doc_no]=byDoc[e.doc_no]||new Set()).add(e.entry_no);
+  }
+  for(const [doc,ents] of Object.entries(byDoc)){
+    if(ents.size>1)out.push(_mkA('DUPLICATE_DOC_NUMBER','MEDIUM',75,
+      `Belge No ${doc}, ${ents.size} farklı yevmiyede kullanılmış`,Array.from(ents),'DUPLICATION'));
+  }
+  return out;
+}
+
+function detDates(entries,holidays){
+  const out=[];const nowMs=Date.now();
+  for(const e of entries){
+    if(!e.date)continue;
+    const d=new Date(e.date);if(isNaN(d))continue;
+    const dow=d.getDay();const total=e.debit+e.credit;
+    if(e.timestamp&&e.timestamp!==e.date){
+      const ed=new Date(e.timestamp);
+      if(!isNaN(ed)&&ed-d>30*24*60*60*1000){
+        out.push(_mkA('BACKDATED_ENTRY','MEDIUM',70,
+          `Kayıt tarihi (${e.timestamp}) yevmiye tarihinden 30+ gün sonra (${e.date})`,[e.id],'DATE'));
+      }
+    }
+    if((dow===0||dow===6)&&total>=DEFTER_CFG.highValueWeekend){
+      out.push(_mkA('WEEKEND_HIGH_VALUE','MEDIUM',65,
+        `${e.date} (${dow===0?'Pazar':'Cumartesi'}): yüksek tutar ${total.toFixed(2)} TL`,[e.id],'DATE'));
+    }
+    if(holidays&&holidays.has(e.date)&&total>=DEFTER_CFG.highValueWeekend){
+      out.push(_mkA('HOLIDAY_HIGH_VALUE','MEDIUM',70,
+        `${e.date} (resmi tatil): yüksek tutar ${total.toFixed(2)} TL`,[e.id],'DATE'));
+    }
+    if(d.getTime()>nowMs+24*60*60*1000){
+      out.push(_mkA('FUTURE_DATED','HIGH',95,`İleri tarihli kayıt: ${e.date}`,[e.id],'DATE'));
+    }
+  }
+  return out;
+}
+
+function detAmounts(entries){
+  const out=[];
+  const amounts=entries.map(e=>e.debit+e.credit).filter(v=>v>0);
+  if(amounts.length<10)return out;
+  const mean=amounts.reduce((a,b)=>a+b,0)/amounts.length;
+  const sd=Math.sqrt(amounts.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/amounts.length);
+  const thr=mean+DEFTER_CFG.outlierStdMult*sd;
+  const roundIds=[];
+  for(const e of entries){
+    const t=e.debit+e.credit;
+    if(t>=1000&&t%1000===0&&DEFTER_CFG.roundFlagThresholds.includes(t))roundIds.push(e.id);
+  }
+  if(roundIds.length>=3)out.push(_mkA('ROUND_NUMBER_PATTERN','LOW',55,
+    `${roundIds.length} kayıt tam yuvarlak büyük tutarlarda`,roundIds,'AMOUNT'));
+  const outIds=entries.filter(e=>(e.debit+e.credit)>thr).map(e=>e.id);
+  if(outIds.length)out.push(_mkA('AMOUNT_OUTLIER','MEDIUM',70,
+    `${outIds.length} kayıt ortalamadan ${DEFTER_CFG.outlierStdMult}σ üstü (${thr.toFixed(0)} TL üstü)`,outIds,'AMOUNT'));
+  const splits={};
+  for(const e of entries){
+    const k=`${e.date}|${e.account_code}|${(e.description||'').slice(0,30)}`;
+    if(!splits[k])splits[k]={total:0,ids:[]};
+    splits[k].total+=e.debit+e.credit;splits[k].ids.push(e.id);
+  }
+  for(const [k,v] of Object.entries(splits)){
+    if(v.ids.length>=4&&v.total>=50000){
+      out.push(_mkA('SPLIT_TRANSACTION','MEDIUM',65,
+        `Olası parçalanmış işlem: ${v.ids.length} kayıt, toplam ${v.total.toFixed(0)} TL`,v.ids,'AMOUNT'));
+    }
+  }
+  return out;
+}
+
+function detAccountMisuse(entries){
+  const out=[];const freq={};
+  for(const e of entries){
+    if(!e.account_code)continue;
+    freq[e.account_code]=(freq[e.account_code]||0)+1;
+  }
+  const directMain=[];
+  for(const e of entries){
+    if(/^\d{3}$/.test(e.account_code)){
+      const hasSub=Object.keys(freq).some(c=>c.startsWith(e.account_code+'.'));
+      if(hasSub)directMain.push(e.id);
+    }
+  }
+  if(directMain.length)out.push(_mkA('DIRECT_MAIN_ACCOUNT','MEDIUM',75,
+    `${directMain.length} kayıt ana THP hesabına doğrudan yapılmış (alt hesap atlanmış)`,
+    directMain,'ACCOUNT_MISUSE'));
+  for(const [code,count] of Object.entries(freq)){
+    if(count<3){
+      const m=entries.filter(e=>e.account_code===code);
+      const total=m.reduce((s,e)=>s+e.debit+e.credit,0);
+      if(total>=100000){
+        out.push(_mkA('RARE_ACCOUNT_ACTIVATION','MEDIUM',60,
+          `Nadir hesap (${code}): ${count} hareket, toplam ${total.toFixed(0)} TL`,
+          m.map(e=>e.id),'ACCOUNT_MISUSE'));
+      }
+    }
+  }
+  return out;
+}
+
+function detDescriptions(entries){
+  const out=[];
+  const empty=entries.filter(e=>!e.description||!e.description.trim()).map(e=>e.id);
+  if(empty.length>=5)out.push(_mkA('EMPTY_DESCRIPTION','MEDIUM',80,
+    `${empty.length} kayıt boş açıklamaya sahip`,empty,'DESCRIPTION'));
+  const short=entries.filter(e=>{const d=(e.description||'').trim();return d.length>0&&d.length<DEFTER_CFG.shortDescMaxLen;}).map(e=>e.id);
+  if(short.length>=10)out.push(_mkA('SHORT_DESCRIPTION','LOW',55,
+    `${short.length} kayıt çok kısa açıklamalı (<${DEFTER_CFG.shortDescMaxLen} karakter)`,short,'DESCRIPTION'));
+  const df={};
+  for(const e of entries){
+    const d=(e.description||'').trim();if(!d)continue;
+    (df[d]=df[d]||[]).push(e.id);
+  }
+  for(const [d,ids] of Object.entries(df)){
+    if(ids.length>=20)out.push(_mkA('REPEATED_DESCRIPTION','LOW',50,
+      `"${d.slice(0,60)}" açıklaması ${ids.length} kez tekrarlanmış`,ids,'DESCRIPTION'));
+  }
+  return out;
+}
+
+function detTax(entries){
+  const out=[];
+  const ind=entries.filter(e=>e.account_code&&e.account_code.startsWith('191'));
+  const hes=entries.filter(e=>e.account_code&&e.account_code.startsWith('391'));
+  if(ind.length>=5&&hes.length===0){
+    out.push(_mkA('VAT_ONLY_INPUT','MEDIUM',65,
+      `İndirilecek KDV (191) hareketleri var ama Hesaplanan KDV (391) yok`,
+      ind.map(e=>e.id).slice(0,50),'TAX'));
+  }else if(hes.length>=5&&ind.length===0){
+    out.push(_mkA('VAT_ONLY_OUTPUT','MEDIUM',65,
+      `Hesaplanan KDV (391) hareketleri var ama İndirilecek KDV (191) yok`,
+      hes.map(e=>e.id).slice(0,50),'TAX'));
+  }
+  const byEntry={};
+  for(const e of entries)(byEntry[e.entry_no]=byEntry[e.entry_no]||[]).push(e);
+  const odd=[];
+  for(const [no,arr] of Object.entries(byEntry)){
+    const vat=arr.find(e=>e.account_code&&(e.account_code.startsWith('191')||e.account_code.startsWith('391')));
+    if(!vat)continue;
+    const base=arr.filter(e=>e.account_code&&/^[1-7]\d{2}/.test(e.account_code)&&!e.account_code.startsWith('191')&&!e.account_code.startsWith('391'));
+    const baseTotal=base.reduce((s,e)=>s+Math.max(e.debit,e.credit),0);
+    const vatAmt=Math.max(vat.debit,vat.credit);
+    if(baseTotal>0&&vatAmt>0){
+      const rate=vatAmt/baseTotal;
+      const isStd=DEFTER_CFG.vatRates.some(r=>Math.abs(rate-r)<0.005);
+      if(!isStd&&rate<0.30)odd.push(no);
+    }
+  }
+  if(odd.length)out.push(_mkA('VAT_ODD_RATE','MEDIUM',60,
+    `${odd.length} yevmiyede KDV oranı standart (%1, %8, %10, %18, %20) dışı`,odd,'TAX'));
+  return out;
+}
+
+function detTiming(entries){
+  const out=[];
+  const offHours=[];
+  for(const e of entries){
+    if(!e.timestamp)continue;
+    const d=new Date(e.timestamp);if(isNaN(d))continue;
+    const h=d.getHours();
+    if(h<DEFTER_CFG.workHourStart||h>=DEFTER_CFG.workHourEnd)offHours.push(e.id);
+  }
+  if(offHours.length>=10)out.push(_mkA('OFF_HOURS_ENTRY','MEDIUM',60,
+    `${offHours.length} kayıt mesai dışında (${DEFTER_CFG.workHourStart}:00–${DEFTER_CFG.workHourEnd}:00 dışı) yapılmış`,
+    offHours,'TIMING'));
+  const ts=entries.filter(e=>e.timestamp).sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+  const burst=new Set();
+  for(let i=0;i<ts.length;i++){
+    let count=1;const start=new Date(ts[i].timestamp).getTime();
+    for(let j=i+1;j<ts.length;j++){
+      if(new Date(ts[j].timestamp).getTime()-start>DEFTER_CFG.bulkWindowMs)break;
+      if(ts[j].source===ts[i].source)count++;
+    }
+    if(count>=DEFTER_CFG.bulkThreshold){
+      for(let j=i;j<i+count&&j<ts.length;j++)burst.add(ts[j].id);
+    }
+  }
+  if(burst.size)out.push(_mkA('BULK_BURST','MEDIUM',65,
+    `${burst.size} kayıt 60 sn pencerede toplu girilmiş (${DEFTER_CFG.bulkThreshold}+ kayıt/dk)`,
+    Array.from(burst),'TIMING'));
+  return out;
+}
+
+function detIntegration(entries){
+  const out=[];const k2={};
+  for(const e of entries){
+    const k=`${e.date}|${e.account_code}|${(e.debit+e.credit).toFixed(2)}`;
+    (k2[k]=k2[k]||{})[e.source]=(k2[k][e.source]||[]).concat(e.id);
+  }
+  const dup=[];
+  for(const v of Object.values(k2)){
+    if(Object.keys(v).length>=2){
+      const all=[].concat(...Object.values(v));
+      if(all.length>=2)dup.push(...all);
+    }
+  }
+  if(dup.length)out.push(_mkA('CROSS_SOURCE_DUPLICATE','HIGH',80,
+    `${dup.length} kayıt birden fazla kaynak (manuel + sistem) tarafından eklenmiş gibi`,
+    dup,'INTEGRATION'));
+  return out;
+}
+
+function runDefterAnomali(entries,holidays){
+  const all=[
+    ...detBalance(entries),...detDuplicates(entries),...detDates(entries,holidays),
+    ...detAmounts(entries),...detAccountMisuse(entries),...detDescriptions(entries),
+    ...detTax(entries),...detTiming(entries),...detIntegration(entries)
+  ];
+  let raw=0;
+  for(const a of all)raw+=(_SEV_W[a.severity]||1)*(a.confidence/100);
+  const risk=Math.min(100,Math.round(raw*0.5));
+  const byCat={};
+  for(const a of all){
+    if(!byCat[a.category])byCat[a.category]={count:0,LOW:0,MEDIUM:0,HIGH:0};
+    byCat[a.category].count++;byCat[a.category][a.severity]++;
+  }
+  return {
+    summary:{
+      total_entries:entries.length,anomalies_found:all.length,risk_score:risk,
+      by_category:byCat,
+      by_severity:{LOW:all.filter(a=>a.severity==='LOW').length,
+        MEDIUM:all.filter(a=>a.severity==='MEDIUM').length,
+        HIGH:all.filter(a=>a.severity==='HIGH').length}
+    },
+    anomalies:all
+  };
+}
+
+// ─── PERSISTENCE ──
+async function saveDefterRapor(){
+  const r=S.defter.report;
+  if(!r){showToast('Önce bir dosya analiz edin','error');return;}
+  if(!S.user){showToast('Kaydetmek için giriş yapın','error');return;}
+  const res=await sbCall('defterSave',{
+    dosyaAdi:S.defter.fileName,donem:'',
+    entriesCount:r.summary.total_entries,riskScore:r.summary.risk_score,
+    summaryJson:r.summary,anomaliesJson:r.anomalies
+  });
+  if(res.error){showToast('Kayıt hatası: '+res.error,'error');return;}
+  showToast('Rapor kaydedildi ✓','success',3000);
+  await loadDefterList();render();
+}
+async function loadDefterList(){
+  if(!S.user)return;
+  const res=await sbCall('defterList');
+  S.defter.savedList=Array.isArray(res)?res:(Array.isArray(res?.data)?res.data:[]);
+  S.defter._listLoaded=true;
+}
+async function loadDefterRapor(id){
+  const res=await sbCall('defterGet',{id});
+  if(res.error){showToast('Yükleme hatası: '+res.error,'error');return;}
+  S.defter.fileName=res.dosya_adi||'';
+  S.defter.report={summary:res.summary_json||{by_severity:{HIGH:0,MEDIUM:0,LOW:0},by_category:{}},anomalies:res.anomalies_json||[]};
+  S.defter.entries=[];
+  render();showToast('Rapor yüklendi','success',2000);
+}
+async function deleteDefterRapor(id){
+  if(!confirm('Bu raporu silmek istiyor musunuz?'))return;
+  const res=await sbCall('defterDelete',{id});
+  if(res.error){showToast('Silme hatası: '+res.error,'error');return;}
+  showToast('Silindi','success',2000);
+  await loadDefterList();render();
+}
+
+// ─── RENDERER ──
+const _DEF_SEV_COL={HIGH:'var(--rd)',MEDIUM:'var(--am)',LOW:'var(--ac)'};
+const _DEF_SEV_LBL={HIGH:'Yüksek',MEDIUM:'Orta',LOW:'Düşük'};
+const _DEF_CAT_LBL={
+  BALANCE:'⚖️ Bakiye',DUPLICATION:'📑 Yineleme',DATE:'📅 Tarih',
+  AMOUNT:'💰 Tutar',ACCOUNT_MISUSE:'🏷️ Hesap Kullanımı',
+  DESCRIPTION:'📝 Açıklama',TAX:'🧾 KDV',TIMING:'⏰ Zamanlama',
+  INTEGRATION:'🔗 Entegrasyon'
+};
+function _defEsc(s){return String(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+
+function rDefter(el){
+  const D=S.defter;let h='';
+  if(!D.report){
+    if(S.user&&!D._listLoaded){loadDefterList().then(()=>{if(S.tab==='defter')render();});}
+    h+=`<div class="card"><div class="card-h"><div class="card-t">🔍 e-Defter Anomali Tespiti</div></div><div class="card-b">
+      <div class="uz" id="defterUz" onclick="document.getElementById('defterFileIn').click()">
+        <div class="uz-i">📂</div>
+        <div class="uz-t">${D.loading?'İşleniyor…':'XML veya ZIP dosyasını buraya bırakın'}</div>
+        <div class="uz-h">e-Defter (XBRL GL) yevmiye dosyası · maks 50 MB</div>
+      </div>
+      <input type="file" id="defterFileIn" accept=".xml,.zip" style="display:none" onchange="hDefterFile(this.files[0])">
+      <div style="font-size:12px;color:var(--t2);line-height:1.7;margin-top:14px">
+        Bu modül yalnızca anomali tespiti yapar — finansal rasyo analizi <b>içermez</b>.
+        Yevmiye bütünlüğü, mükerrer kayıt, tarih sapması, KDV uyumu gibi
+        muhasebe kalitesi konularını denetler.
+      </div>
+    </div></div>`;
+    if(D.savedList&&D.savedList.length){
+      h+=`<div class="card"><div class="card-h"><div class="card-t">🗂️ Kayıtlı Raporlar</div></div><div class="card-b">`;
+      for(const it of D.savedList){
+        const dt=it.olusturma_tarihi?new Date(it.olusturma_tarihi).toLocaleDateString('tr-TR'):'';
+        const rs=it.risk_score||0;
+        const rc=rs>=70?'var(--rd)':rs>=40?'var(--am)':'var(--gn)';
+        h+=`<div class="saved-item" onclick="loadDefterRapor('${it.id}')">
+          <div class="saved-dot" style="background:${rc}"></div>
+          <div class="saved-info">
+            <div class="saved-name">${_defEsc(it.dosya_adi||'(adsız)')}</div>
+            <div class="saved-meta">${it.entries_count||0} kayıt · risk ${rs}/100 · ${dt}</div>
+          </div>
+          <button class="saved-del" onclick="event.stopPropagation();deleteDefterRapor('${it.id}')" title="Sil">✕</button>
+        </div>`;
+      }
+      h+='</div></div>';
+    }
+    el.innerHTML=h;
+    setTimeout(()=>{
+      const z=document.getElementById('defterUz');if(!z)return;
+      z.ondragover=e=>{e.preventDefault();z.classList.add('dov');};
+      z.ondragleave=()=>z.classList.remove('dov');
+      z.ondrop=e=>{e.preventDefault();z.classList.remove('dov');if(e.dataTransfer.files[0])hDefterFile(e.dataTransfer.files[0]);};
+    },50);
+    return;
+  }
+  const r=D.report,s=r.summary;
+  const rsc=s.risk_score||0;
+  const rcol=rsc>=70?'var(--rd)':rsc>=40?'var(--am)':'var(--gn)';
+  const rlbl=rsc>=70?'Yüksek Risk':rsc>=40?'Orta Risk':'Düşük Risk';
+  const sev=s.by_severity||{HIGH:0,MEDIUM:0,LOW:0};
+  h+=`<div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px">
+      <div class="card"><div class="card-b" style="text-align:center;padding:22px">
+        <div style="font-size:11px;color:var(--tm);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-family:'JetBrains Mono',monospace">Risk Skoru</div>
+        <svg viewBox="0 0 120 120" width="112" height="112" style="display:block;margin:0 auto">
+          <circle cx="60" cy="60" r="46" fill="none" stroke="var(--brd)" stroke-width="10"/>
+          <circle cx="60" cy="60" r="46" fill="none" stroke="${rcol}" stroke-width="10"
+            stroke-dasharray="${(2*Math.PI*46*rsc/100).toFixed(1)} ${(2*Math.PI*46).toFixed(1)}"
+            stroke-linecap="round" transform="rotate(-90 60 60)"/>
+          <text x="60" y="55" text-anchor="middle" font-size="20" font-weight="800" fill="${rcol}" font-family="'JetBrains Mono',monospace">${rsc}</text>
+          <text x="60" y="72" text-anchor="middle" font-size="10" fill="var(--tm)" font-family="'Inter',sans-serif">/ 100</text>
+        </svg>
+        <div style="font-size:14px;color:${rcol};font-weight:700;margin-top:10px">${rlbl}</div>
+      </div></div>
+      <div class="card"><div class="card-b" style="text-align:center;padding:22px">
+        <div style="font-size:11px;color:var(--tm);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-family:'JetBrains Mono',monospace">Toplam Kayıt</div>
+        <div style="font-size:42px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1);letter-spacing:-1px">${(s.total_entries||0).toLocaleString('tr-TR')}</div>
+        <div style="font-size:12px;color:var(--tm);margin-top:8px">${_defEsc(D.fileName||'')}</div>
+      </div></div>
+      <div class="card"><div class="card-b" style="text-align:center;padding:22px">
+        <div style="font-size:11px;color:var(--tm);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-family:'JetBrains Mono',monospace">Anomali</div>
+        <div style="font-size:42px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${s.anomalies_found?rcol:'var(--gn)'};letter-spacing:-1px">${s.anomalies_found||0}</div>
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:8px;font-size:11px">
+          <span style="color:var(--rd)">● ${sev.HIGH} Y</span>
+          <span style="color:var(--am)">● ${sev.MEDIUM} O</span>
+          <span style="color:var(--ac)">● ${sev.LOW} D</span>
+        </div>
+      </div></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="S.defter.report=null;S.defter.entries=[];render()">↺ Yeni Dosya</button>
+      ${S.user?'<button class="btn btn-p" onclick="saveDefterRapor()">💾 Raporu Kaydet</button>':''}
+    </div>`;
+  if(s.by_category&&Object.keys(s.by_category).length){
+    h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Kategori Dağılımı</div></div><div class="card-b">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">`;
+    for(const [cat,v] of Object.entries(s.by_category)){
+      const max=Math.max(v.HIGH,v.MEDIUM,v.LOW,1);
+      h+=`<div style="background:var(--bgi);border:1px solid var(--brd);border-radius:10px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">${_DEF_CAT_LBL[cat]||cat}</div>
+        <div style="display:flex;gap:4px;align-items:flex-end;height:32px">
+          <div style="flex:1;background:var(--rd);height:${v.HIGH/max*100}%;border-radius:3px;min-height:2px" title="Yüksek: ${v.HIGH}"></div>
+          <div style="flex:1;background:var(--am);height:${v.MEDIUM/max*100}%;border-radius:3px;min-height:2px" title="Orta: ${v.MEDIUM}"></div>
+          <div style="flex:1;background:var(--ac);height:${v.LOW/max*100}%;border-radius:3px;min-height:2px" title="Düşük: ${v.LOW}"></div>
+        </div>
+        <div style="font-size:10px;color:var(--tm);margin-top:6px;display:flex;justify-content:space-between">
+          <span>${v.count} bulgu</span><span style="color:var(--rd)">${v.HIGH}H</span>
+        </div>
+      </div>`;
+    }
+    h+='</div></div></div>';
+  }
+  if(r.anomalies&&r.anomalies.length){
+    const byCat={};
+    for(const a of r.anomalies)(byCat[a.category]=byCat[a.category]||[]).push(a);
+    const sevOrder={HIGH:0,MEDIUM:1,LOW:2};
+    h+=`<div class="card"><div class="card-h"><div class="card-t">🔎 Bulgular (Detay)</div><span style="font-size:11px;color:var(--tm)">${r.anomalies.length} anomali</span></div><div class="card-b" style="padding:0">`;
+    for(const cat of Object.keys(byCat)){
+      const list=byCat[cat].sort((a,b)=>sevOrder[a.severity]-sevOrder[b.severity]||b.confidence-a.confidence);
+      h+=`<div style="padding:10px 14px;background:var(--bgi);font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--brd)">${_DEF_CAT_LBL[cat]||cat}</div>`;
+      for(const a of list){
+        const ec=a.affected_count||(a.affected_entries||[]).length;
+        h+=`<div style="padding:12px 16px;border-bottom:1px solid var(--brd);display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start">
+          <div style="background:${_DEF_SEV_COL[a.severity]};color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px;white-space:nowrap">${_DEF_SEV_LBL[a.severity].toUpperCase()}</div>
+          <div>
+            <div style="font-size:12px;color:var(--t1);margin-bottom:3px;font-weight:500">${_defEsc(a.description)}</div>
+            <div style="font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace">${a.type} · güven %${a.confidence}${ec?` · ${ec} kayıt`:''}</div>
+          </div>
+          <div style="font-size:11px;color:${_DEF_SEV_COL[a.severity]};font-weight:600;font-family:'JetBrains Mono',monospace">${a.confidence}</div>
+        </div>`;
+      }
+    }
+    h+='</div></div>';
+  }else{
+    h+=`<div class="card"><div class="card-b" style="text-align:center;padding:36px">
+      <div style="font-size:32px;margin-bottom:12px">✓</div>
+      <div style="font-size:13px;font-weight:600;color:var(--gn);margin-bottom:8px">Anomali tespit edilmedi</div>
+      <div style="font-size:11px;color:var(--t2)">Yüklenen yevmiye dosyası bütün kontrolü geçti.</div>
+    </div></div>`;
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
+
 // ─── GLOBAL BAĞLAMA ──────────────────────────────────────────────────────────
 window.sTab             = sTab;
 window.toggleSection    = toggleSection;
@@ -2509,6 +3074,11 @@ window.uF               = uF;
 window.initTheme        = initTheme;
 window.saveAnaliz       = saveAnaliz;
 window.runAI            = runAI;
+window.rDefter          = rDefter;
+window.hDefterFile      = hDefterFile;
+window.saveDefterRapor  = saveDefterRapor;
+window.loadDefterRapor  = loadDefterRapor;
+window.deleteDefterRapor= deleteDefterRapor;
 
 window.addEventListener('beforeunload',e=>{
   if(S.dirty){e.preventDefault();e.returnValue='';}
