@@ -288,6 +288,163 @@ body{
 ::-webkit-scrollbar-thumb:hover{background:var(--tm)}
 
 /* === MIZAN APPLE-STYLE — PHASE 2 — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 3 (shell + color palette) — START
+   Rebinds legacy tokens (--bg0/--bg1/--bg2/--brd/--t1/--ac/...) to Apple
+   neutral values. Because every existing rule already references these
+   tokens, the entire shell (sidebar, topbar, page bg, cards, inputs,
+   tables) shifts in one pass without selector edits.
+   To revert: delete everything between this START and the matching END.
+   ====================================================================== */
+
+/* Dark — default */
+:root{
+  --bg0:#000000;          /* page background */
+  --bg1:#1c1c1e;          /* sidebar / topbar / brand */
+  --bg2:#2c2c2e;          /* cards / surfaces */
+  --bg2h:#3a3a3c;         /* hover surface */
+  --bgi:#1c1c1e;          /* input background */
+  --brd:rgba(255,255,255,.10); /* hairlines */
+  --t1:#f5f5f7;
+  --t2:#d1d1d6;
+  --tm:#98989d;
+  --t3:#3a3a3c;
+  --ac:#0a84ff;           /* Apple system blue (dark) */
+  --acd:rgba(10,132,255,.16);
+  --gn:#30d158;
+  --gnd:rgba(48,209,88,.14);
+  --rd:#ff453a;
+  --am:#ff9f0a;
+  --pu:#bf5af2;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.32);
+  --mo-bg:rgba(0,0,0,.55);
+}
+
+/* Light — overrides */
+[data-theme="light"]{
+  --bg0:#fbfbfd;
+  --bg1:#ffffff;
+  --bg2:#ffffff;
+  --bg2h:#f5f5f7;
+  --bgi:#ffffff;
+  --brd:rgba(60,60,67,.10);
+  --t1:#1d1d1f;
+  --t2:#424245;
+  --tm:#6e6e73;
+  --t3:#d2d2d7;
+  --ac:#0071e3;
+  --acd:rgba(0,113,227,.10);
+  --gn:#1f8a4c;
+  --gnd:rgba(48,209,88,.10);
+  --rd:#c5283d;
+  --am:#b25e09;
+  --pu:#7c3aed;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.06);
+  --mo-bg:rgba(0,0,0,.32);
+}
+
+/* --- Shell touch-ups that don't fall out of pure token rebinding --- */
+
+/* Sidebar surface */
+.sidebar{
+  background:var(--bg1);
+  border-right:1px solid var(--brd);
+}
+.sb-brand{
+  background:var(--bg1);   /* drop the legacy gradient — flat Apple */
+  border-bottom:1px solid var(--brd);
+}
+.sb-tabs{
+  background:var(--bg1);
+  border-bottom:1px solid var(--brd);
+}
+.sb-tab{
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);
+  letter-spacing:var(--tracking-tight);
+  text-transform:none;
+  font-weight:500;
+}
+.sb-tab.on{
+  border-bottom-color:var(--ac);
+  background:transparent;
+}
+
+/* Period bar */
+.pbar{
+  background:var(--bg1);
+  border-bottom:1px solid var(--brd);
+  padding:12px 22px;
+}
+.plab{
+  font-family:var(--font-sans);
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--tm);
+  font-size:var(--fs-12);
+}
+
+/* Main tab strip */
+.mtabs{
+  background:var(--bg1);
+  border-bottom:1px solid var(--brd);
+}
+
+/* Brand mark — keep gradient on the M square only */
+.brand-i{
+  background:linear-gradient(135deg,var(--ac),var(--pu));
+  box-shadow:0 2px 10px rgba(10,132,255,.30);
+}
+.brand-n{
+  font-family:var(--font-sans);
+  letter-spacing:var(--tracking-display);
+}
+.brand-s{
+  font-family:var(--font-sans);
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--tm);
+}
+
+/* Section headings inside content */
+.st{
+  font-family:var(--font-sans);
+  letter-spacing:0.04em;
+}
+
+/* Tables — refined hover row, sticky header looks lighter */
+.ctb th{
+  background:var(--bg1);
+  font-family:var(--font-sans);
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  font-weight:600;
+  color:var(--tm);
+}
+.ctb tr:hover td{
+  background:var(--bg2h);
+}
+
+/* Modal — match Apple sheet feel */
+.mo{
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+}
+
+/* Loading overlay & spinner */
+.loading-overlay{
+  backdrop-filter:saturate(180%) blur(20px);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+}
+
+/* Toast palette — Apple semantic colors */
+.toast.info   {background:var(--ac)}
+.toast.success{background:var(--gn)}
+.toast.error  {background:var(--rd)}
+.toast.warning{background:var(--am)}
+
+/* === MIZAN APPLE-STYLE — PHASE 3 — END === */
 .skeleton-card{height:80px;border-radius:10px;margin-bottom:12px}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
