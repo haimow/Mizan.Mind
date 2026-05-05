@@ -110,6 +110,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t1);min-he
 /* SAVE BTN */
 .btn-save-anim{animation:savePulse .6s ease}@keyframes savePulse{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
 .cl-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid var(--brd);margin-bottom:6px;cursor:pointer;transition:all .18s;background:var(--bg2)}.cl-row:hover{border-color:var(--brd2);background:var(--bg2h)}.cl-chk{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--brd);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .18s}.cl-p-yuksek{font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(239,68,68,.1);color:var(--rd);font-weight:600;letter-spacing:.3px;flex-shrink:0}.cl-bolum-h{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg0);border-radius:7px;margin-bottom:6px;cursor:pointer}.cl-note{width:100%;background:transparent;border:none;outline:none;font-size:11px;color:var(--t2);font-family:'Inter',sans-serif;resize:none;margin-top:6px;padding:6px 8px;border-radius:5px;border:1px solid transparent;transition:border-color .2s}.cl-note:focus{border-color:var(--brd);background:var(--bgi)}.cl-note::placeholder{color:var(--t3)}
+/* Native disclosure widget — used by e-Defter drill-down */
+details summary{list-style:none;cursor:pointer}
+details summary::-webkit-details-marker{display:none}
+details summary::marker{display:none}
+details[open] .det-arr{transform:rotate(90deg)}
+.det-arr{transition:transform .18s cubic-bezier(.4,0,.2,1);display:inline-block}
 /* Global focus rings — Apple HIG keyboard nav */
 button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(--ac);outline-offset:2px;border-radius:6px}
 /* Table zebra rows */
@@ -531,23 +537,48 @@ function rPB(){
 function rSB(){const el=document.getElementById('sbCont');document.querySelectorAll('.sb-tab').forEach(t=>t.classList.toggle('on',t.dataset.st===S.stab));if(S.stab==='formulas'){let h='';Object.entries(RATIOS).forEach(([ck,cat])=>{const op=S.ecat===ck;h+=`<div class="sb-cat"><div class="sb-cat-h ${op?'open':''}" onclick="tCat('${ck}')"><span>${cat.icon}</span> ${cat.label}<span class="arr">▶</span></div>`;if(op)cat.items.forEach(r=>{h+=`<div class="fc"><div class="fc-n">${r.name}</div><div class="fc-f">${r.formula}</div><div class="fc-i">İdeal: ${r.ideal}</div></div>`});h+=`</div>`});el.innerHTML=h}else if(S.stab==='charts')rSBC(el);else rSBSaved(el)}
 
 function rSBSaved(el){
-  if(!S.savedList||!S.savedList.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--tm);font-size:11px">Kayıtlı analiz yok.<br><span style="color:var(--ac)">Analiz yapıp 💾 Kaydet butonuna basın.</span></div>';return}
-  let h='<div style="padding:10px 10px 4px;font-size:10px;color:var(--tm);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1.5px">Kayıtlı Analizler</div>';
-  S.savedList.forEach(item=>{
-    const d=new Date(item.olusturma_tarihi);
-    const tarih=d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const sektor=item.sektor?` · ${esc(SEKTOR_LABELS[item.sektor]||item.sektor)}`:'';
-    const dosyaBtn=item.has_file?`<button class="saved-del" onclick="event.stopPropagation();downloadSaved('${item.id}')" title="Dosyayı İndir" style="color:var(--ac)">⬇</button>`:'';
-    h+=`<div class="saved-item" onclick="loadSaved('${item.id}')">
-      <div class="saved-dot" style="${item.has_file?'background:var(--gn)':''}"></div>
-      <div class="saved-info">
-        <div class="saved-name">${esc(item.sirket_adi||item.donem||'Adsız Analiz')}</div>
-        <div class="saved-meta">${tarih}${sektor}${item.dosya_adi?' 📎':''}</div>
-      </div>
-      ${dosyaBtn}
-      <button class="saved-del" onclick="event.stopPropagation();deleteSaved('${item.id}')" title="Sil">✕</button>
-    </div>`;
-  });
+  const aList=S.savedList||[];
+  const dList=(S.defter&&S.defter.savedList)||[];
+  if(!aList.length&&!dList.length){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--tm);font-size:11px">Kayıtlı analiz yok.<br><span style="color:var(--ac)">Analiz yapıp 💾 Kaydet butonuna basın.</span></div>';
+    return;
+  }
+  let h='';
+  if(aList.length){
+    h+='<div style="padding:10px 10px 4px;font-size:10px;color:var(--tm);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1.5px">Kayıtlı Analizler</div>';
+    aList.forEach(item=>{
+      const d=new Date(item.olusturma_tarihi);
+      const tarih=d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const sektor=item.sektor?` · ${esc(SEKTOR_LABELS[item.sektor]||item.sektor)}`:'';
+      const dosyaBtn=item.has_file?`<button class="saved-del" onclick="event.stopPropagation();downloadSaved('${item.id}')" title="Dosyayı İndir" style="color:var(--ac)">⬇</button>`:'';
+      h+=`<div class="saved-item" onclick="loadSaved('${item.id}')">
+        <div class="saved-dot" style="${item.has_file?'background:var(--gn)':''}"></div>
+        <div class="saved-info">
+          <div class="saved-name">${esc(item.sirket_adi||item.donem||'Adsız Analiz')}</div>
+          <div class="saved-meta">${tarih}${sektor}${item.dosya_adi?' 📎':''}</div>
+        </div>
+        ${dosyaBtn}
+        <button class="saved-del" onclick="event.stopPropagation();deleteSaved('${item.id}')" title="Sil">✕</button>
+      </div>`;
+    });
+  }
+  if(dList.length){
+    h+='<div style="padding:14px 10px 4px;font-size:10px;color:var(--tm);font-family:\'JetBrains Mono\',monospace;text-transform:uppercase;letter-spacing:1.5px">🔍 e-Defter Raporları</div>';
+    dList.forEach(item=>{
+      const d=new Date(item.olusturma_tarihi);
+      const tarih=d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
+      const rs=item.risk_score||0;
+      const rc=rs>=70?'var(--rd)':rs>=40?'var(--am)':'var(--gn)';
+      h+=`<div class="saved-item" onclick="sTab('defter');loadDefterRapor('${item.id}')">
+        <div class="saved-dot" style="background:${rc}"></div>
+        <div class="saved-info">
+          <div class="saved-name">${esc(item.dosya_adi||'Adsız Rapor')}</div>
+          <div class="saved-meta">${tarih} · ${item.entries_count||0} kayıt · risk ${rs}/100</div>
+        </div>
+        <button class="saved-del" onclick="event.stopPropagation();deleteDefterRapor('${item.id}')" title="Sil">✕</button>
+      </div>`;
+    });
+  }
   el.innerHTML=h;
 }
 let sCh=[];
@@ -2118,14 +2149,16 @@ async function sbCall(action, data={}){
 async function loadSavedList(){
   if(!S.user) return;
   try{
-    const res = await sbCall('list');
-    if(res && Array.isArray(res.data)){
-      S.savedList = res.data;
-    } else if(res && Array.isArray(res)){
-      S.savedList = res;
-    } else {
-      S.savedList = [];
-    }
+    const [listRes, defterRes] = await Promise.allSettled([sbCall('list'), sbCall('defterList')]);
+    const r1 = listRes.status==='fulfilled'?listRes.value:null;
+    if(r1 && Array.isArray(r1.data)) S.savedList = r1.data;
+    else if(r1 && Array.isArray(r1)) S.savedList = r1;
+    else S.savedList = [];
+    const r2 = defterRes.status==='fulfilled'?defterRes.value:null;
+    if(r2 && Array.isArray(r2.data)) S.defter.savedList = r2.data;
+    else if(r2 && Array.isArray(r2)) S.defter.savedList = r2;
+    else S.defter.savedList = [];
+    S.defter._listLoaded = true;
   }catch(e){
     S.savedList = [];
     console.warn('loadSavedList hata:', e);
@@ -2608,31 +2641,37 @@ async function hDefterFile(file){
 // ANOMALİ TESPİT MOTORU — 9 KATEGORİ, saf fonksiyonlar
 // ═══════════════════════════════════════════════════════════════════════════
 const _SEV_W={LOW:2,MEDIUM:5,HIGH:10};
-const _mkA=(type,severity,confidence,description,affected,category)=>({
-  type,severity,confidence:Math.max(0,Math.min(100,Math.round(confidence))),description,
-  affected_entries:Array.isArray(affected)?affected.slice(0,DEFTER_CFG.maxAnomalyDetailRows):[affected],
-  affected_count:Array.isArray(affected)?affected.length:1,category
-});
+const fmtTL=v=>{const n=Number(v);if(!isFinite(n))return'—';return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' ₺';};
+// Drill-down için kayıt referansı — sadece görüntüleme için gereken alanlar
+const _refE=e=>({id:e.id,no:e.entry_no,date:e.date,acct:e.account_code,acct_name:(e.account_name||'').slice(0,40),debit:e.debit||0,credit:e.credit||0,desc:(e.description||'').slice(0,120),doc:e.doc_no||''});
+const _mkA=(type,severity,confidence,description,affected,category)=>{
+  const refs=Array.isArray(affected)?affected:[affected];
+  return {
+    type,severity,confidence:Math.max(0,Math.min(100,Math.round(confidence))),description,
+    affected_entries:refs.slice(0,DEFTER_CFG.maxAnomalyDetailRows),
+    affected_count:refs.length,category
+  };
+};
 
 function detBalance(entries){
   const out=[];const byNo={};
   for(const e of entries){
-    if(!byNo[e.entry_no])byNo[e.entry_no]={debit:0,credit:0,ids:[]};
+    if(!byNo[e.entry_no])byNo[e.entry_no]={debit:0,credit:0,refs:[]};
     byNo[e.entry_no].debit+=e.debit;byNo[e.entry_no].credit+=e.credit;
-    byNo[e.entry_no].ids.push(e.id);
+    byNo[e.entry_no].refs.push(_refE(e));
   }
   for(const [no,v] of Object.entries(byNo)){
     if(Math.abs(v.debit-v.credit)>0.01){
       out.push(_mkA('UNBALANCED_ENTRY','HIGH',95,
-        `Yevmiye No ${no}: borç ${v.debit.toFixed(2)} ≠ alacak ${v.credit.toFixed(2)} (fark: ${(v.debit-v.credit).toFixed(2)})`,
-        v.ids,'BALANCE'));
+        `Yevmiye ${no}: borç ${fmtTL(v.debit)} ≠ alacak ${fmtTL(v.credit)} (fark: ${fmtTL(v.debit-v.credit)})`,
+        v.refs,'BALANCE'));
     }
   }
   const td=entries.reduce((s,e)=>s+e.debit,0);
   const tc=entries.reduce((s,e)=>s+e.credit,0);
   if(Math.abs(td-tc)>0.01){
     out.push(_mkA('TRIAL_BALANCE_MISMATCH','HIGH',98,
-      `Genel mizan dengesizliği: borç ${td.toFixed(2)} ≠ alacak ${tc.toFixed(2)}`,[],'BALANCE'));
+      `Genel mizan dengesizliği: borç ${fmtTL(td)} ≠ alacak ${fmtTL(tc)} (fark: ${fmtTL(td-tc)})`,[],'BALANCE'));
   }
   return out;
 }
@@ -2641,47 +2680,64 @@ function detDuplicates(entries){
   const out=[];const seen={};
   for(const e of entries){
     const key=`${e.date}|${e.account_code}|${e.debit}|${e.credit}|${e.description}|${e.doc_no}`;
-    (seen[key]=seen[key]||[]).push(e.id);
+    (seen[key]=seen[key]||[]).push(e);
   }
-  for(const [k,ids] of Object.entries(seen)){
-    if(ids.length>1)out.push(_mkA('DUPLICATE_ENTRY','HIGH',90,
-      `Birebir aynı kayıt ${ids.length} kez: ${k.slice(0,80)}…`,ids,'DUPLICATION'));
+  for(const [,arr] of Object.entries(seen)){
+    if(arr.length>1)out.push(_mkA('DUPLICATE_ENTRY','HIGH',90,
+      `Birebir aynı kayıt ${arr.length} kez tekrarlanmış (${arr[0].date} · ${arr[0].account_code} · ${fmtTL(arr[0].debit+arr[0].credit)})`,
+      arr.map(_refE),'DUPLICATION'));
   }
   const byDoc={};
   for(const e of entries){
     if(!e.doc_no)continue;
-    (byDoc[e.doc_no]=byDoc[e.doc_no]||new Set()).add(e.entry_no);
+    if(!byDoc[e.doc_no])byDoc[e.doc_no]={ents:new Set(),refs:[]};
+    byDoc[e.doc_no].ents.add(e.entry_no);
+    byDoc[e.doc_no].refs.push(e);
   }
-  for(const [doc,ents] of Object.entries(byDoc)){
-    if(ents.size>1)out.push(_mkA('DUPLICATE_DOC_NUMBER','MEDIUM',75,
-      `Belge No ${doc}, ${ents.size} farklı yevmiyede kullanılmış`,Array.from(ents),'DUPLICATION'));
+  for(const [doc,v] of Object.entries(byDoc)){
+    if(v.ents.size>1)out.push(_mkA('DUPLICATE_DOC_NUMBER','MEDIUM',75,
+      `Belge No ${doc}: ${v.ents.size} farklı yevmiyede kullanılmış`,
+      v.refs.map(_refE),'DUPLICATION'));
   }
   return out;
 }
 
+// Tarih anomalileri YEVMİYE BAZINDA — aynı yevmiyenin tüm satırları için
+// tek anomali; bu sayede aynı tarih + tutar farklı satırlarda mükerrer çıkmaz.
 function detDates(entries,holidays){
-  const out=[];const nowMs=Date.now();
+  const out=[];const byNo={};
   for(const e of entries){
-    if(!e.date)continue;
-    const d=new Date(e.date);if(isNaN(d))continue;
-    const dow=d.getDay();const total=e.debit+e.credit;
-    if(e.timestamp&&e.timestamp!==e.date){
-      const ed=new Date(e.timestamp);
+    if(!byNo[e.entry_no])byNo[e.entry_no]={refs:[],date:e.date,timestamp:e.timestamp,debit:0};
+    byNo[e.entry_no].refs.push(e);
+    byNo[e.entry_no].debit+=e.debit;
+  }
+  const nowMs=Date.now();
+  for(const [no,v] of Object.entries(byNo)){
+    if(!v.date)continue;
+    const d=new Date(v.date);if(isNaN(d))continue;
+    const dow=d.getDay();const total=v.debit; // dengeli fişte borç = alacak
+    const refs=v.refs.map(_refE);
+    if(v.timestamp&&v.timestamp!==v.date){
+      const ed=new Date(v.timestamp);
       if(!isNaN(ed)&&ed-d>30*24*60*60*1000){
         out.push(_mkA('BACKDATED_ENTRY','MEDIUM',70,
-          `Kayıt tarihi (${e.timestamp}) yevmiye tarihinden 30+ gün sonra (${e.date})`,[e.id],'DATE'));
+          `Yevmiye ${no}: kayıt tarihi (${v.timestamp}) yevmiye tarihinden 30+ gün sonra (${v.date})`,
+          refs,'DATE'));
       }
     }
     if((dow===0||dow===6)&&total>=DEFTER_CFG.highValueWeekend){
       out.push(_mkA('WEEKEND_HIGH_VALUE','MEDIUM',65,
-        `${e.date} (${dow===0?'Pazar':'Cumartesi'}): yüksek tutar ${total.toFixed(2)} TL`,[e.id],'DATE'));
+        `Yevmiye ${no} · ${v.date} (${dow===0?'Pazar':'Cumartesi'}): yüksek tutar ${fmtTL(total)}`,
+        refs,'DATE'));
     }
-    if(holidays&&holidays.has(e.date)&&total>=DEFTER_CFG.highValueWeekend){
+    if(holidays&&holidays.has(v.date)&&total>=DEFTER_CFG.highValueWeekend){
       out.push(_mkA('HOLIDAY_HIGH_VALUE','MEDIUM',70,
-        `${e.date} (resmi tatil): yüksek tutar ${total.toFixed(2)} TL`,[e.id],'DATE'));
+        `Yevmiye ${no} · ${v.date} (resmi tatil): yüksek tutar ${fmtTL(total)}`,
+        refs,'DATE'));
     }
     if(d.getTime()>nowMs+24*60*60*1000){
-      out.push(_mkA('FUTURE_DATED','HIGH',95,`İleri tarihli kayıt: ${e.date}`,[e.id],'DATE'));
+      out.push(_mkA('FUTURE_DATED','HIGH',95,
+        `Yevmiye ${no}: ileri tarihli kayıt ${v.date}`,refs,'DATE'));
     }
   }
   return out;
@@ -2694,26 +2750,29 @@ function detAmounts(entries){
   const mean=amounts.reduce((a,b)=>a+b,0)/amounts.length;
   const sd=Math.sqrt(amounts.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/amounts.length);
   const thr=mean+DEFTER_CFG.outlierStdMult*sd;
-  const roundIds=[];
+  const round=[];
   for(const e of entries){
     const t=e.debit+e.credit;
-    if(t>=1000&&t%1000===0&&DEFTER_CFG.roundFlagThresholds.includes(t))roundIds.push(e.id);
+    if(t>=1000&&t%1000===0&&DEFTER_CFG.roundFlagThresholds.includes(t))round.push(e);
   }
-  if(roundIds.length>=3)out.push(_mkA('ROUND_NUMBER_PATTERN','LOW',55,
-    `${roundIds.length} kayıt tam yuvarlak büyük tutarlarda`,roundIds,'AMOUNT'));
-  const outIds=entries.filter(e=>(e.debit+e.credit)>thr).map(e=>e.id);
-  if(outIds.length)out.push(_mkA('AMOUNT_OUTLIER','MEDIUM',70,
-    `${outIds.length} kayıt ortalamadan ${DEFTER_CFG.outlierStdMult}σ üstü (${thr.toFixed(0)} TL üstü)`,outIds,'AMOUNT'));
+  if(round.length>=3)out.push(_mkA('ROUND_NUMBER_PATTERN','LOW',55,
+    `${round.length} kayıt tam yuvarlak büyük tutarlarda (örn: ${DEFTER_CFG.roundFlagThresholds.slice(0,3).map(fmtTL).join(', ')}…)`,
+    round.map(_refE),'AMOUNT'));
+  const outliers=entries.filter(e=>(e.debit+e.credit)>thr);
+  if(outliers.length)out.push(_mkA('AMOUNT_OUTLIER','MEDIUM',70,
+    `${outliers.length} kayıt ortalamadan ${DEFTER_CFG.outlierStdMult}σ üstü (${fmtTL(thr)} üstü)`,
+    outliers.map(_refE),'AMOUNT'));
   const splits={};
   for(const e of entries){
     const k=`${e.date}|${e.account_code}|${(e.description||'').slice(0,30)}`;
-    if(!splits[k])splits[k]={total:0,ids:[]};
-    splits[k].total+=e.debit+e.credit;splits[k].ids.push(e.id);
+    if(!splits[k])splits[k]={total:0,arr:[]};
+    splits[k].total+=e.debit+e.credit;splits[k].arr.push(e);
   }
-  for(const [k,v] of Object.entries(splits)){
-    if(v.ids.length>=4&&v.total>=50000){
+  for(const v of Object.values(splits)){
+    if(v.arr.length>=4&&v.total>=50000){
       out.push(_mkA('SPLIT_TRANSACTION','MEDIUM',65,
-        `Olası parçalanmış işlem: ${v.ids.length} kayıt, toplam ${v.total.toFixed(0)} TL`,v.ids,'AMOUNT'));
+        `Olası parçalanmış işlem: ${v.arr.length} kayıt · toplam ${fmtTL(v.total)} (${v.arr[0].date} · ${v.arr[0].account_code})`,
+        v.arr.map(_refE),'AMOUNT'));
     }
   }
   return out;
@@ -2725,24 +2784,24 @@ function detAccountMisuse(entries){
     if(!e.account_code)continue;
     freq[e.account_code]=(freq[e.account_code]||0)+1;
   }
-  const directMain=[];
+  const direct=[];
   for(const e of entries){
     if(/^\d{3}$/.test(e.account_code)){
       const hasSub=Object.keys(freq).some(c=>c.startsWith(e.account_code+'.'));
-      if(hasSub)directMain.push(e.id);
+      if(hasSub)direct.push(e);
     }
   }
-  if(directMain.length)out.push(_mkA('DIRECT_MAIN_ACCOUNT','MEDIUM',75,
-    `${directMain.length} kayıt ana THP hesabına doğrudan yapılmış (alt hesap atlanmış)`,
-    directMain,'ACCOUNT_MISUSE'));
+  if(direct.length)out.push(_mkA('DIRECT_MAIN_ACCOUNT','MEDIUM',75,
+    `${direct.length} kayıt ana THP hesabına doğrudan yapılmış (alt hesap atlanmış)`,
+    direct.map(_refE),'ACCOUNT_MISUSE'));
   for(const [code,count] of Object.entries(freq)){
     if(count<3){
       const m=entries.filter(e=>e.account_code===code);
       const total=m.reduce((s,e)=>s+e.debit+e.credit,0);
       if(total>=100000){
         out.push(_mkA('RARE_ACCOUNT_ACTIVATION','MEDIUM',60,
-          `Nadir hesap (${code}): ${count} hareket, toplam ${total.toFixed(0)} TL`,
-          m.map(e=>e.id),'ACCOUNT_MISUSE'));
+          `Nadir hesap (${code}): ${count} hareket · toplam ${fmtTL(total)}`,
+          m.map(_refE),'ACCOUNT_MISUSE'));
       }
     }
   }
@@ -2751,20 +2810,22 @@ function detAccountMisuse(entries){
 
 function detDescriptions(entries){
   const out=[];
-  const empty=entries.filter(e=>!e.description||!e.description.trim()).map(e=>e.id);
+  const empty=entries.filter(e=>!e.description||!e.description.trim());
   if(empty.length>=5)out.push(_mkA('EMPTY_DESCRIPTION','MEDIUM',80,
-    `${empty.length} kayıt boş açıklamaya sahip`,empty,'DESCRIPTION'));
-  const short=entries.filter(e=>{const d=(e.description||'').trim();return d.length>0&&d.length<DEFTER_CFG.shortDescMaxLen;}).map(e=>e.id);
+    `${empty.length} kayıt boş açıklamaya sahip`,empty.map(_refE),'DESCRIPTION'));
+  const short=entries.filter(e=>{const d=(e.description||'').trim();return d.length>0&&d.length<DEFTER_CFG.shortDescMaxLen;});
   if(short.length>=10)out.push(_mkA('SHORT_DESCRIPTION','LOW',55,
-    `${short.length} kayıt çok kısa açıklamalı (<${DEFTER_CFG.shortDescMaxLen} karakter)`,short,'DESCRIPTION'));
+    `${short.length} kayıt çok kısa açıklamalı (<${DEFTER_CFG.shortDescMaxLen} karakter)`,
+    short.map(_refE),'DESCRIPTION'));
   const df={};
   for(const e of entries){
     const d=(e.description||'').trim();if(!d)continue;
-    (df[d]=df[d]||[]).push(e.id);
+    (df[d]=df[d]||[]).push(e);
   }
-  for(const [d,ids] of Object.entries(df)){
-    if(ids.length>=20)out.push(_mkA('REPEATED_DESCRIPTION','LOW',50,
-      `"${d.slice(0,60)}" açıklaması ${ids.length} kez tekrarlanmış`,ids,'DESCRIPTION'));
+  for(const [d,arr] of Object.entries(df)){
+    if(arr.length>=20)out.push(_mkA('REPEATED_DESCRIPTION','LOW',50,
+      `"${d.slice(0,60)}" açıklaması ${arr.length} kez tekrarlanmış`,
+      arr.map(_refE),'DESCRIPTION'));
   }
   return out;
 }
@@ -2776,15 +2837,14 @@ function detTax(entries){
   if(ind.length>=5&&hes.length===0){
     out.push(_mkA('VAT_ONLY_INPUT','MEDIUM',65,
       `İndirilecek KDV (191) hareketleri var ama Hesaplanan KDV (391) yok`,
-      ind.map(e=>e.id).slice(0,50),'TAX'));
+      ind.slice(0,50).map(_refE),'TAX'));
   }else if(hes.length>=5&&ind.length===0){
     out.push(_mkA('VAT_ONLY_OUTPUT','MEDIUM',65,
       `Hesaplanan KDV (391) hareketleri var ama İndirilecek KDV (191) yok`,
-      hes.map(e=>e.id).slice(0,50),'TAX'));
+      hes.slice(0,50).map(_refE),'TAX'));
   }
   const byEntry={};
   for(const e of entries)(byEntry[e.entry_no]=byEntry[e.entry_no]||[]).push(e);
-  const odd=[];
   for(const [no,arr] of Object.entries(byEntry)){
     const vat=arr.find(e=>e.account_code&&(e.account_code.startsWith('191')||e.account_code.startsWith('391')));
     if(!vat)continue;
@@ -2794,41 +2854,43 @@ function detTax(entries){
     if(baseTotal>0&&vatAmt>0){
       const rate=vatAmt/baseTotal;
       const isStd=DEFTER_CFG.vatRates.some(r=>Math.abs(rate-r)<0.005);
-      if(!isStd&&rate<0.30)odd.push(no);
+      if(!isStd&&rate<0.30){
+        out.push(_mkA('VAT_ODD_RATE','MEDIUM',60,
+          `Yevmiye ${no}: KDV oranı standart dışı %${(rate*100).toFixed(1)} — KDV ${fmtTL(vatAmt)}, baz ${fmtTL(baseTotal)}`,
+          arr.map(_refE),'TAX'));
+      }
     }
   }
-  if(odd.length)out.push(_mkA('VAT_ODD_RATE','MEDIUM',60,
-    `${odd.length} yevmiyede KDV oranı standart (%1, %8, %10, %18, %20) dışı`,odd,'TAX'));
   return out;
 }
 
 function detTiming(entries){
   const out=[];
-  const offHours=[];
-  for(const e of entries){
-    if(!e.timestamp)continue;
-    const d=new Date(e.timestamp);if(isNaN(d))continue;
+  const offHours=entries.filter(e=>{
+    if(!e.timestamp)return false;
+    const d=new Date(e.timestamp);if(isNaN(d))return false;
     const h=d.getHours();
-    if(h<DEFTER_CFG.workHourStart||h>=DEFTER_CFG.workHourEnd)offHours.push(e.id);
-  }
+    return h<DEFTER_CFG.workHourStart||h>=DEFTER_CFG.workHourEnd;
+  });
   if(offHours.length>=10)out.push(_mkA('OFF_HOURS_ENTRY','MEDIUM',60,
     `${offHours.length} kayıt mesai dışında (${DEFTER_CFG.workHourStart}:00–${DEFTER_CFG.workHourEnd}:00 dışı) yapılmış`,
-    offHours,'TIMING'));
+    offHours.map(_refE),'TIMING'));
   const ts=entries.filter(e=>e.timestamp).sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-  const burst=new Set();
+  const burstMap=new Map();
   for(let i=0;i<ts.length;i++){
-    let count=1;const start=new Date(ts[i].timestamp).getTime();
+    const start=new Date(ts[i].timestamp).getTime();
+    const sameSrc=[ts[i]];
     for(let j=i+1;j<ts.length;j++){
       if(new Date(ts[j].timestamp).getTime()-start>DEFTER_CFG.bulkWindowMs)break;
-      if(ts[j].source===ts[i].source)count++;
+      if(ts[j].source===ts[i].source)sameSrc.push(ts[j]);
     }
-    if(count>=DEFTER_CFG.bulkThreshold){
-      for(let j=i;j<i+count&&j<ts.length;j++)burst.add(ts[j].id);
+    if(sameSrc.length>=DEFTER_CFG.bulkThreshold){
+      for(const e of sameSrc)burstMap.set(e.id,e);
     }
   }
-  if(burst.size)out.push(_mkA('BULK_BURST','MEDIUM',65,
-    `${burst.size} kayıt 60 sn pencerede toplu girilmiş (${DEFTER_CFG.bulkThreshold}+ kayıt/dk)`,
-    Array.from(burst),'TIMING'));
+  if(burstMap.size)out.push(_mkA('BULK_BURST','MEDIUM',65,
+    `${burstMap.size} kayıt 60 sn pencerede toplu girilmiş (${DEFTER_CFG.bulkThreshold}+ kayıt/dk)`,
+    Array.from(burstMap.values()).map(_refE),'TIMING'));
   return out;
 }
 
@@ -2836,7 +2898,9 @@ function detIntegration(entries){
   const out=[];const k2={};
   for(const e of entries){
     const k=`${e.date}|${e.account_code}|${(e.debit+e.credit).toFixed(2)}`;
-    (k2[k]=k2[k]||{})[e.source]=(k2[k][e.source]||[]).concat(e.id);
+    if(!k2[k])k2[k]={};
+    if(!k2[k][e.source])k2[k][e.source]=[];
+    k2[k][e.source].push(e);
   }
   const dup=[];
   for(const v of Object.values(k2)){
@@ -2847,7 +2911,7 @@ function detIntegration(entries){
   }
   if(dup.length)out.push(_mkA('CROSS_SOURCE_DUPLICATE','HIGH',80,
     `${dup.length} kayıt birden fazla kaynak (manuel + sistem) tarafından eklenmiş gibi`,
-    dup,'INTEGRATION'));
+    dup.map(_refE),'INTEGRATION'));
   return out;
 }
 
@@ -2889,7 +2953,7 @@ async function saveDefterRapor(){
   });
   if(res.error){showToast('Kayıt hatası: '+res.error,'error');return;}
   showToast('Rapor kaydedildi ✓','success',3000);
-  await loadDefterList();render();
+  await loadSavedList();render();
 }
 async function loadDefterList(){
   if(!S.user)return;
@@ -2910,7 +2974,7 @@ async function deleteDefterRapor(id){
   const res=await sbCall('defterDelete',{id});
   if(res.error){showToast('Silme hatası: '+res.error,'error');return;}
   showToast('Silindi','success',2000);
-  await loadDefterList();render();
+  await loadSavedList();render();
 }
 
 // ─── RENDERER ──
@@ -3006,23 +3070,29 @@ function rDefter(el){
       ${S.user?'<button class="btn btn-p" onclick="saveDefterRapor()">💾 Raporu Kaydet</button>':''}
     </div>`;
   if(s.by_category&&Object.keys(s.by_category).length){
-    h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Kategori Dağılımı</div></div><div class="card-b">
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">`;
-    for(const [cat,v] of Object.entries(s.by_category)){
-      const max=Math.max(v.HIGH,v.MEDIUM,v.LOW,1);
-      h+=`<div style="background:var(--bgi);border:1px solid var(--brd);border-radius:10px;padding:12px 14px">
-        <div style="font-size:12px;font-weight:600;margin-bottom:8px">${_DEF_CAT_LBL[cat]||cat}</div>
-        <div style="display:flex;gap:4px;align-items:flex-end;height:32px">
-          <div style="flex:1;background:var(--rd);height:${v.HIGH/max*100}%;border-radius:3px;min-height:2px" title="Yüksek: ${v.HIGH}"></div>
-          <div style="flex:1;background:var(--am);height:${v.MEDIUM/max*100}%;border-radius:3px;min-height:2px" title="Orta: ${v.MEDIUM}"></div>
-          <div style="flex:1;background:var(--ac);height:${v.LOW/max*100}%;border-radius:3px;min-height:2px" title="Düşük: ${v.LOW}"></div>
+    const cats=Object.entries(s.by_category).sort((a,b)=>b[1].count-a[1].count);
+    h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Kategori Dağılımı</div></div><div class="card-b" style="padding:0">`;
+    for(const [cat,v] of cats){
+      const segs=[];
+      if(v.HIGH)segs.push(`<div style="flex:${v.HIGH};background:var(--rd)" title="Yüksek: ${v.HIGH}"></div>`);
+      if(v.MEDIUM)segs.push(`<div style="flex:${v.MEDIUM};background:var(--am)" title="Orta: ${v.MEDIUM}"></div>`);
+      if(v.LOW)segs.push(`<div style="flex:${v.LOW};background:var(--ac)" title="Düşük: ${v.LOW}"></div>`);
+      const badges=[];
+      if(v.HIGH)badges.push(`<span style="font-size:10px;background:rgba(239,68,68,.15);color:var(--rd);padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace">${v.HIGH} Y</span>`);
+      if(v.MEDIUM)badges.push(`<span style="font-size:10px;background:rgba(245,158,11,.15);color:var(--am);padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace">${v.MEDIUM} O</span>`);
+      if(v.LOW)badges.push(`<span style="font-size:10px;background:rgba(59,130,246,.15);color:var(--ac);padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace">${v.LOW} D</span>`);
+      h+=`<div style="padding:14px 18px;border-bottom:1px solid var(--brd);display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center">
+        <div style="min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--t1);margin-bottom:8px">${_DEF_CAT_LBL[cat]||cat}</div>
+          <div style="display:flex;height:6px;background:var(--bgi);border-radius:3px;overflow:hidden">${segs.join('')}</div>
         </div>
-        <div style="font-size:10px;color:var(--tm);margin-top:6px;display:flex;justify-content:space-between">
-          <span>${v.count} bulgu</span><span style="color:var(--rd)">${v.HIGH}H</span>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          ${badges.join('')}
+          <span style="font-size:15px;font-weight:700;color:var(--t1);font-family:'JetBrains Mono',monospace;margin-left:8px;min-width:20px;text-align:right">${v.count}</span>
         </div>
       </div>`;
     }
-    h+='</div></div></div>';
+    h+='</div></div>';
   }
   if(r.anomalies&&r.anomalies.length){
     const byCat={};
@@ -3034,14 +3104,44 @@ function rDefter(el){
       h+=`<div style="padding:10px 14px;background:var(--bgi);font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--brd)">${_DEF_CAT_LBL[cat]||cat}</div>`;
       for(const a of list){
         const ec=a.affected_count||(a.affected_entries||[]).length;
-        h+=`<div style="padding:12px 16px;border-bottom:1px solid var(--brd);display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start">
-          <div style="background:${_DEF_SEV_COL[a.severity]};color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px;white-space:nowrap">${_DEF_SEV_LBL[a.severity].toUpperCase()}</div>
-          <div>
-            <div style="font-size:12px;color:var(--t1);margin-bottom:3px;font-weight:500">${_defEsc(a.description)}</div>
-            <div style="font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace">${a.type} · güven %${a.confidence}${ec?` · ${ec} kayıt`:''}</div>
-          </div>
-          <div style="font-size:11px;color:${_DEF_SEV_COL[a.severity]};font-weight:600;font-family:'JetBrains Mono',monospace">${a.confidence}</div>
-        </div>`;
+        const refs=Array.isArray(a.affected_entries)?a.affected_entries:[];
+        const hasDetail=refs.length>0&&typeof refs[0]==='object';
+        h+=`<details style="border-bottom:1px solid var(--brd)">
+          <summary style="padding:12px 16px;display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:start">
+            <div style="background:${_DEF_SEV_COL[a.severity]};color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px;white-space:nowrap">${_DEF_SEV_LBL[a.severity].toUpperCase()}</div>
+            <div>
+              <div style="font-size:12px;color:var(--t1);margin-bottom:3px;font-weight:500">${_defEsc(a.description)}</div>
+              <div style="font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace">${a.type} · güven %${a.confidence}${ec?` · ${ec} kayıt`:''}</div>
+            </div>
+            <div style="font-size:11px;color:${_DEF_SEV_COL[a.severity]};font-weight:600;font-family:'JetBrains Mono',monospace;align-self:center">${a.confidence}</div>
+            <div class="det-arr" style="font-size:11px;color:var(--tm);align-self:center;${hasDetail?'':'visibility:hidden'}">▶</div>
+          </summary>`;
+        if(hasDetail){
+          h+=`<div style="padding:0 0 10px;background:var(--bgi);overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'JetBrains Mono',monospace">
+            <thead><tr style="color:var(--tm)">
+              <th style="padding:8px 12px;font-weight:500;text-align:left;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">YEVMİYE</th>
+              <th style="padding:8px 12px;font-weight:500;text-align:left;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">TARİH</th>
+              <th style="padding:8px 12px;font-weight:500;text-align:left;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">HESAP</th>
+              <th style="padding:8px 12px;font-weight:500;text-align:left;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">AÇIKLAMA</th>
+              <th style="padding:8px 12px;font-weight:500;text-align:right;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">BORÇ</th>
+              <th style="padding:8px 12px;font-weight:500;text-align:right;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">ALACAK</th>
+            </tr></thead><tbody>`;
+          for(const ref of refs){
+            h+=`<tr>
+              <td style="padding:6px 12px;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03)">${_defEsc(ref.no||'—')}</td>
+              <td style="padding:6px 12px;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03)">${_defEsc(ref.date||'—')}</td>
+              <td style="padding:6px 12px;color:var(--ac);border-bottom:1px solid rgba(255,255,255,.03)">${_defEsc(ref.acct||'—')}</td>
+              <td style="padding:6px 12px;color:var(--t2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,.03)" title="${_defEsc(ref.desc||'')}">${_defEsc(ref.desc||'—')}</td>
+              <td style="padding:6px 12px;text-align:right;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03)">${ref.debit?fmtTL(ref.debit):''}</td>
+              <td style="padding:6px 12px;text-align:right;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03)">${ref.credit?fmtTL(ref.credit):''}</td>
+            </tr>`;
+          }
+          if(a.affected_count>refs.length){
+            h+=`<tr><td colspan="6" style="padding:8px 12px;text-align:center;color:var(--tm);font-size:10px;font-style:italic">… ${a.affected_count-refs.length} kayıt daha</td></tr>`;
+          }
+          h+=`</tbody></table></div>`;
+        }
+        h+=`</details>`;
       }
     }
     h+='</div></div>';
