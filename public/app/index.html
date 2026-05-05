@@ -1061,6 +1061,13 @@ function getMissing(p){return FIELDS.flatMap(s=>s.fields).filter(f=>!p.data[f.ke
 // File upload: ask period name first if not set
 async function hFile(file){
   if(!file)return;
+  // e-Defter dosyaları (.xml veya .zip) ayrı sekmede işlenir
+  if(/\.(xml|zip)$/i.test(file.name)){
+    S.tab='defter';render();
+    showToast('e-Defter dosyası tespit edildi → 🔍 e-Defter sekmesine yönlendirildiniz','info',3500);
+    setTimeout(()=>hDefterFile(file),120);
+    return;
+  }
   const p=S.periods[S.ap];
   if(p.fileName){
     if(!confirm('Bu dönemde zaten veri var. Üzerine yazmak istiyor musunuz?\n\nFarklı bir dönem için yukarıdaki "+ Dönem Ekle" butonunu kullanın.'))return;
@@ -3049,6 +3056,21 @@ function rDefter(el){
   el.innerHTML=h;
 }
 
+// ─── KAYITLI DOSYA İNDİRME (sidebar saved-list ⬇ butonu) ─────────────────────
+async function downloadSaved(id){
+  const res=await sbCall('getFileUrl',{id});
+  if(res.error){showToast('İndirme hatası: '+res.error,'error');return;}
+  if(!res.url){showToast('Dosya bulunamadı','error');return;}
+  const a=document.createElement('a');
+  a.href=res.url;
+  a.download=res.dosyaAdi||'dosya';
+  a.target='_blank';
+  a.rel='noopener';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{try{document.body.removeChild(a);}catch{}},200);
+}
+
 // ─── GLOBAL BAĞLAMA ──────────────────────────────────────────────────────────
 window.sTab             = sTab;
 window.toggleSection    = toggleSection;
@@ -3079,6 +3101,7 @@ window.hDefterFile      = hDefterFile;
 window.saveDefterRapor  = saveDefterRapor;
 window.loadDefterRapor  = loadDefterRapor;
 window.deleteDefterRapor= deleteDefterRapor;
+window.downloadSaved    = downloadSaved;
 
 window.addEventListener('beforeunload',e=>{
   if(S.dirty){e.preventDefault();e.returnValue='';}
