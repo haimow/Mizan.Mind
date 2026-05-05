@@ -177,7 +177,10 @@ export const handler = async (event, context) => {
       );
       const rows = await res.json();
       if (!res.ok) return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Liste hatası" }) };
-      return { statusCode: 200, headers: CORS, body: JSON.stringify(rows) };
+      // Strip dosya_path — clients never need the raw storage path.
+      // Replace with has_file boolean so the UI can still show the download button.
+      const sanitized = rows.map(({ dosya_path, ...rest }) => ({ ...rest, has_file: !!dosya_path }));
+      return { statusCode: 200, headers: CORS, body: JSON.stringify(sanitized) };
     }
 
     // ─── SİL
@@ -313,6 +316,61 @@ export const handler = async (event, context) => {
           dosyaAdi // Orijinal adı indirme için client'a ver ama path'i verme
         })
       };
+    }
+
+    // ─── E-DEFTER ANOMALİ RAPORU — KAYDET
+    if (action === "defterSave") {
+      const { dosyaAdi, donem, entriesCount, riskScore, summaryJson, anomaliesJson } = data;
+      const res = await sbFetch("/defter_raporlari", "POST", {
+        user_email: verifiedEmail,
+        dosya_adi: String(dosyaAdi || '').substring(0, 255),
+        donem: String(donem || '').substring(0, 100),
+        entries_count: Number.isFinite(+entriesCount) ? +entriesCount : 0,
+        risk_score: Number.isFinite(+riskScore) ? Math.max(0, Math.min(100, Math.round(+riskScore))) : 0,
+        summary_json: (typeof summaryJson === 'object' && summaryJson !== null) ? summaryJson : {},
+        anomalies_json: (typeof anomaliesJson === 'object' && anomaliesJson !== null) ? anomaliesJson : [],
+      });
+      const result = await res.json();
+      if (!res.ok) return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Kayıt hatası" }) };
+      return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true, id: result[0]?.id }) };
+    }
+
+    // ─── E-DEFTER LİSTELE
+    if (action === "defterList") {
+      const res = await sbFetch(
+        `/defter_raporlari?user_email=eq.${encodeURIComponent(verifiedEmail)}&order=olusturma_tarihi.desc&limit=50&select=id,dosya_adi,donem,entries_count,risk_score,summary_json,olusturma_tarihi`,
+        "GET"
+      );
+      const rows = await res.json();
+      if (!res.ok) return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Liste hatası" }) };
+      return { statusCode: 200, headers: CORS, body: JSON.stringify(rows) };
+    }
+
+    // ─── E-DEFTER GETİR (tam rapor — anomalies_json dahil)
+    if (action === "defterGet") {
+      const { id } = data;
+      if (!isValidUUID(id)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Geçersiz ID" }) };
+      const res = await sbFetch(
+        `/defter_raporlari?id=eq.${id}&user_email=eq.${encodeURIComponent(verifiedEmail)}`,
+        "GET"
+      );
+      const rows = await res.json();
+      if (!res.ok || !rows || rows.length === 0) {
+        return { statusCode: 404, headers: CORS, body: JSON.stringify({ error: "Rapor bulunamadı" }) };
+      }
+      return { statusCode: 200, headers: CORS, body: JSON.stringify(rows[0]) };
+    }
+
+    // ─── E-DEFTER SİL
+    if (action === "defterDelete") {
+      const { id } = data;
+      if (!isValidUUID(id)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Geçersiz ID" }) };
+      const res = await sbFetch(
+        `/defter_raporlari?id=eq.${id}&user_email=eq.${encodeURIComponent(verifiedEmail)}`,
+        "DELETE"
+      );
+      if (!res.ok) return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Silme hatası" }) };
+      return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true }) };
     }
 
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Geçersiz istek" }) };
