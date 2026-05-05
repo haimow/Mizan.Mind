@@ -23,6 +23,42 @@
 --sw:360px;--hh:54px;
 --shadow:0 2px 8px rgba(0,0,0,.3);
 --mo-bg:rgba(0,0,0,.65);
+
+/* === Apple-style design tokens (dark default) ============================
+   Namespaced (--c-/--s-/--r-/--sh-/--grad-/--font-/--ease/--dur-) so they
+   never collide with the legacy variables above. Used only by components
+   reskinned in Phase 2+. Light-mode overrides live in [data-theme="light"]. */
+--font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", Roboto, system-ui, sans-serif;
+--font-num : ui-rounded, "SF Pro Rounded", "SF Pro Display", -apple-system, system-ui, sans-serif;
+--fs-12:12px;--fs-13:13px;--fs-14:14px;--fs-15:15px;--fs-17:17px;--fs-20:20px;--fs-24:24px;--fs-32:32px;
+--lh-tight:1.2;--lh-body:1.45;
+--tracking-tight:-0.011em;--tracking-display:-0.022em;
+--c-bg:#000000;
+--c-surface:#1c1c1e;
+--c-surface-2:#2c2c2e;
+--c-hairline:rgba(255,255,255,0.10);
+--c-hairline-2:rgba(255,255,255,0.06);
+--c-text:#f5f5f7;
+--c-text-2:#d1d1d6;
+--c-text-3:#98989d;
+--c-text-4:#6c6c70;
+--c-accent:#0a84ff;
+--c-accent-soft:rgba(10,132,255,0.16);
+--c-good:#30d158;--c-good-bg:rgba(48,209,88,0.12);--c-good-dot:#30d158;
+--c-warn:#ff9f0a;--c-warn-bg:rgba(255,159,10,0.12);--c-warn-dot:#ff9f0a;
+--c-bad:#ff453a; --c-bad-bg:rgba(255,69,58,0.12); --c-bad-dot:#ff453a;
+--s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:20px;--s-6:24px;--s-8:32px;--s-10:40px;--s-12:48px;
+--r-1:6px;--r-2:10px;--r-3:14px;--r-4:18px;--r-pill:999px;
+--sh-0:0 0 0 1px var(--c-hairline);
+--sh-1:0 1px 2px rgba(0,0,0,0.4),0 0 0 1px var(--c-hairline);
+--sh-2:0 4px 16px rgba(0,0,0,0.5),0 0 0 1px var(--c-hairline);
+--sh-pop:0 12px 32px rgba(0,0,0,0.6),0 0 0 1px var(--c-hairline);
+--grad-good:linear-gradient(90deg,rgba(48,209,88,0.22) 0%,rgba(48,209,88,0.06) 100%);
+--grad-warn:linear-gradient(90deg,rgba(255,159,10,0.24) 0%,rgba(255,159,10,0.06) 100%);
+--grad-bad :linear-gradient(90deg,rgba(255,69,58,0.28) 0%,rgba(255,69,58,0.08) 100%);
+--ease:cubic-bezier(0.4,0,0.2,1);
+--ease-out:cubic-bezier(0.16,1,0.3,1);
+--dur-1:120ms;--dur-2:200ms;--dur-3:320ms;
 }
 [data-theme="light"]{
 --bg0:#f0f4f8;--bg1:#ffffff;--bg2:#f8fafc;--bg2h:#eef2f7;--bgi:#ffffff;
@@ -33,6 +69,28 @@
 --rd:#dc2626;--am:#d97706;--pu:#7c3aed;
 --shadow:0 2px 12px rgba(0,0,0,.08);
 --mo-bg:rgba(15,23,42,.5);
+
+/* === Apple-style design tokens (light overrides) ========================== */
+--c-bg:#fbfbfd;
+--c-surface:#ffffff;
+--c-surface-2:#f5f5f7;
+--c-hairline:rgba(60,60,67,0.10);
+--c-hairline-2:rgba(60,60,67,0.06);
+--c-text:#1d1d1f;
+--c-text-2:#424245;
+--c-text-3:#6e6e73;
+--c-text-4:#8e8e93;
+--c-accent:#0071e3;
+--c-accent-soft:#e8f1fd;
+--c-good:#1f8a4c;--c-good-bg:#e7f5ec;
+--c-warn:#b25e09;--c-warn-bg:#fdf1e3;
+--c-bad :#c5283d;--c-bad-bg :#fde9ec;
+--sh-1:0 1px 2px rgba(0,0,0,0.04),0 0 0 1px var(--c-hairline);
+--sh-2:0 4px 16px rgba(0,0,0,0.04),0 0 0 1px var(--c-hairline);
+--sh-pop:0 12px 32px rgba(0,0,0,0.10),0 0 0 1px var(--c-hairline);
+--grad-good:linear-gradient(90deg,rgba(48,209,88,0.14) 0%,rgba(48,209,88,0.04) 100%);
+--grad-warn:linear-gradient(90deg,rgba(255,159,10,0.16) 0%,rgba(255,159,10,0.04) 100%);
+--grad-bad :linear-gradient(90deg,rgba(255,69,58,0.18) 0%,rgba(255,69,58,0.05) 100%);
 }
 body{font-family:'Inter',sans-serif;background:var(--bg0);color:var(--t1);min-height:100vh;overflow:hidden;transition:background .25s,color .25s}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--brd);border-radius:4px}
