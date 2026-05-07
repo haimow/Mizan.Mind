@@ -4181,6 +4181,10 @@ async function saveDefterRapor(){
   const r=S.defter.report;
   if(!r){showToast('Önce bir dosya analiz edin','error');return;}
   if(!S.user){showToast('Kaydetmek için giriş yapın','error');return;}
+  // Attach customer/supplier analytics so saved reports stay self-contained
+  // (raw entries aren't persisted, but the top-10 + risky snapshot is enough to re-render the cards)
+  const _analytics = _defAnalyticsSnapshot(S.defter.entries);
+  if(_analytics) r.summary.analytics = _analytics;
   const res=await sbCall('defterSave',{
     dosyaAdi:S.defter.fileName,donem:'',
     entriesCount:r.summary.total_entries,riskScore:r.summary.risk_score,
@@ -4262,11 +4266,27 @@ function _defConcentrationRisk(entries){
     const total = arr.reduce((s,x)=>s + x.balance, 0);
     arr.forEach(x => x.pct = total > 0 ? (x.balance / total) * 100 : 0);
     arr.sort((a,b)=>b.balance - a.balance);
-    return { total, accounts:arr, risky: arr.filter(x => x.pct > 30) };
+    return { total, totalCount: arr.length, accounts:arr, risky: arr.filter(x => x.pct > 30) };
   };
   return {
     customers: _process(cust, o => o.debit  - o.credit),  // 120 (alıcılar)
     suppliers: _process(supp, o => o.credit - o.debit ),  // 320+329 (satıcılar)
+  };
+}
+
+// Compact analytics snapshot for DB persistence (top-10 + risky list, ~3-5KB max).
+// Saved reports use this so the analyses survive without raw entries.
+function _defAnalyticsSnapshot(entries){
+  const c = _defConcentrationRisk(entries);
+  if(!c) return null;
+  const _trim = (arr) => arr.map(x => ({
+    code:x.code, group:x.group, name:x.name,
+    balance:x.balance, pct:x.pct,
+    count:x.count, avgSize:x.avgSize, lastDate:x.lastDate
+  }));
+  return {
+    customers: { total:c.customers.total, totalCount:c.customers.totalCount, accounts:_trim(c.customers.accounts.slice(0,10)), risky:_trim(c.customers.risky) },
+    suppliers: { total:c.suppliers.total, totalCount:c.suppliers.totalCount, accounts:_trim(c.suppliers.accounts.slice(0,10)), risky:_trim(c.suppliers.risky) },
   };
 }
 
@@ -4353,7 +4373,10 @@ function rDefter(el){
     </div>`;
 
   // Konsantrasyon Riski Tespiti — alıcı (120) ve satıcı (320+329) alt-hesap analizi (>30% RİSKLİ)
-  const _conc = _defConcentrationRisk(D.entries);
+  // Live entries varsa onlardan; yoksa kaydedilmiş raporun summary.analytics snapshot'ından üret.
+  const _conc = (D.entries && D.entries.length)
+    ? _defConcentrationRisk(D.entries)
+    : (D.report && D.report.summary && D.report.summary.analytics ? D.report.summary.analytics : null);
   if(_conc){
     const _renderGroup = (label, mainCode, data) => {
       if(!data || !data.accounts.length) return '';
@@ -4374,7 +4397,7 @@ function rDefter(el){
           </div>`;
         }
       } else {
-        inner += `<div style="padding:12px 18px"><div class="mm-find-empty">✅ ${label} grubunda %30 eşiğini aşan alt-hesap yok (${data.accounts.length} alt-hesap incelendi)</div></div>`;
+        inner += `<div style="padding:12px 18px"><div class="mm-find-empty">✅ ${label} grubunda %30 eşiğini aşan alt-hesap yok (${data.totalCount||data.accounts.length} alt-hesap incelendi)</div></div>`;
       }
       return inner;
     };
@@ -4407,7 +4430,7 @@ function rDefter(el){
           <td class="r" style="color:var(--tm);font-size:10px">${dateStr}</td>
         </tr>`;
       });
-      return `<div class="card"><div class="card-h"><div class="card-t">${icon} ${title}</div><span style="font-size:11px;color:var(--tm)">${data.accounts.length} alt-hesap · ${fmtTL(data.total)}</span></div>
+      return `<div class="card"><div class="card-h"><div class="card-t">${icon} ${title}</div><span style="font-size:11px;color:var(--tm)">${data.totalCount||data.accounts.length} alt-hesap · ${fmtTL(data.total)}</span></div>
         <div class="card-b" style="padding:0;overflow-x:auto"><table class="mm-fdtl-tbl">
           <thead><tr><th style="text-align:center">#</th><th>${mainLabel}</th><th class="r">Bakiye</th><th class="r">Pay</th><th class="r"># İşl.</th><th class="r">Ort.</th><th class="r">Son</th></tr></thead>
           <tbody>${body}</tbody>
