@@ -1063,6 +1063,36 @@ body{
 }
 
 /* === MIZAN APPLE-STYLE — PHASE 9 — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 10 (Sankey — Gelir Tablosu Akışı) — START
+   Income-statement waterfall on Rasyolar tab. Hand-coded SVG (no D3).
+   Green trunk on bottom baseline, red expense terminals on top —
+   different y-bands prevent any label collision.
+   ====================================================================== */
+.mm-sankey{
+  display:block;width:100%;height:auto;
+  font-family:var(--font-sans);
+  letter-spacing:var(--tracking-tight);
+}
+.mm-sankey .mm-snk-rib{transition:opacity var(--dur-2) var(--ease)}
+.mm-sankey:hover .mm-snk-rib{opacity:.55}
+.mm-sankey .mm-snk-rib:hover{opacity:1}
+.mm-sankey .mm-snk-bar{transition:filter var(--dur-2) var(--ease)}
+.mm-sankey .mm-snk-bar:hover{filter:brightness(1.15)}
+.mm-sankey text{
+  font-family:var(--font-sans);
+  letter-spacing:var(--tracking-tight);
+  pointer-events:none;
+  user-select:none;
+}
+.mm-sankey text.num{
+  font-family:var(--font-num);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0;
+}
+
+/* === MIZAN APPLE-STYLE — PHASE 10 — END === */
 .skeleton-card{height:80px;border-radius:10px;margin-bottom:12px}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
@@ -2734,6 +2764,11 @@ function rRat(el){
     return;
   }
   let h='<div style="display:flex;flex-direction:column;gap:12px">';
+  // Gelir Tablosu Sankey — Net Satışlar → Net Kâr akış grafiği (Phase 10)
+  const _gtSk = rGTSankey(d);
+  if(_gtSk){
+    h += `<div class="card"><div class="card-h"><div class="card-t">💸 Gelir Tablosu Akışı</div><span style="font-size:11px;color:var(--tm)">Net Satışlar → Net Kâr</span></div><div class="card-b" style="padding:14px 8px">${_gtSk}</div></div>`;
+  }
   // Sağlık skoru — analist hassasiyetinde ağırlıklı puanlama
   //  iyi=1.0 · orta=0.5 · zayıf=0.0 · nötr (sektör BM'i yoksa, ör. Değerleme) puana girmez
   const allItems=Object.values(RATIOS).flatMap(c=>c.items);
@@ -2797,6 +2832,71 @@ function rRat(el){
   });
   h+='</div>';
   el.innerHTML=h;
+}
+
+// ─── GELİR TABLOSU SANKEY — Net Satışlar → Net Kâr akış grafiği ──────────────
+function rGTSankey(d){
+  const ns = +d.netSales || 0;
+  if(ns <= 0) return '';
+  const cogs    = Math.min(ns, Math.abs(+d.cogs || 0));
+  const gp      = Math.max(0, (d.grossProfit != null ? +d.grossProfit : (ns - cogs)));
+  const opEx    = Math.min(gp, Math.abs(+d.operatingExpenses || 0));
+  const opP     = Math.max(0, (d.operatingProfit != null ? +d.operatingProfit : (gp - opEx)));
+  const finEx   = Math.abs(+d.financialExpenses || 0);
+  const finIn   = Math.max(0, +d.financialIncome || 0);
+  const otherEx = Math.min(opP, Math.max(0, finEx - finIn));
+  const ptInc   = Math.max(0, opP - otherEx);
+  const tax     = Math.min(ptInc, Math.abs(+d.taxExpense || 0));
+  const netP    = Math.max(0, (d.netProfit != null ? +d.netProfit : (ptInc - tax)));
+  if(gp <= 0 && opP <= 0 && netP <= 0) return '';
+  // Layout
+  const W=920, H=400, baseY=H-58, topY=58;
+  const sc = 240/ns; // pixel per TL — Net Satışlar bar = 240px
+  const bw = 14;
+  const greenXs = [40, 240, 440, 640, 860];
+  const redXs   = [140, 340, 540, 740];
+  const gh = [ns*sc, gp*sc, opP*sc, ptInc*sc, netP*sc];
+  const rh = [cogs*sc, opEx*sc, otherEx*sc, tax*sc];
+  const gLab = ['Net Satışlar','Brüt Kâr','Faaliyet Kârı','Vergi Öncesi Kâr','Net Kâr'];
+  const gVal = [ns, gp, opP, ptInc, netP];
+  const rLab = ['Sat. Maliyeti','Faaliyet Gid.','Finansman Gid.','Vergi'];
+  const rVal = [cogs, opEx, otherEx, tax];
+  // Helper — ribbon path with smooth Bezier
+  const rib = (x1,y1t,y1b,x2,y2t,y2b)=>{
+    const cx=(x1+x2)/2;
+    return `M ${x1} ${y1t} C ${cx} ${y1t}, ${cx} ${y2t}, ${x2} ${y2t} L ${x2} ${y2b} C ${cx} ${y2b}, ${cx} ${y1b}, ${x1} ${y1b} Z`;
+  };
+  const escT = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="mm-sankey">`;
+  // Ribbons (drawn first, under bars)
+  for(let i=0;i<4;i++){
+    const xA=greenXs[i]+bw, xB=greenXs[i+1], xR=redXs[i];
+    const srcTopY=baseY-gh[i], splitY=baseY-gh[i+1], tgtTopY=baseY-gh[i+1];
+    if(rh[i]>0){
+      svg += `<path class="mm-snk-rib" d="${rib(xA,srcTopY,splitY,xR,topY,topY+rh[i])}" fill="rgba(239,68,68,.32)"><title>${escT(rLab[i])}: ${escT(fC(rVal[i]))}</title></path>`;
+    }
+    if(gh[i+1]>0){
+      svg += `<path class="mm-snk-rib" d="${rib(xA,splitY,baseY,xB,tgtTopY,baseY)}" fill="rgba(48,209,88,.30)"><title>${escT(gLab[i+1])}: ${escT(fC(gVal[i+1]))}</title></path>`;
+    }
+  }
+  // Green bars + labels (below baseline)
+  for(let i=0;i<5;i++){
+    if(gh[i]<=0) continue;
+    const x=greenXs[i], y=baseY-gh[i];
+    svg += `<rect class="mm-snk-bar" x="${x}" y="${y}" width="${bw}" height="${gh[i]}" fill="var(--gn)" rx="2"><title>${escT(gLab[i])}: ${escT(fC(gVal[i]))}</title></rect>`;
+    svg += `<text x="${x+bw/2}" y="${baseY+18}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--t1)">${escT(gLab[i])}</text>`;
+    svg += `<text class="num" x="${x+bw/2}" y="${baseY+32}" text-anchor="middle" font-size="11" fill="var(--tm)">${escT(fC(gVal[i]))}</text>`;
+  }
+  // Red bars + labels (above topY)
+  for(let i=0;i<4;i++){
+    if(rh[i]<=0) continue;
+    const x=redXs[i], y=topY;
+    svg += `<rect class="mm-snk-bar" x="${x}" y="${y}" width="${bw}" height="${rh[i]}" fill="var(--rd)" rx="2"><title>${escT(rLab[i])}: ${escT(fC(rVal[i]))}</title></rect>`;
+    svg += `<text x="${x+bw/2}" y="${topY-22}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--t1)">${escT(rLab[i])}</text>`;
+    svg += `<text class="num" x="${x+bw/2}" y="${topY-8}" text-anchor="middle" font-size="11" fill="var(--tm)">${escT(fC(rVal[i]))}</text>`;
+  }
+  svg += '</svg>';
+  return svg;
 }
 
 // ─── DETAY MİZAN ─────────────────────────────────────────────────────────────
