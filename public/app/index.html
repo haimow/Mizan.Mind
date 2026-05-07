@@ -7,10 +7,18 @@
 <!-- v2.4.3-MIZANMIND-BUILD-1777469418 -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b82f6'/><text x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-size='18' font-weight='bold'>M</text></svg>">
 <script src="/auth.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+  integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+  integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+  integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+  integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -629,6 +637,43 @@ body{
 .saved-del:hover{opacity:1 !important;background:var(--c-bad-bg);color:var(--rd)}
 
 /* === MIZAN APPLE-STYLE — PHASE 6 — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 6b (Uzman Yorum panel) — START
+   Refines .aip / .aip-h / .aip-b — AI streaming panel readability.
+   ====================================================================== */
+.aip{
+  border-radius:var(--r-3);
+  background:var(--bg2);
+  border:1px solid var(--brd);
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+.aip-h{
+  padding:var(--s-4) var(--s-5);
+  border-bottom:1px solid var(--brd);
+  background:transparent;
+}
+.aip-t{
+  font-family:var(--font-sans);
+  font-size:var(--fs-14);
+  letter-spacing:var(--tracking-tight);
+}
+.aip-b{
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);
+  line-height:1.65;
+  letter-spacing:var(--tracking-tight);
+  padding:var(--s-5);
+  color:var(--t1);
+}
+.aip-ph{
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);
+  letter-spacing:var(--tracking-tight);
+  padding:var(--s-8) var(--s-5);
+}
+.aip-ld{font-family:var(--font-sans);font-size:var(--fs-13);letter-spacing:var(--tracking-tight)}
+/* === MIZAN APPLE-STYLE — PHASE 6b — END === */
 .skeleton-card{height:80px;border-radius:10px;margin-bottom:12px}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
@@ -1074,10 +1119,15 @@ function render(){rPB();rSB();rC();uT()}
 function uT(){const b=document.getElementById('tglBtn');if(!b)return;b.textContent=S.sbo?'◀':'▶'}
 function rPB(){
   const b=document.getElementById('pBar');
+  // e-Defter sekmesi S.periods ile değil S.defter ile çalışır — dönem çipleri yanıltıcı
+  if(S.tab==='defter'){
+    b.innerHTML=`<span class="plab">Dönemler:</span><span style="font-size:11px;color:var(--tm);font-style:italic;letter-spacing:0">e-Defter modülü dönemden bağımsızdır — yüklenen dosya doğrudan analiz edilir</span>`;
+    return;
+  }
   let h='<span class="plab">Dönemler:</span>';
   // Normal dönemler
   S.periods.forEach((p,i)=>{
-    const label=p.name||'Dönem '+(i+1);
+    const label=esc(p.name||'Dönem '+(i+1));
     h+=`<button class="chip ${i===S.ap?'on':''}" ${p.saved?'data-saved="1"':''} onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span></button>`;
   });
 
@@ -1406,21 +1456,11 @@ function rCmp(el){
   // Tip seçici (karma varsa göster, yoksa aktif tipin tek butonunu göster)
   if(karmasik || (mizanlar.length>=2 && bilanconlar.length>=2)){
     h+=`<div style="display:flex;gap:6px">
-      <button onclick="S._cmpTab='mizan';rCmp(document.getElementById('cont'))"
-        style="padding:7px 16px;border-radius:8px;border:1px solid ${aktifTab==='mizan'?'var(--ac)':'var(--brd)'};
-        background:${aktifTab==='mizan'?'var(--acd)':'transparent'};color:${aktifTab==='mizan'?'var(--ac)':'var(--t2)'};
-        font-size:12px;font-weight:${aktifTab==='mizan'?'600':'400'};cursor:${mizanlar.length>=2?'pointer':'default'};
-        opacity:${mizanlar.length>=2?1:.4};font-family:'Inter',sans-serif">
-        📋 Mizan Karşılaştırması
-        <span style="font-size:10px;margin-left:4px;opacity:.7">(${mizanlar.length})</span>
+      <button class="btn ${aktifTab==='mizan'?'btn-p':''}" ${mizanlar.length>=2?`onclick="S._cmpTab='mizan';rCmp(document.getElementById('cont'))"`:'disabled'}>
+        📋 Mizan Karşılaştırması <span style="opacity:.7;margin-left:4px;font-size:11px">(${mizanlar.length})</span>
       </button>
-      <button onclick="S._cmpTab='bilanco';rCmp(document.getElementById('cont'))"
-        style="padding:7px 16px;border-radius:8px;border:1px solid ${aktifTab==='bilanco'?'var(--ac)':'var(--brd)'};
-        background:${aktifTab==='bilanco'?'var(--acd)':'transparent'};color:${aktifTab==='bilanco'?'var(--ac)':'var(--t2)'};
-        font-size:12px;font-weight:${aktifTab==='bilanco'?'600':'400'};cursor:${bilanconlar.length>=2?'pointer':'default'};
-        opacity:${bilanconlar.length>=2?1:.4};font-family:'Inter',sans-serif">
-        📊 Bilanço/Beyanname Karşılaştırması
-        <span style="font-size:10px;margin-left:4px;opacity:.7">(${bilanconlar.length})</span>
+      <button class="btn ${aktifTab==='bilanco'?'btn-p':''}" ${bilanconlar.length>=2?`onclick="S._cmpTab='bilanco';rCmp(document.getElementById('cont'))"`:'disabled'}>
+        📊 Bilanço/Beyanname Karşılaştırması <span style="opacity:.7;margin-left:4px;font-size:11px">(${bilanconlar.length})</span>
       </button>
     </div>`;
   }
@@ -2642,10 +2682,62 @@ function rKredi(el){
       const s=st<50?'good':st<70?'warn':'bad';
       items.push({name:'Borç Vade Karması', formula:'KVYK ÷ Toplam Borç × 100', fmt:fP(st), sev:s, sevLab:sevLab[s]});
     }
-    // 6-8. e-Defter gerektirenler — placeholder (locked)
-    items.push({name:'Müşteri Konsantrasyonu', formula:'e-Defter — En büyük 3 müşteri ÷ Net Satışlar × 100', fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
-    items.push({name:'Nakit Akış Kalitesi',    formula:'e-Defter — Tahsilat sürekliliği · mevsimsellik · gecikme', fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
-    items.push({name:'Tahsilat Profili',       formula:'e-Defter — Ortalama tahsilat süresi · çek protesto sayısı', fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
+    // 6-8. e-Defter dimensions — compute from S.defter.entries when available
+    const _hasEntries = _hasDefter && Array.isArray(S.defter.entries) && S.defter.entries.length>0;
+    if(_hasEntries){
+      const E=S.defter.entries;
+      // 6. Müşteri Konsantrasyonu — top-3 share of 120/121 debit (alıcı tahakkuku) per sub-account
+      const custMap={}; let totalRaised=0, totalCollected=0;
+      E.forEach(e=>{
+        const ac=e.account_code||'';
+        if(ac.startsWith('120')||ac.startsWith('121')){
+          if(e.debit>0){ custMap[ac]=(custMap[ac]||0)+e.debit; totalRaised+=e.debit; }
+          if(e.credit>0){ totalCollected+=e.credit; }
+        }
+      });
+      const sortedCust=Object.values(custMap).sort((a,b)=>b-a);
+      if(totalRaised>0 && sortedCust.length){
+        const top3=sortedCust.slice(0,3).reduce((s,v)=>s+v,0);
+        const concPct=top3/totalRaised*100;
+        const s=concPct<30?'good':concPct<50?'warn':'bad';
+        items.push({name:'Müşteri Konsantrasyonu', formula:`En büyük 3 müşteri ÷ Toplam ticari alacak (120/121) × 100  ·  ${sortedCust.length} müşteri`, fmt:fP(concPct), sev:s, sevLab:sevLab[s]});
+      } else {
+        items.push({name:'Müşteri Konsantrasyonu', formula:'120/121 hesabında tahakkuk hareketi yok', fmt:'—', sev:'neu', sevLab:'—'});
+      }
+      // 7. Nakit Akış Kalitesi — aylık satış (600 credit) varyans katsayısı (CV)
+      const monthMap={};
+      E.forEach(e=>{
+        const ac=e.account_code||'';
+        if(ac.startsWith('600') && e.credit>0 && e.date){
+          const ym=String(e.date).slice(0,7);
+          monthMap[ym]=(monthMap[ym]||0)+e.credit;
+        }
+      });
+      const months=Object.values(monthMap);
+      if(months.length>=3){
+        const mean=months.reduce((s,v)=>s+v,0)/months.length;
+        const variance=months.reduce((s,v)=>s+(v-mean)**2,0)/months.length;
+        const cv=mean>0?Math.sqrt(variance)/mean:0;
+        const s=cv<0.5?'good':cv<1.0?'warn':'bad';
+        items.push({name:'Nakit Akış Kalitesi', formula:`Aylık satış (600) varyans katsayısı (CV) · ${months.length} ay verisi · düşük CV = düzenli`, fmt:`CV ${cv.toFixed(2)}`, sev:s, sevLab:sevLab[s]});
+      } else {
+        items.push({name:'Nakit Akış Kalitesi', formula:'Satış (600) hareketi en az 3 ay gerektirir', fmt:'—', sev:'neu', sevLab:'—'});
+      }
+      // 8. Tahsilat Profili — Σ credit ÷ Σ debit (120/121) — tahsil oranı
+      if(totalRaised>0){
+        const collRate=totalCollected/totalRaised*100;
+        const s=collRate>=70?'good':collRate>=40?'warn':'bad';
+        items.push({name:'Tahsilat Profili', formula:`Tahsil edilen ÷ Tahakkuk eden (120/121) × 100 · ${fC(totalCollected)} / ${fC(totalRaised)}`, fmt:fP(collRate), sev:s, sevLab:sevLab[s]});
+      } else {
+        items.push({name:'Tahsilat Profili', formula:'120/121 hesabında tahakkuk hareketi yok', fmt:'—', sev:'neu', sevLab:'—'});
+      }
+    } else {
+      // No live entries — locked (defter not loaded) or summary-only (saved report)
+      const _f=_hasDefter?'Hesaplama için XML/ZIP dosyası yeniden yüklenmelidir':null;
+      items.push({name:'Müşteri Konsantrasyonu', formula:_f||'e-Defter — En büyük 3 müşteri ÷ Toplam alıcı × 100', fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
+      items.push({name:'Nakit Akış Kalitesi',    formula:_f||'e-Defter — Aylık satış varyans katsayısı (CV)',     fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
+      items.push({name:'Tahsilat Profili',       formula:_f||'e-Defter — Tahsil edilen ÷ Tahakkuk eden × 100',     fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
+    }
     return items;
   })();
   const _bActive = _bka.filter(it=>it.sev!=='neu');
