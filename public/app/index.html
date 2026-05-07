@@ -2228,7 +2228,7 @@ function rRat(el){
         ? `<div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
             ${S.periods.filter(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0')).map((pp,i)=>{
               const idx=S.periods.indexOf(pp);
-              return `<button class="btn btn-p" onclick="S.ap=${idx};rC()" style="font-size:11px">${pp.name||'Dönem '+(idx+1)}</button>`;
+              return `<button class="btn btn-p" onclick="setAP(${idx})" style="font-size:11px">${pp.name||'Dönem '+(idx+1)}</button>`;
             }).join('')}
            </div>`
         : `<button class="btn btn-p" onclick="sTab('input')" style="margin-top:16px">📥 Veri Girişi</button>`}
@@ -2314,6 +2314,11 @@ function rDetay(el){
   const mizanlar=S.periods.filter(p=>p.isMizan&&Object.keys(p.mizanAccts||{}).length>0);
   const mizanP=aktifP?.isMizan&&Object.keys(aktifP.mizanAccts||{}).length>0
     ? aktifP : mizanlar[mizanlar.length-1]||null;
+  // Auto-sync — Detay Mizan başka bir döneme düşerse, üstteki dönem çipi de onu göstersin
+  if(mizanP && S.periods[S.ap] !== mizanP){
+    S.ap = S.periods.indexOf(mizanP);
+    if(typeof rPB==='function') rPB();
+  }
   if(!mizanP){
     el.innerHTML=`<div class="card"><div class="card-b" style="text-align:center;padding:36px">
       <div style="font-size:32px;margin-bottom:12px">📋</div>
@@ -2379,7 +2384,7 @@ function rDetay(el){
     h+=`<div style="display:flex;gap:6px;flex-wrap:wrap">`;
     mizanlar.forEach(mp=>{
       const isAkt=mp===mizanP;const mpIdx=S.periods.indexOf(mp);
-      h+=`<button onclick="S.ap=${mpIdx};rC()" style="padding:6px 14px;border-radius:8px;border:1px solid ${isAkt?'var(--ac)':'var(--brd)'};background:${isAkt?'var(--acd)':'transparent'};color:${isAkt?'var(--ac)':'var(--t2)'};font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">${mp.name||'Dönem'}</button>`;
+      h+=`<button onclick="setAP(${mpIdx})" style="padding:6px 14px;border-radius:8px;border:1px solid ${isAkt?'var(--ac)':'var(--brd)'};background:${isAkt?'var(--acd)':'transparent'};color:${isAkt?'var(--ac)':'var(--t2)'};font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">${mp.name||'Dönem'}</button>`;
     });
     h+=`</div>`;
   }
@@ -2435,7 +2440,7 @@ function rKredi(el){
         ? `<div style="display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
             ${S.periods.filter(p=>!p.isMizan&&Object.values(p.data).some(v=>v&&v!=='0')).map(pp=>{
               const idx=S.periods.indexOf(pp);
-              return `<button class="btn btn-p" onclick="S.ap=${idx};rC()" style="font-size:11px">${pp.name||'Dönem '+(idx+1)}</button>`;
+              return `<button class="btn btn-p" onclick="setAP(${idx})" style="font-size:11px">${pp.name||'Dönem '+(idx+1)}</button>`;
             }).join('')}
           </div>`
         : `<button class="btn btn-p" onclick="sTab('input')" style="margin-top:16px">📥 Veri Girişi</button>`}
@@ -2527,6 +2532,79 @@ function rKredi(el){
       <div style="font-size:11px;color:var(--tm);margin-top:5px;line-height:1.5">${kAcik}</div>
     </div></div>
   </div>`;
+
+  // ===== Banka Kredi Analizi — kredi yetkilisi hassasiyeti =====
+  // Bilanço'dan hesaplanabilenler + e-Defter gerektirenler (locked).
+  const _bka = (function(){
+    const items=[];
+    const sevLab={good:'İYİ',warn:'ORTA',bad:'ZAYIF',neu:'—'};
+    const _hasDefter = !!(S.defter && S.defter.report);
+    // 1. Net Borç / FAVÖK
+    if(d.totalLiabilities!=null && d.operatingProfit!=null){
+      const netDebt = d.totalLiabilities - (d.cashEquivalents||0);
+      const ebitda  = d.operatingProfit + (d.depreciation||0);
+      if(ebitda>0){
+        const r = netDebt/ebitda;
+        const s = r<2.5?'good':r<4?'warn':'bad';
+        items.push({name:'Net Borç / FAVÖK', formula:'(Toplam Borç − Nakit) ÷ (Faaliyet Kârı + Amortisman)', fmt:r.toFixed(2)+'x', sev:s, sevLab:sevLab[s]});
+      } else {
+        items.push({name:'Net Borç / FAVÖK', formula:'FAVÖK ≤ 0 — oran anlamsız', fmt:'—', sev:'bad', sevLab:'ZAYIF'});
+      }
+    }
+    // 2. İşletme Sermayesi Yeterliliği
+    if(d.currentAssets!=null && d.shortTermLiabilities!=null && d.totalAssets){
+      const wc=(d.currentAssets-d.shortTermLiabilities)/d.totalAssets*100;
+      const s=wc>15?'good':wc>5?'warn':'bad';
+      items.push({name:'İşletme Sermayesi Yeterliliği', formula:'(Dönen V. − KVYK) ÷ Toplam Aktif × 100', fmt:fP(wc), sev:s, sevLab:sevLab[s]});
+    }
+    // 3. Tahsilat Süresi (DSO)
+    if(d.tradeReceivables!=null && d.netSales){
+      const dso=d.tradeReceivables/d.netSales*365;
+      const s=dso<60?'good':dso<90?'warn':'bad';
+      items.push({name:'Tahsilat Süresi (DSO)', formula:'Ticari Alacaklar ÷ Net Satışlar × 365', fmt:dso.toFixed(0)+' gün', sev:s, sevLab:sevLab[s]});
+    }
+    // 4. Stok Tutma Süresi (DIO)
+    if(d.inventory!=null && d.cogs){
+      const dio=d.inventory/Math.abs(d.cogs)*365;
+      const s=dio<60?'good':dio<120?'warn':'bad';
+      items.push({name:'Stok Tutma Süresi (DIO)', formula:'Stoklar ÷ Satışların Maliyeti × 365', fmt:dio.toFixed(0)+' gün', sev:s, sevLab:sevLab[s]});
+    }
+    // 5. Borç Vade Karması (KVYK %)
+    if(d.shortTermLiabilities!=null && d.totalLiabilities){
+      const st=d.shortTermLiabilities/d.totalLiabilities*100;
+      const s=st<50?'good':st<70?'warn':'bad';
+      items.push({name:'Borç Vade Karması', formula:'KVYK ÷ Toplam Borç × 100', fmt:fP(st), sev:s, sevLab:sevLab[s]});
+    }
+    // 6-8. e-Defter gerektirenler — placeholder (locked)
+    items.push({name:'Müşteri Konsantrasyonu', formula:'e-Defter — En büyük 3 müşteri ÷ Net Satışlar × 100', fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
+    items.push({name:'Nakit Akış Kalitesi',    formula:'e-Defter — Tahsilat sürekliliği · mevsimsellik · gecikme', fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
+    items.push({name:'Tahsilat Profili',       formula:'e-Defter — Ortalama tahsilat süresi · çek protesto sayısı', fmt:'—', sev:'neu', sevLab:'—', locked:!_hasDefter});
+    return items;
+  })();
+  const _bActive = _bka.filter(it=>it.sev!=='neu');
+  const _bLocked = _bka.filter(it=>it.locked).length;
+  let _bSum=0; _bActive.forEach(it=>{ _bSum+=it.sev==='good'?1.0:it.sev==='warn'?0.5:0.0; });
+  const _bPct = _bActive.length ? Math.round(_bSum/_bActive.length*100) : 0;
+  const _bVerdict = _bPct>=70?'Onay — düşük risk':_bPct>=50?'Koşullu Onay — ek teminat / faiz iyileştirmesi':_bPct>=30?'Yüksek Risk — sınırlı limit':'Red önerilir';
+  const _bSev     = _bPct>=70?'good':_bPct>=50?'warn':_bPct>=30?'warn':'bad';
+  h+=`<div class="card"><div class="card-h">
+      <div class="card-t">🏦 Banka Kredi Analizi</div>
+      <span style="font-size:10px;color:var(--tm)">Bilanço${(S.defter&&S.defter.report)?' + e-Defter ✓':' + e-Defter gerektirir'}</span>
+    </div>`;
+  _bka.forEach(it=>{
+    const _f=String(it.formula||'').replace(/"/g,'&quot;');
+    const _lock = it.locked ? ' <span style="opacity:.55;font-size:10px;font-weight:500">🔒 e-Defter</span>' : '';
+    h+=`<div class="mm-rrow" data-sev="${it.sev}" data-formula="${_f}">
+      <div class="nm">${it.name}${_lock}</div>
+      <div class="val">${it.fmt}</div>
+      <div class="st"><span class="dot"></span>${it.sevLab}</div>
+    </div>`;
+  });
+  h+=`<div class="mm-cf" data-sev="${_bSev}">
+      <span class="summary"><strong style="color:var(--t1)">Banka Görüşü:</strong> ${_bVerdict}${_bLocked?` <span style="opacity:.55">· ${_bLocked} kriter e-Defter gerektirir</span>`:''}</span>
+      <span class="pill">${_bPct}/100</span>
+    </div></div>`;
+
   h+=`<div class="card"><div class="card-h"><div class="card-t">🏦 BDDK Kriter Değerlendirmesi</div>
     <span style="font-size:10px;color:var(--tm)">${p.name||'Dönem'}</span>
   </div><div class="card-b" style="padding:0;overflow:auto">
