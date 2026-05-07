@@ -674,6 +674,395 @@ body{
 }
 .aip-ld{font-family:var(--font-sans);font-size:var(--fs-13);letter-spacing:var(--tracking-tight)}
 /* === MIZAN APPLE-STYLE — PHASE 6b — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 7 (auth overlay / login screen) — START
+   Reskins the login overlay — every visitor's first impression. Replaces
+   the dense inline-styled markup with proper .auth-* classes.
+   To revert: delete everything between this START and the matching END,
+   AND restore the auth overlay HTML block from App/index.html.backup-20260505.
+   ====================================================================== */
+
+.auth-overlay{
+  position:fixed;inset:0;
+  background:var(--bg0);
+  z-index:100;display:flex;align-items:center;justify-content:center;
+  overflow:auto;padding:20px;
+  font-family:var(--font-sans);
+  letter-spacing:var(--tracking-tight);
+}
+.auth-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 60% 20%, var(--acd) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 80%, rgba(139,92,246,.08) 0%, transparent 55%);
+}
+.auth-box{
+  position:relative;
+  background:var(--bg1);
+  border:1px solid var(--brd);
+  border-radius:var(--r-4);
+  padding:32px 32px 28px;
+  width:100%;max-width:400px;
+  box-shadow:var(--sh-pop);
+}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:var(--s-6)}
+.auth-logo{
+  width:40px;height:40px;
+  background:linear-gradient(135deg, var(--ac), var(--pu));
+  border-radius:var(--r-2);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:18px;color:#fff;flex-shrink:0;
+  box-shadow:0 2px 14px rgba(10,132,255,.34);
+}
+.auth-title{
+  font-size:var(--fs-20);font-weight:600;
+  letter-spacing:var(--tracking-display);color:var(--t1);
+}
+.auth-tag{
+  font-size:10px;color:var(--tm);margin-top:2px;
+  text-transform:uppercase;letter-spacing:0.08em;
+}
+.auth-info{
+  font-size:var(--fs-12);color:var(--t2);
+  margin-bottom:var(--s-5);
+  line-height:1.7;
+  padding:12px 14px;
+  background:var(--acd);
+  border:1px solid var(--brd);
+  border-radius:var(--r-2);
+}
+.auth-tabs{
+  display:flex;
+  border-bottom:1px solid var(--brd);
+  margin-bottom:var(--s-5);
+}
+.auth-tab{
+  flex:1;padding:10px;
+  background:none;border:0;
+  border-bottom:2px solid transparent;
+  color:var(--tm);
+  font-family:var(--font-sans);font-size:var(--fs-13);font-weight:500;
+  cursor:pointer;
+  transition:color var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease);
+}
+.auth-tab.on{color:var(--t1);font-weight:600;border-bottom-color:var(--ac)}
+.auth-tab:hover:not(.on){color:var(--t2)}
+.auth-msg{
+  margin-bottom:14px;
+  padding:10px 14px;
+  border-radius:var(--r-2);
+  font-size:var(--fs-12);line-height:1.5;
+  font-family:var(--font-sans);
+}
+.auth-field{margin-bottom:12px}
+.auth-label{
+  font-size:var(--fs-12);color:var(--t2);font-weight:500;
+  display:block;margin-bottom:5px;
+  letter-spacing:0;
+}
+.auth-inp{
+  width:100%;
+  padding:11px 12px;
+  background:var(--bg2);
+  border:1px solid var(--brd);
+  border-radius:var(--r-2);
+  color:var(--t1);
+  font-family:var(--font-sans);font-size:var(--fs-13);
+  letter-spacing:var(--tracking-tight);
+  outline:none;
+  transition:border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.auth-inp::placeholder{color:var(--tm)}
+.auth-inp:focus{border-color:var(--ac);box-shadow:0 0 0 4px var(--acd)}
+.auth-pass-wrap{position:relative}
+.auth-eye{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  background:none;border:0;
+  color:var(--tm);font-size:14px;
+  cursor:pointer;padding:4px;
+  border-radius:var(--r-pill);
+  transition:color var(--dur-1) var(--ease);
+}
+.auth-eye:hover{color:var(--t1)}
+.auth-forgot{text-align:right;margin-bottom:var(--s-5)}
+.auth-forgot button{
+  background:none;border:0;color:var(--tm);
+  font-family:var(--font-sans);font-size:var(--fs-12);
+  cursor:pointer;
+  transition:color var(--dur-2) var(--ease);
+}
+.auth-forgot button:hover{color:var(--ac)}
+.auth-submit{
+  width:100%;padding:12px;
+  background:var(--ac);color:#fff;
+  border:0;border-radius:var(--r-2);
+  font-family:var(--font-sans);font-size:var(--fs-14);font-weight:600;
+  letter-spacing:var(--tracking-tight);
+  cursor:pointer;margin-bottom:16px;
+  box-shadow:0 1px 2px rgba(0,0,0,.06), 0 4px 14px rgba(10,132,255,.32);
+  transition:background var(--dur-2) var(--ease), transform var(--dur-1) var(--ease), box-shadow var(--dur-2) var(--ease), opacity var(--dur-1) var(--ease);
+}
+.auth-submit:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.08), 0 8px 22px rgba(10,132,255,.42)}
+.auth-submit:active{transform:translateY(0)}
+.auth-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.auth-divider{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.auth-divider .line{flex:1;height:1px;background:var(--brd)}
+.auth-divider .or{font-size:10px;color:var(--tm);letter-spacing:0.08em}
+.auth-google{
+  width:100%;padding:11px;
+  background:var(--bg2);color:var(--t1);
+  border:1px solid var(--brd);border-radius:var(--r-2);
+  font-family:var(--font-sans);font-size:var(--fs-13);font-weight:500;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:background var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), transform var(--dur-1) var(--ease);
+}
+.auth-google:hover{background:var(--bg2h);transform:translateY(-1px)}
+.auth-google:active{transform:translateY(0)}
+.auth-foot{
+  margin-top:var(--s-5);
+  font-size:10px;color:var(--tm);
+  text-align:center;line-height:1.8;
+  letter-spacing:0.04em;
+}
+
+/* === MIZAN APPLE-STYLE — PHASE 7 — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 8 (modals — Apple sheet polish) — START
+   Refines .mo / .mod / .mod-h / .mod-t / .mod-x / .mod-b / .mod-f / .igl.
+   Used by openMo() — covers Yeni Dönem Ekle, Rename, File Upload, Save.
+   ====================================================================== */
+
+/* Stronger scrim — Apple sheets sit on a heavier blur */
+.mo{
+  background:var(--mo-bg);
+  backdrop-filter:saturate(180%) blur(24px);
+  -webkit-backdrop-filter:saturate(180%) blur(24px);
+  animation:moBgIn var(--dur-2) var(--ease-out);
+}
+@keyframes moBgIn{from{opacity:0}to{opacity:1}}
+
+/* Sheet itself — softer entrance, refined elevation */
+.mod{
+  background:var(--bg2);
+  animation:modIn var(--dur-3) var(--ease-out);
+}
+@keyframes modIn{
+  from{opacity:0;transform:translateY(8px) scale(.985)}
+  to  {opacity:1;transform:translateY(0)    scale(1)}
+}
+
+/* Header */
+.mod-h{
+  padding:18px 22px;
+}
+.mod-t{
+  font-family:var(--font-sans);
+  font-size:var(--fs-15);font-weight:600;
+  letter-spacing:var(--tracking-tight);
+  color:var(--t1);
+}
+.mod-x{
+  width:28px;height:28px;
+  border-radius:var(--r-pill);
+  font-size:18px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:background var(--dur-1) var(--ease),color var(--dur-1) var(--ease);
+}
+.mod-x:hover{
+  background:var(--bg2h);
+  color:var(--t1);
+}
+
+/* Body + footer — sheet-style spacing */
+.mod-b{padding:22px}
+.mod-f{
+  padding:14px 22px;
+  background:transparent;
+  border-top:1px solid var(--brd);
+  gap:10px;
+}
+
+/* Modal labels */
+.igl{
+  font-family:var(--font-sans);
+  font-size:var(--fs-12);
+  letter-spacing:var(--tracking-tight);
+  color:var(--t2);
+  font-weight:500;
+}
+
+/* Modal input — refined focus halo */
+.mod .inp:focus{
+  box-shadow:0 0 0 4px var(--acd);
+}
+
+/* === MIZAN APPLE-STYLE — PHASE 8 — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 9 (Detay Mizan findings) — START
+   Apple-style severity-tinted multi-line finding cards. Used by rDetay()
+   anomaliler list. Single class .mm-find with [data-sev="bad|warn|good"].
+   ====================================================================== */
+
+.mm-find{
+  position:relative;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  align-items:start;
+  column-gap:var(--s-3);
+  padding:12px 14px 12px 18px;
+  border-radius:var(--r-2);
+  margin-bottom:6px;
+  background:var(--bg2);
+  border:1px solid var(--brd);
+  transition:background var(--dur-2) var(--ease),
+             box-shadow var(--dur-2) var(--ease);
+}
+.mm-find:hover{box-shadow:0 2px 10px rgba(0,0,0,.05),0 0 0 1px var(--brd)}
+.mm-find:last-child{margin-bottom:0}
+.mm-find::before{
+  content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;
+  border-radius:0 2px 2px 0;
+}
+.mm-find[data-sev="bad"] {background:var(--grad-bad)}
+.mm-find[data-sev="bad"]::before {background:var(--rd)}
+.mm-find[data-sev="warn"]{background:var(--grad-warn)}
+.mm-find[data-sev="warn"]::before{background:var(--am)}
+.mm-find[data-sev="good"]{background:var(--grad-good)}
+.mm-find[data-sev="good"]::before{background:var(--gn)}
+
+.mm-find-icon{
+  font-size:14px;line-height:1.4;flex-shrink:0;
+  margin-top:1px;
+}
+.mm-find-msg{
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);font-weight:600;
+  letter-spacing:var(--tracking-tight);
+  color:var(--t1);
+  line-height:1.4;
+}
+.mm-find-detail{
+  font-family:var(--font-sans);
+  font-size:var(--fs-12);
+  color:var(--t2);
+  margin-top:4px;
+  line-height:1.55;
+  letter-spacing:var(--tracking-tight);
+}
+
+.mm-find-empty{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 18px;
+  background:var(--grad-good);
+  border:1px solid var(--brd);
+  border-radius:var(--r-2);
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);font-weight:500;
+  color:var(--gn);
+  letter-spacing:var(--tracking-tight);
+}
+
+/* --- e-Defter findings (extends Phase 9 — same severity language, drill-down) --- */
+.mm-fdtl{border-bottom:1px solid var(--brd);position:relative}
+.mm-fdtl:last-child{border-bottom:0}
+.mm-fdtl-cathdr{
+  padding:10px 16px;
+  background:var(--bgi);
+  font-family:var(--font-sans);
+  font-size:11px;font-weight:600;
+  color:var(--t2);
+  text-transform:uppercase;letter-spacing:0.06em;
+  border-bottom:1px solid var(--brd);
+}
+.mm-fdtl-summary{
+  padding:14px 18px 14px 21px;
+  display:grid;
+  grid-template-columns:auto 1fr auto auto;
+  gap:14px;align-items:start;
+  cursor:pointer;
+  transition:background var(--dur-1) var(--ease);
+  position:relative;
+  list-style:none;
+}
+.mm-fdtl-summary::-webkit-details-marker{display:none}
+.mm-fdtl-summary::marker{display:none}
+.mm-fdtl-summary:hover{background:var(--bg2h)}
+.mm-fdtl-summary::before{
+  content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;
+  border-radius:0 2px 2px 0;
+}
+.mm-fdtl[data-sev="HIGH"]   .mm-fdtl-summary::before{background:var(--rd)}
+.mm-fdtl[data-sev="MEDIUM"] .mm-fdtl-summary::before{background:var(--am)}
+.mm-fdtl[data-sev="LOW"]    .mm-fdtl-summary::before{background:var(--ac)}
+.mm-fdtl-pill{
+  display:inline-flex;align-items:center;
+  padding:3px 9px;border-radius:var(--r-pill);
+  font-family:var(--font-sans);
+  font-size:10px;font-weight:700;letter-spacing:0.04em;
+  white-space:nowrap;color:#fff;
+}
+.mm-fdtl[data-sev="HIGH"]   .mm-fdtl-pill{background:var(--rd)}
+.mm-fdtl[data-sev="MEDIUM"] .mm-fdtl-pill{background:var(--am)}
+.mm-fdtl[data-sev="LOW"]    .mm-fdtl-pill{background:var(--ac)}
+.mm-fdtl-msg{
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);font-weight:500;
+  letter-spacing:var(--tracking-tight);
+  color:var(--t1);
+  line-height:1.4;margin-bottom:3px;
+}
+.mm-fdtl-meta{
+  font-family:var(--font-num);
+  font-size:11px;color:var(--tm);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0;
+}
+.mm-fdtl-conf{
+  font-family:var(--font-num);
+  font-size:var(--fs-13);font-weight:600;
+  align-self:center;
+  font-variant-numeric:tabular-nums;
+}
+.mm-fdtl[data-sev="HIGH"]   .mm-fdtl-conf{color:var(--rd)}
+.mm-fdtl[data-sev="MEDIUM"] .mm-fdtl-conf{color:var(--am)}
+.mm-fdtl[data-sev="LOW"]    .mm-fdtl-conf{color:var(--ac)}
+
+/* Drill-down table */
+.mm-fdtl-tbl-wrap{padding:0 0 10px;background:var(--bgi);overflow-x:auto}
+.mm-fdtl-tbl{
+  width:100%;border-collapse:collapse;
+  font-family:var(--font-num);font-size:11px;
+  font-variant-numeric:tabular-nums;
+}
+.mm-fdtl-tbl th{
+  padding:8px 14px;
+  font-family:var(--font-sans);
+  font-size:10px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--tm);text-align:left;
+  border-bottom:1px solid var(--brd);
+}
+.mm-fdtl-tbl th.r{text-align:right}
+.mm-fdtl-tbl td{
+  padding:7px 14px;color:var(--t2);
+  border-bottom:1px solid var(--c-hairline-2);
+}
+.mm-fdtl-tbl td.acct{color:var(--ac)}
+.mm-fdtl-tbl td.desc{
+  max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.mm-fdtl-tbl td.r{text-align:right}
+.mm-fdtl-tbl tr:last-child td{border-bottom:0}
+.mm-fdtl-more{
+  padding:9px 14px;text-align:center;
+  color:var(--tm);font-size:10px;font-style:italic;
+}
+
+/* === MIZAN APPLE-STYLE — PHASE 9 — END === */
 .skeleton-card{height:80px;border-radius:10px;margin-bottom:12px}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
@@ -725,76 +1114,68 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
 <div class="toast-container" id="toastContainer"></div>
 <!-- AUTH OVERLAY -->
 <div id="authOverlay" class="auth-overlay">
-  <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 60% 20%,var(--acd) 0%,transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(139,92,246,.06) 0%,transparent 55%);pointer-events:none"></div>
+  <div class="auth-bg"></div>
   <div class="auth-box">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px">
+    <div class="auth-brand">
       <div class="auth-logo">M</div>
       <div>
-        <div style="font-size:18px;font-weight:700;letter-spacing:-.3px">Mizan Mind</div>
-        <div style="font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;text-transform:uppercase">Yapay Zeka Destekli Finansal Analiz</div>
+        <div class="auth-title">Mizan Mind</div>
+        <div class="auth-tag">Yapay Zeka Destekli Finansal Analiz</div>
       </div>
     </div>
-    <div style="font-size:12px;color:var(--t2);margin-bottom:24px;line-height:1.7;padding:12px 14px;background:var(--acd);border:1px solid rgba(var(--ac-rgb,59 130 246)/.2);border-radius:8px">
+
+    <div class="auth-info">
       Türk şirketleri için profesyonel rasyo analizi,<br>sektör karşılaştırması ve AI finansal değerlendirme.
     </div>
+
     <!-- Tab bar -->
-    <div style="display:flex;border-bottom:1px solid var(--brd);margin-bottom:24px">
-      <button id="authTabLogin" onclick="authSwitchTab('login')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid var(--ac);color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s">Giriş Yap</button>
-      <button id="authTabSignup" onclick="authSwitchTab('signup')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid transparent;color:var(--tm);font-size:13px;font-weight:400;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s">Ücretsiz Kayıt</button>
+    <div class="auth-tabs">
+      <button id="authTabLogin" class="auth-tab on" onclick="authSwitchTab('login')">Giriş Yap</button>
+      <button id="authTabSignup" class="auth-tab" onclick="authSwitchTab('signup')">Ücretsiz Kayıt</button>
     </div>
 
     <!-- Hata / bilgi mesajı -->
-    <div id="authMsg" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:8px;font-size:12px;line-height:1.5"></div>
+    <div id="authMsg" class="auth-msg" style="display:none"></div>
 
     <!-- Email -->
-    <div style="margin-bottom:12px">
-      <label style="font-size:11px;color:var(--t2);font-weight:500;display:block;margin-bottom:5px">E-posta</label>
-      <input id="authEmail" type="email" placeholder="ornek@firma.com"
-        style="width:100%;padding:10px 12px;background:var(--bg2);border:1px solid var(--brd);border-radius:8px;color:var(--t1);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s"
-        onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--brd)'"
+    <div class="auth-field">
+      <label class="auth-label" for="authEmail">E-posta</label>
+      <input id="authEmail" class="auth-inp" type="email" placeholder="ornek@firma.com"
         onkeydown="if(event.key==='Enter')authSubmit()">
     </div>
 
     <!-- Şifre -->
-    <div style="margin-bottom:8px">
-      <label style="font-size:11px;color:var(--t2);font-weight:500;display:block;margin-bottom:5px">Şifre</label>
-      <div style="position:relative">
-        <input id="authPass" type="password" placeholder="••••••••"
-          style="width:100%;padding:10px 38px 10px 12px;background:var(--bg2);border:1px solid var(--brd);border-radius:8px;color:var(--t1);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s"
-          onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--brd)'"
+    <div class="auth-field">
+      <label class="auth-label" for="authPass">Şifre</label>
+      <div class="auth-pass-wrap">
+        <input id="authPass" class="auth-inp" type="password" placeholder="••••••••"
+          style="padding-right:38px"
           onkeydown="if(event.key==='Enter')authSubmit()">
-        <button onclick="const i=document.getElementById('authPass');i.type=i.type==='password'?'text':'password'"
-          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--tm);cursor:pointer;font-size:14px;padding:4px">👁</button>
+        <button type="button" class="auth-eye" aria-label="Şifreyi göster/gizle"
+          onclick="const i=document.getElementById('authPass');i.type=i.type==='password'?'text':'password'">👁</button>
       </div>
     </div>
 
     <!-- Şifremi unuttum -->
-    <div id="authForgotRow" style="text-align:right;margin-bottom:18px">
-      <button onclick="authForgot()" style="background:none;border:none;color:var(--tm);font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;transition:color .2s" onmouseover="this.style.color='var(--ac)'" onmouseout="this.style.color='var(--tm)'">Şifremi unuttum</button>
+    <div id="authForgotRow" class="auth-forgot">
+      <button onclick="authForgot()">Şifremi unuttum</button>
     </div>
 
     <!-- Ana buton -->
-    <button id="authSubmitBtn" onclick="authSubmit()"
-      style="width:100%;padding:12px;background:var(--ac);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;margin-bottom:16px">
-      Giriş Yap
-    </button>
+    <button id="authSubmitBtn" class="auth-submit" onclick="authSubmit()">Giriş Yap</button>
 
     <!-- Ayraç -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <div style="flex:1;height:1px;background:var(--brd)"></div>
-      <span style="font-size:10px;color:var(--t3);letter-spacing:.5px">VEYA</span>
-      <div style="flex:1;height:1px;background:var(--brd)"></div>
+    <div class="auth-divider">
+      <div class="line"></div><span class="or">VEYA</span><div class="line"></div>
     </div>
 
     <!-- Google butonu -->
-    <button onclick="authGoogle()"
-      style="width:100%;padding:11px;background:var(--bg2);color:var(--t1);border:1px solid var(--brd);border-radius:9px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s"
-      onmouseover="this.style.borderColor='var(--brd2)';this.style.background='var(--bg3)'"
-      onmouseout="this.style.borderColor='var(--brd)';this.style.background='var(--bg2)'">
+    <button class="auth-google" onclick="authGoogle()">
       <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
       Google ile devam et
     </button>
-    <div style="margin-top:20px;font-size:10px;color:var(--tm);text-align:center;font-family:'JetBrains Mono',monospace;line-height:1.8">
+
+    <div class="auth-foot">
       THP Bazlı Mizan · PDF Beyanname · AI Yorum<br>Sektör Benchmark · Dönemsel Karşılaştırma
     </div>
   </div>
@@ -2504,15 +2885,23 @@ function rDetay(el){
     <span style="font-size:10px;color:var(--tm)">${Object.keys(accts).length} hesap · ${anomaliler.filter(a=>a.sev==='rd').length} kritik · ${anomaliler.filter(a=>a.sev==='am').length} uyarı</span>
   </div></div>`;
   if(anomaliler.length){
-    h+=`<div class="card"><div class="card-h"><div class="card-t">⚠️ Risk & Anomali Tespitleri</div></div><div class="card-b" style="padding:8px">`;
+    const _critC=anomaliler.filter(a=>a.sev==='rd').length;
+    const _warnC=anomaliler.filter(a=>a.sev==='am').length;
+    h+=`<div class="card"><div class="card-h"><div class="card-t">⚠️ Risk & Anomali Tespitleri</div><span style="font-size:11px;color:var(--tm)">${_critC} kritik · ${_warnC} uyarı</span></div><div class="card-b" style="padding:10px">`;
     anomaliler.forEach(a=>{
-      h+=`<div style="padding:10px 12px;background:${a.sev==='rd'?'rgba(239,68,68,.07)':'rgba(245,158,11,.07)'};border:1px solid ${a.sev==='rd'?'rgba(239,68,68,.2)':'rgba(245,158,11,.2)'};border-radius:8px;margin-bottom:6px">
-        <div style="font-size:12px;font-weight:600;color:var(--t1)">${a.sev==='rd'?'🔴':'🟡'} ${a.msg}</div>
-        <div style="font-size:10px;color:var(--tm);margin-top:4px">${a.detay}</div></div>`;
+      const _sev = a.sev==='rd' ? 'bad' : 'warn';
+      const _ico = a.sev==='rd' ? '🔴' : '🟡';
+      h+=`<div class="mm-find" data-sev="${_sev}">
+        <div class="mm-find-icon">${_ico}</div>
+        <div>
+          <div class="mm-find-msg">${a.msg}</div>
+          <div class="mm-find-detail">${a.detay}</div>
+        </div>
+      </div>`;
     });
     h+=`</div></div>`;
   } else {
-    h+=`<div class="card"><div class="card-b" style="padding:16px;text-align:center;color:var(--gn)">✅ Kritik anomali tespit edilmedi</div></div>`;
+    h+=`<div class="card"><div class="card-b" style="padding:14px"><div class="mm-find-empty">✅ Kritik anomali tespit edilmedi</div></div></div>`;
   }
   const GRUP={'1':'Dönen Varlıklar','2':'Duran Varlıklar','3':'Kısa Vadeli Yük.','4':'Uzun Vadeli Yük.','5':'Özsermaye','6':'Gelir Tablosu','7':'Maliyet'};
   h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Hesap Bakiyeleri</div></div><div class="card-b" style="padding:0;overflow:auto;max-height:60vh">
@@ -3836,43 +4225,39 @@ function rDefter(el){
     h+=`<div class="card"><div class="card-h"><div class="card-t">🔎 Bulgular (Detay)</div><span style="font-size:11px;color:var(--tm)">${r.anomalies.length} anomali</span></div><div class="card-b" style="padding:0">`;
     for(const cat of Object.keys(byCat)){
       const list=byCat[cat].sort((a,b)=>sevOrder[a.severity]-sevOrder[b.severity]||b.confidence-a.confidence);
-      h+=`<div style="padding:10px 14px;background:var(--bgi);font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--brd)">${_DEF_CAT_LBL[cat]||cat}</div>`;
+      h+=`<div class="mm-fdtl-cathdr">${_DEF_CAT_LBL[cat]||cat}</div>`;
       for(const a of list){
         const ec=a.affected_count||(a.affected_entries||[]).length;
         const refs=Array.isArray(a.affected_entries)?a.affected_entries:[];
         const hasDetail=refs.length>0&&typeof refs[0]==='object';
-        h+=`<details style="border-bottom:1px solid var(--brd)">
-          <summary style="padding:12px 16px;display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:start">
-            <div style="background:${_DEF_SEV_COL[a.severity]};color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px;white-space:nowrap">${_DEF_SEV_LBL[a.severity].toUpperCase()}</div>
+        h+=`<details class="mm-fdtl" data-sev="${a.severity}">
+          <summary class="mm-fdtl-summary">
+            <span class="mm-fdtl-pill">${_DEF_SEV_LBL[a.severity].toUpperCase()}</span>
             <div>
-              <div style="font-size:12px;color:var(--t1);margin-bottom:3px;font-weight:500">${_defEsc(a.description)}</div>
-              <div style="font-size:10px;color:var(--tm);font-family:'JetBrains Mono',monospace">${a.type} · güven %${a.confidence}${ec?` · ${ec} kayıt`:''}</div>
+              <div class="mm-fdtl-msg">${_defEsc(a.description)}</div>
+              <div class="mm-fdtl-meta">${a.type} · güven %${a.confidence}${ec?` · ${ec} kayıt`:''}</div>
             </div>
-            <div style="font-size:11px;color:${_DEF_SEV_COL[a.severity]};font-weight:600;font-family:'JetBrains Mono',monospace;align-self:center">${a.confidence}</div>
+            <div class="mm-fdtl-conf">${a.confidence}</div>
             <div class="det-arr" style="font-size:11px;color:var(--tm);align-self:center;${hasDetail?'':'visibility:hidden'}">▶</div>
           </summary>`;
         if(hasDetail){
-          h+=`<div style="padding:0 0 10px;background:var(--bgi);overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'JetBrains Mono',monospace">
-            <thead><tr style="color:var(--tm)">
-              <th style="padding:8px 12px;font-weight:500;text-align:left;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">YEVMİYE</th>
-              <th style="padding:8px 12px;font-weight:500;text-align:left;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">TARİH</th>
-              <th style="padding:8px 12px;font-weight:500;text-align:left;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">HESAP</th>
-              <th style="padding:8px 12px;font-weight:500;text-align:left;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">AÇIKLAMA</th>
-              <th style="padding:8px 12px;font-weight:500;text-align:right;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">BORÇ</th>
-              <th style="padding:8px 12px;font-weight:500;text-align:right;border-bottom:1px solid var(--brd);font-size:10px;letter-spacing:.5px">ALACAK</th>
+          h+=`<div class="mm-fdtl-tbl-wrap"><table class="mm-fdtl-tbl">
+            <thead><tr>
+              <th>Yevmiye</th><th>Tarih</th><th>Hesap</th><th>Açıklama</th>
+              <th class="r">Borç</th><th class="r">Alacak</th>
             </tr></thead><tbody>`;
           for(const ref of refs){
             h+=`<tr>
-              <td style="padding:6px 12px;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03)">${_defEsc(ref.no||'—')}</td>
-              <td style="padding:6px 12px;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03)">${_defEsc(ref.date||'—')}</td>
-              <td style="padding:6px 12px;color:var(--ac);border-bottom:1px solid rgba(255,255,255,.03)">${_defEsc(ref.acct||'—')}</td>
-              <td style="padding:6px 12px;color:var(--t2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,.03)" title="${_defEsc(ref.desc||'')}">${_defEsc(ref.desc||'—')}</td>
-              <td style="padding:6px 12px;text-align:right;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03)">${ref.debit?fmtTL(ref.debit):''}</td>
-              <td style="padding:6px 12px;text-align:right;color:var(--t2);border-bottom:1px solid rgba(255,255,255,.03)">${ref.credit?fmtTL(ref.credit):''}</td>
+              <td>${_defEsc(ref.no||'—')}</td>
+              <td>${_defEsc(ref.date||'—')}</td>
+              <td class="acct">${_defEsc(ref.acct||'—')}</td>
+              <td class="desc" title="${_defEsc(ref.desc||'')}">${_defEsc(ref.desc||'—')}</td>
+              <td class="r">${ref.debit?fmtTL(ref.debit):''}</td>
+              <td class="r">${ref.credit?fmtTL(ref.credit):''}</td>
             </tr>`;
           }
           if(a.affected_count>refs.length){
-            h+=`<tr><td colspan="6" style="padding:8px 12px;text-align:center;color:var(--tm);font-size:10px;font-style:italic">… ${a.affected_count-refs.length} kayıt daha</td></tr>`;
+            h+=`<tr><td colspan="6" class="mm-fdtl-more">… ${a.affected_count-refs.length} kayıt daha</td></tr>`;
           }
           h+=`</tbody></table></div>`;
         }
@@ -3881,10 +4266,8 @@ function rDefter(el){
     }
     h+='</div></div>';
   }else{
-    h+=`<div class="card"><div class="card-b" style="text-align:center;padding:36px">
-      <div style="font-size:32px;margin-bottom:12px">✓</div>
-      <div style="font-size:13px;font-weight:600;color:var(--gn);margin-bottom:8px">Anomali tespit edilmedi</div>
-      <div style="font-size:11px;color:var(--t2)">Yüklenen yevmiye dosyası bütün kontrolü geçti.</div>
+    h+=`<div class="card"><div class="card-b" style="padding:14px">
+      <div class="mm-find-empty">✅ Anomali tespit edilmedi — yüklenen yevmiye dosyası bütün kontrolü geçti.</div>
     </div></div>`;
   }
   h+='</div>';
