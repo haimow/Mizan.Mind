@@ -1119,20 +1119,21 @@ function render(){rPB();rSB();rC();uT()}
 function uT(){const b=document.getElementById('tglBtn');if(!b)return;b.textContent=S.sbo?'◀':'▶'}
 function rPB(){
   const b=document.getElementById('pBar');
-  // e-Defter sekmesi S.periods ile değil S.defter ile çalışır — dönem çipleri yanıltıcı
-  if(S.tab==='defter'){
-    b.innerHTML=`<span class="plab">Dönemler:</span><span style="font-size:11px;color:var(--tm);font-style:italic;letter-spacing:0">e-Defter modülü dönemden bağımsızdır — yüklenen dosya doğrudan analiz edilir</span>`;
-    return;
-  }
+  // e-Defter sekmesi S.periods ile değil S.defter ile çalışır.
+  // Çipler görünür kalır ama hiçbiri seçili değildir; üstteki Kaydet butonu
+  // (saveAnaliz, e-Defter'i kaydetmez) gizlenir. e-Defter'in kendi kaydet UI'ı rDefter içinde.
+  const isDefterTab = (S.tab === 'defter');
   let h='<span class="plab">Dönemler:</span>';
-  // Normal dönemler
   S.periods.forEach((p,i)=>{
     const label=esc(p.name||'Dönem '+(i+1));
-    h+=`<button class="chip ${i===S.ap?'on':''}" ${p.saved?'data-saved="1"':''} onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span></button>`;
+    const isActive = !isDefterTab && i===S.ap;
+    h+=`<button class="chip ${isActive?'on':''}" ${p.saved?'data-saved="1"':''} onclick="setAP(${i})" ondblclick="renamePeriod(${i})" title="Çift tıkla: adını düzenle">${label}${p.fileName?'<span style="opacity:.6;font-size:9px;margin-left:1px">📎</span>':''}<span class="x" onclick="event.stopPropagation();remP(${i})">✕</span></button>`;
   });
 
   h+='<button class="chip add" onclick="openMo(\'add\')">+ Dönem Ekle</button>';
-  h+='<button class="btn btn-p" id="saveBtn" onclick="saveAnaliz()" style="font-size:11px;margin-left:auto;flex-shrink:0" title="Bu analizi kaydet">💾 Kaydet</button>';
+  if(!isDefterTab){
+    h+='<button class="btn btn-p" id="saveBtn" onclick="saveAnaliz()" style="font-size:11px;margin-left:auto;flex-shrink:0" title="Bu analizi kaydet">💾 Kaydet</button>';
+  }
   b.innerHTML=h;
 }
 function rSB(){const el=document.getElementById('sbCont');document.querySelectorAll('.sb-tab').forEach(t=>t.classList.toggle('on',t.dataset.st===S.stab));if(S.stab==='formulas'){let h='';Object.entries(RATIOS).forEach(([ck,cat])=>{const op=S.ecat===ck;h+=`<div class="sb-cat"><div class="sb-cat-h ${op?'open':''}" onclick="tCat('${ck}')"><span>${cat.icon}</span> ${cat.label}<span class="arr">▶</span></div>`;if(op)cat.items.forEach(r=>{h+=`<div class="fc"><div class="fc-n">${r.name}</div><div class="fc-f">${r.formula}</div><div class="fc-i">İdeal: ${r.ideal}</div></div>`});h+=`</div>`});el.innerHTML=h}else if(S.stab==='charts')rSBC(el);else rSBSaved(el)}
@@ -1594,7 +1595,10 @@ let moCallback=null;
 let pendingFile=null;
 
 function sTab(t){
-  S.tab=t;rC();
+  S.tab=t;
+  // Çip durumu S.tab'a bağlı (e-Defter sekmesinde hiçbir dönem seçili olmamalı) — her sekme değişiminde çip barını da yenile
+  rPB();
+  rC();
 }
 function toggleSection(name){
   if(!S.openSections)S.openSections={};
