@@ -2879,13 +2879,17 @@ function rGTSankey(d){
       svg += `<path class="mm-snk-rib" d="${rib(xA,splitY,baseY,xB,tgtTopY,baseY)}" fill="rgba(48,209,88,.30)"><title>${escT(gLab[i+1])}: ${escT(fC(gVal[i+1]))}</title></path>`;
     }
   }
-  // Green bars + labels (below baseline)
+  // Green bars + labels (below baseline) — first label left-anchored, last right-anchored
+  // so 12-digit currency values can't clip the chart edges.
   for(let i=0;i<5;i++){
     if(gh[i]<=0) continue;
     const x=greenXs[i], y=baseY-gh[i];
     svg += `<rect class="mm-snk-bar" x="${x}" y="${y}" width="${bw}" height="${gh[i]}" fill="var(--gn)" rx="2"><title>${escT(gLab[i])}: ${escT(fC(gVal[i]))}</title></rect>`;
-    svg += `<text x="${x+bw/2}" y="${baseY+18}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--t1)">${escT(gLab[i])}</text>`;
-    svg += `<text class="num" x="${x+bw/2}" y="${baseY+32}" text-anchor="middle" font-size="11" fill="var(--tm)">${escT(fC(gVal[i]))}</text>`;
+    let anc='middle', tx=x+bw/2;
+    if(i===0){ anc='start'; tx=x; }
+    else if(i===4){ anc='end';   tx=x+bw; }
+    svg += `<text x="${tx}" y="${baseY+18}" text-anchor="${anc}" font-size="11" font-weight="600" fill="var(--t1)">${escT(gLab[i])}</text>`;
+    svg += `<text class="num" x="${tx}" y="${baseY+32}" text-anchor="${anc}" font-size="11" fill="var(--tm)">${escT(fC(gVal[i]))}</text>`;
   }
   // Red bars + labels (above topY)
   for(let i=0;i<4;i++){
@@ -4219,6 +4223,44 @@ const _DEF_CAT_LBL={
 };
 function _defEsc(s){return String(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
 
+// ─── KONSANTRASYON RİSKİ TESPİTİ — alıcı (120) & satıcı (320+329) sub-account analysis ──
+// 30% threshold per user spec. A sub-account's balance > 30% of its group total = RISKY.
+function _defConcentrationRisk(entries){
+  if(!Array.isArray(entries) || !entries.length) return null;
+  const cust = {}, supp = {};
+  for(const e of entries){
+    const ac = String(e.account_code||'').trim();
+    if(!ac || ac.length <= 3) continue; // need a sub-account, not just main code
+    let bucket = null, group = null;
+    if(ac.startsWith('120')){ bucket = cust; group = '120'; }
+    else if(ac.startsWith('320')){ bucket = supp; group = '320'; }
+    else if(ac.startsWith('329')){ bucket = supp; group = '329'; }
+    if(!bucket) continue;
+    if(!bucket[ac]) bucket[ac] = {code:ac, group, debit:0, credit:0, descCount:{}};
+    bucket[ac].debit  += +e.debit  || 0;
+    bucket[ac].credit += +e.credit || 0;
+    const dsc = String(e.description||'').trim();
+    if(dsc) bucket[ac].descCount[dsc] = (bucket[ac].descCount[dsc]||0) + 1;
+  }
+  // Customer balance = debit − credit (asset side); supplier = credit − debit (liability side)
+  const _process = (map, balanceFn) => {
+    const arr = Object.values(map).map(o => {
+      const bal = balanceFn(o);
+      const top = Object.entries(o.descCount).sort((a,b)=>b[1]-a[1])[0];
+      const name = top ? top[0].slice(0,80) : '—';
+      return { code:o.code, group:o.group, name, balance:bal };
+    }).filter(x => x.balance > 0);
+    const total = arr.reduce((s,x)=>s + x.balance, 0);
+    arr.forEach(x => x.pct = total > 0 ? (x.balance / total) * 100 : 0);
+    arr.sort((a,b)=>b.balance - a.balance);
+    return { total, accounts:arr, risky: arr.filter(x => x.pct > 30) };
+  };
+  return {
+    customers: _process(cust, o => o.debit  - o.credit),  // 120 (alıcılar)
+    suppliers: _process(supp, o => o.credit - o.debit ),  // 320+329 (satıcılar)
+  };
+}
+
 function rDefter(el){
   const D=S.defter;let h='';
   if(!D.report){
@@ -4300,6 +4342,44 @@ function rDefter(el){
       <button class="btn" onclick="S.defter.report=null;S.defter.entries=[];render()">↺ Yeni Dosya</button>
       ${S.user?'<button class="btn btn-p" onclick="saveDefterRapor()">💾 Raporu Kaydet</button>':''}
     </div>`;
+
+  // Konsantrasyon Riski Tespiti — alıcı (120) ve satıcı (320+329) alt-hesap analizi (>30% RİSKLİ)
+  const _conc = _defConcentrationRisk(D.entries);
+  if(_conc){
+    const _renderGroup = (label, mainCode, data) => {
+      if(!data || !data.accounts.length) return '';
+      let inner = `<div class="mm-fdtl-cathdr">${label} · Toplam ${fmtTL(data.total)}</div>`;
+      if(data.risky.length){
+        for(const x of data.risky){
+          inner += `<div class="mm-find" data-sev="bad">
+            <div class="mm-find-icon">🚨</div>
+            <div>
+              <div class="mm-find-msg">${_defEsc(x.code)} — ${_defEsc(x.name)}</div>
+              <div class="mm-find-detail">
+                Bakiye: <strong style="color:var(--t1)">${fmtTL(x.balance)}</strong> ·
+                Toplam ${mainCode} Bakiye: ${fmtTL(data.total)} ·
+                Oran: <strong style="color:var(--rd)">%${x.pct.toFixed(1)}</strong> ·
+                <span style="color:var(--rd);font-weight:700;letter-spacing:0.04em">RİSKLİ</span>
+              </div>
+            </div>
+          </div>`;
+        }
+      } else {
+        inner += `<div style="padding:12px 18px"><div class="mm-find-empty">✅ ${label} grubunda %30 eşiğini aşan alt-hesap yok (${data.accounts.length} alt-hesap incelendi)</div></div>`;
+      }
+      return inner;
+    };
+    const _custBlock = _renderGroup('Müşteriler (120)',     '120',     _conc.customers);
+    const _suppBlock = _renderGroup('Tedarikçiler (320+329)', '320+329', _conc.suppliers);
+    if(_custBlock || _suppBlock){
+      const _totalRisky = (_conc.customers?.risky.length||0) + (_conc.suppliers?.risky.length||0);
+      const _riskMeta = _totalRisky
+        ? `<span style="font-size:11px;color:var(--rd);font-weight:600">${_totalRisky} riskli alt-hesap</span>`
+        : `<span style="font-size:11px;color:var(--gn);font-weight:600">Konsantrasyon riski yok</span>`;
+      h += `<div class="card"><div class="card-h"><div class="card-t">🚨 Konsantrasyon Riski Tespiti</div>${_riskMeta}</div><div class="card-b" style="padding:0">${_custBlock}${_suppBlock}</div></div>`;
+    }
+  }
+
   if(s.by_category&&Object.keys(s.by_category).length){
     const cats=Object.entries(s.by_category).sort((a,b)=>b[1].count-a[1].count);
     h+=`<div class="card"><div class="card-h"><div class="card-t">⚠️ Anomali İçeren Bölümler</div><span style="font-size:11px;color:var(--tm)">${cats.length} kategori</span></div><div class="card-b" style="padding:12px 14px"><div style="display:flex;flex-wrap:wrap;gap:6px">`;
