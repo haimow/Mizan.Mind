@@ -4441,6 +4441,11 @@ function rDefter(el){
     if(_topCust || _topSupp){
       h += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:12px">${_topCust}${_topSupp}</div>`;
     }
+
+    // Empty state — live entries var ama 120/320/329 alt-hesap işlemi yok (tipik test dosyası senaryosu)
+    if(!_custBlock && !_suppBlock && !_topCust && !_topSupp && D.entries && D.entries.length){
+      h += `<div class="card"><div class="card-h"><div class="card-t">🏢 Müşteri & Tedarikçi Analizi</div><span style="font-size:11px;color:var(--am)">Veri yetersiz</span></div><div class="card-b" style="padding:14px"><div class="mm-find-empty" style="background:rgba(245,158,11,.10);color:var(--am)">⚠️ Bu yevmiye dosyasında <strong>120</strong> (alıcılar) veya <strong>320/329</strong> (satıcılar) alt-hesap koduyla işlem bulunamadı. Müşteri / tedarikçi konsantrasyon analizi için alt-hesap detayında işlenmiş bir e-Defter gereklidir (örn. <code style="font-family:var(--font-num)">120-01-001</code>).</div></div></div>`;
+    }
   }
 
   if(s.by_category&&Object.keys(s.by_category).length){
