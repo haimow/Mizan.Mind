@@ -4236,9 +4236,11 @@ function _defConcentrationRisk(entries){
     else if(ac.startsWith('320')){ bucket = supp; group = '320'; }
     else if(ac.startsWith('329')){ bucket = supp; group = '329'; }
     if(!bucket) continue;
-    if(!bucket[ac]) bucket[ac] = {code:ac, group, debit:0, credit:0, descCount:{}};
+    if(!bucket[ac]) bucket[ac] = {code:ac, group, debit:0, credit:0, count:0, lastDate:'', descCount:{}};
     bucket[ac].debit  += +e.debit  || 0;
     bucket[ac].credit += +e.credit || 0;
+    bucket[ac].count++;
+    if(e.date && e.date > bucket[ac].lastDate) bucket[ac].lastDate = e.date;
     const dsc = String(e.description||'').trim();
     if(dsc) bucket[ac].descCount[dsc] = (bucket[ac].descCount[dsc]||0) + 1;
   }
@@ -4248,7 +4250,14 @@ function _defConcentrationRisk(entries){
       const bal = balanceFn(o);
       const top = Object.entries(o.descCount).sort((a,b)=>b[1]-a[1])[0];
       const name = top ? top[0].slice(0,80) : '—';
-      return { code:o.code, group:o.group, name, balance:bal };
+      const totalVol = o.debit + o.credit;
+      return {
+        code:o.code, group:o.group, name,
+        balance:bal,
+        count:o.count,
+        avgSize: o.count > 0 ? totalVol / o.count : 0,
+        lastDate: o.lastDate
+      };
     }).filter(x => x.balance > 0);
     const total = arr.reduce((s,x)=>s + x.balance, 0);
     arr.forEach(x => x.pct = total > 0 ? (x.balance / total) * 100 : 0);
@@ -4377,6 +4386,37 @@ function rDefter(el){
         ? `<span style="font-size:11px;color:var(--rd);font-weight:600">${_totalRisky} riskli alt-hesap</span>`
         : `<span style="font-size:11px;color:var(--gn);font-weight:600">Konsantrasyon riski yok</span>`;
       h += `<div class="card"><div class="card-h"><div class="card-t">🚨 Konsantrasyon Riski Tespiti</div>${_riskMeta}</div><div class="card-b" style="padding:0">${_custBlock}${_suppBlock}</div></div>`;
+    }
+
+    // Top 10 Müşteri & Tedarikçi tabloları — yan yana (geniş ekran) / alt alta (dar ekran)
+    const _renderTopTable = (title, icon, mainLabel, data) => {
+      if(!data || !data.accounts.length) return '';
+      const top = data.accounts.slice(0, 10);
+      let body = '';
+      top.forEach((x, i) => {
+        const pctCol = x.pct > 30 ? 'var(--rd)' : x.pct > 20 ? 'var(--am)' : 'var(--t2)';
+        const pctWt  = x.pct > 30 ? '700' : x.pct > 20 ? '600' : '500';
+        const dateStr = x.lastDate ? String(x.lastDate).slice(0,10) : '—';
+        body += `<tr>
+          <td style="color:var(--tm);font-weight:600;text-align:center">${i+1}</td>
+          <td><div style="color:var(--t1);font-weight:500;font-family:var(--font-sans);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_defEsc(x.name)}">${_defEsc(x.name)}</div><div style="font-family:var(--font-num);font-size:10px;color:var(--tm);letter-spacing:0">${_defEsc(x.code)}</div></td>
+          <td class="r"><strong style="color:var(--t1)">${fmtTL(x.balance)}</strong></td>
+          <td class="r" style="color:${pctCol};font-weight:${pctWt}">%${x.pct.toFixed(1)}</td>
+          <td class="r">${x.count}</td>
+          <td class="r">${fmtTL(x.avgSize)}</td>
+          <td class="r" style="color:var(--tm);font-size:10px">${dateStr}</td>
+        </tr>`;
+      });
+      return `<div class="card"><div class="card-h"><div class="card-t">${icon} ${title}</div><span style="font-size:11px;color:var(--tm)">${data.accounts.length} alt-hesap · ${fmtTL(data.total)}</span></div>
+        <div class="card-b" style="padding:0;overflow-x:auto"><table class="mm-fdtl-tbl">
+          <thead><tr><th style="text-align:center">#</th><th>${mainLabel}</th><th class="r">Bakiye</th><th class="r">Pay</th><th class="r"># İşl.</th><th class="r">Ort.</th><th class="r">Son</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table></div></div>`;
+    };
+    const _topCust = _renderTopTable('Top 10 Müşteri (120)',         '🏢', 'Müşteri',    _conc.customers);
+    const _topSupp = _renderTopTable('Top 10 Tedarikçi (320+329)',   '🏭', 'Tedarikçi',  _conc.suppliers);
+    if(_topCust || _topSupp){
+      h += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:12px">${_topCust}${_topSupp}</div>`;
     }
   }
 
