@@ -445,6 +445,123 @@ body{
 .toast.warning{background:var(--am)}
 
 /* === MIZAN APPLE-STYLE — PHASE 3 — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 4 (Rasyolar tab) — START
+   Adds row-based ratio layout, severity-tinted footers, hover formula
+   tooltips, and the segmented health-score bar. Used by rRat() output.
+   To revert: delete everything between this START and the matching END,
+   AND restore the rRat() body from App/index.html.backup-20260505.
+   ====================================================================== */
+
+/* Row layout */
+.mm-rrow{
+  display:grid;
+  grid-template-columns:1fr auto 80px;
+  align-items:center;
+  column-gap:var(--s-3);
+  padding:10px var(--s-5);
+  border-bottom:1px solid var(--brd);
+  position:relative;
+  transition:background var(--dur-1) var(--ease);
+}
+.mm-rrow:last-child{border-bottom:0}
+.mm-rrow:hover{background:var(--bg2h)}
+.mm-rrow::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:transparent;border-radius:0 1px 1px 0;
+  transition:background var(--dur-2) var(--ease);
+}
+.mm-rrow[data-sev="good"]::before{background:var(--gn)}
+.mm-rrow[data-sev="warn"]::before{background:var(--am)}
+.mm-rrow[data-sev="bad"]::before{background:var(--rd)}
+.mm-rrow .nm{
+  font-size:var(--fs-13);color:var(--t2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.mm-rrow .val{
+  font-size:var(--fs-15);font-weight:600;text-align:right;
+  font-family:var(--font-num);font-variant-numeric:tabular-nums;
+  letter-spacing:var(--tracking-tight);color:var(--t1);
+}
+.mm-rrow .st{
+  display:inline-flex;align-items:center;gap:6px;justify-content:flex-end;
+  font-size:11px;font-weight:600;letter-spacing:0.04em;
+}
+.mm-rrow .st .dot{width:6px;height:6px;border-radius:var(--r-pill)}
+.mm-rrow[data-sev="good"] .st{color:var(--gn)} .mm-rrow[data-sev="good"] .st .dot{background:var(--gn)}
+.mm-rrow[data-sev="warn"] .st{color:var(--am)} .mm-rrow[data-sev="warn"] .st .dot{background:var(--am)}
+.mm-rrow[data-sev="bad"]  .st{color:var(--rd)} .mm-rrow[data-sev="bad"]  .st .dot{background:var(--rd)}
+.mm-rrow[data-sev="neu"]  .st{color:var(--tm)} .mm-rrow[data-sev="neu"]  .st .dot{background:var(--tm)}
+
+/* Hover formula tooltip */
+.mm-rrow[data-formula]:hover::after{
+  content:attr(data-formula);
+  position:absolute;left:var(--s-5);bottom:calc(100% - 4px);
+  background:var(--t1);color:var(--bg0);
+  font-family:var(--font-num);font-size:11px;font-weight:500;
+  letter-spacing:0;white-space:nowrap;
+  padding:6px 10px;border-radius:var(--r-2);
+  box-shadow:var(--sh-pop);pointer-events:none;z-index:20;
+  animation:mmTipIn var(--dur-2) var(--ease-out);
+}
+@keyframes mmTipIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Severity-tinted card footer */
+.mm-cf{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);
+  padding:var(--s-3) var(--s-5);
+  font-size:var(--fs-12);color:var(--tm);
+  border-top:1px solid var(--brd);
+  transition:background var(--dur-2) var(--ease);
+}
+.mm-cf[data-sev="good"]{background:var(--grad-good);color:var(--gn)}
+.mm-cf[data-sev="warn"]{background:var(--grad-warn);color:var(--am)}
+.mm-cf[data-sev="bad"] {background:var(--grad-bad); color:var(--rd)}
+.mm-cf .summary{color:var(--tm)}
+.mm-cf .pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:3px 10px;border-radius:var(--r-pill);
+  background:var(--bg2);box-shadow:0 0 0 1px var(--brd);
+  color:var(--t2);font-weight:500;
+}
+.mm-cf[data-sev="good"] .pill{color:var(--gn)}
+.mm-cf[data-sev="warn"] .pill{color:var(--am)}
+.mm-cf[data-sev="bad"]  .pill{color:var(--rd)}
+
+/* Segmented score bar (Zayıf | Ortalama | İyi) */
+.mm-score{padding:var(--s-5);display:flex;gap:var(--s-6);align-items:center}
+.mm-score-num{
+  font-size:44px;font-weight:600;letter-spacing:-0.03em;
+  font-family:var(--font-num);line-height:1;color:var(--t1);
+}
+.mm-score-num small{font-size:18px;color:var(--tm);font-weight:600}
+.mm-score-bar{flex:1;position:relative}
+.mm-score-segs{display:flex;gap:4px;height:10px}
+.mm-score-segs > div{border-radius:var(--r-pill);opacity:.88}
+.mm-score-segs .r{background:var(--rd)}
+.mm-score-segs .a{background:var(--am)}
+.mm-score-segs .g{background:var(--gn)}
+.mm-score-mark{
+  position:absolute;top:-4px;transform:translateX(-50%);
+  width:2px;height:18px;background:var(--t1);border-radius:1px;
+  pointer-events:none;
+}
+.mm-score-mark::after{
+  content:"";position:absolute;top:-5px;left:-4px;
+  width:10px;height:10px;border-radius:var(--r-pill);
+  background:var(--t1);box-shadow:0 0 0 3px var(--bg2);
+}
+.mm-score-labels{
+  display:flex;gap:4px;margin-top:var(--s-2);
+  font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;
+}
+.mm-score-labels span{text-align:center}
+.mm-score-labels .r{color:var(--rd)}
+.mm-score-labels .a{color:var(--am)}
+.mm-score-labels .g{color:var(--gn)}
+
+/* === MIZAN APPLE-STYLE — PHASE 4 — END === */
 .skeleton-card{height:80px;border-radius:10px;margin-bottom:12px}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
@@ -2132,17 +2249,22 @@ function rRat(el){
   const total=scored.length;
   const pct=total?Math.round(goodC/total*100):0;
   const sColor=pct>=70?'var(--gn)':pct>=40?'var(--am)':'var(--rd)';
-  h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Finansal Sağlık Skoru</div></div>
-  <div class="card-b" style="display:flex;align-items:center;gap:16px;padding:16px">
-    <div style="width:64px;height:64px;border-radius:50%;border:4px solid ${sColor};display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:${sColor};font-family:'JetBrains Mono',monospace">${pct}%</div>
-    <div>
-      <div style="font-size:13px;font-weight:600;color:var(--t1)">${pct>=70?'İyi':pct>=40?'Gelişime Açık':'Zayıf'}</div>
-      <div style="font-size:11px;color:var(--tm)">${goodC}/${total} rasyo hedef aralığında</div>
-      <div style="margin-top:8px;height:6px;width:100%;max-width:280px;background:var(--bgi);border-radius:3px;overflow:hidden">
-        <div style="height:100%;width:${pct}%;background:${sColor};border-radius:3px;transition:width .5s"></div>
+  const _verdict = pct>=65?'İyi':pct>=40?'Ortalama':'Zayıf';
+  const _vSev    = pct>=65?'good':pct>=40?'warn':'bad';
+  h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Finansal Sağlık Skoru</div><div style="font-size:11px;color:var(--tm)">${total} rasyo</div></div>
+    <div class="mm-score">
+      <div class="mm-score-num">${pct}<small>/100</small></div>
+      <div class="mm-score-bar">
+        <div class="mm-score-segs"><div class="r" style="flex:40"></div><div class="a" style="flex:25"></div><div class="g" style="flex:35"></div></div>
+        <div class="mm-score-mark" style="left:${pct}%"></div>
+        <div class="mm-score-labels"><span class="r" style="flex:40">Zayıf</span><span class="a" style="flex:25">Ortalama</span><span class="g" style="flex:35">İyi</span></div>
       </div>
     </div>
-  </div></div>`;
+    <div class="mm-cf" data-sev="${_vSev}">
+      <span class="summary">${goodC}/${total} rasyo hedef aralığında</span>
+      <span class="pill">${_verdict}</span>
+    </div>
+  </div>`;
   // Rasyo kategorileri
   const _colW={'var(--rd)':0,'var(--am)':1,'var(--gn)':2};
   Object.entries(RATIOS).forEach(([,cat])=>{
@@ -2155,19 +2277,24 @@ function rRat(el){
     const summary=(badC?`<span style="color:var(--rd);font-weight:600">${badC} zayıf</span> · `:'')
       +(midC?`<span style="color:var(--am);font-weight:600">${midC} orta</span> · `:'')
       +`<span style="color:var(--gn);font-weight:600">${goodC} iyi</span>`;
-    h+=`<div class="card"><div class="card-h"><div class="card-t">${cat.icon} ${cat.label}</div><div style="font-size:11px">${summary}</div></div><div class="card-b" style="padding:12px">
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">`;
+    const _domSev = (badC>=goodC && badC>=midC) ? 'bad' : (goodC>=midC ? 'good' : 'warn');
+    h+=`<div class="card"><div class="card-h"><div class="card-t">${cat.icon} ${cat.label}</div><div style="font-size:11px;color:var(--tm)">${items.length} oran</div></div>`;
     items.forEach(r=>{
       const v=r.calc(d); const col=rColS(r.key,v);
+      const sev=col==='var(--gn)'?'good':col==='var(--am)'?'warn':col==='var(--rd)'?'bad':'neu';
+      const sLabel={good:'İYİ',warn:'ORTA',bad:'ZAYIF',neu:'—'}[sev];
       const fmt=v===null?'—':r.pct?fP(v):r.cur?fC(v):fR(v);
-      h+=`<div class="rc" style="border-left-color:${col}">
-        <div class="rc-n">${r.name}</div>
-        <div class="rc-v" style="color:${col}">${fmt}</div>
-        <div class="rc-s">İdeal: ${r.ideal}</div>
-        <div class="rc-s" style="opacity:.65">${r.formula}</div>
+      const _formula=String(r.formula||'').replace(/"/g,'&quot;');
+      h+=`<div class="mm-rrow" data-sev="${sev}" data-formula="${_formula}">
+        <div class="nm">${r.name}</div>
+        <div class="val">${fmt}</div>
+        <div class="st"><span class="dot"></span>${sLabel}</div>
       </div>`;
     });
-    h+='</div></div></div>';
+    h+=`<div class="mm-cf" data-sev="${_domSev}">
+      <span class="summary">${summary}</span>
+      <span class="pill">${goodC}/${items.length} hedefte</span>
+    </div></div>`;
   });
   h+='</div>';
   el.innerHTML=h;
