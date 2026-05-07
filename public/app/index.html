@@ -562,6 +562,73 @@ body{
 .mm-score-labels .g{color:var(--gn)}
 
 /* === MIZAN APPLE-STYLE — PHASE 4 — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 6 (saved lists) — START
+   Refines .saved-item (used by sidebar Kayıtlı list and e-Defter saved
+   reports). Pure CSS — no renderer changes. Apple-style hover lift,
+   refined typography, hairline divider feel.
+   To revert: delete everything between this START and the matching END.
+   ====================================================================== */
+
+.saved-item{
+  background:var(--bg2);
+  border:1px solid var(--brd);
+  border-radius:var(--r-3);
+  padding:10px 14px;
+  margin-bottom:6px;
+  gap:12px;
+  transition:background var(--dur-2) var(--ease),
+             border-color var(--dur-2) var(--ease),
+             transform var(--dur-1) var(--ease),
+             box-shadow var(--dur-2) var(--ease);
+  position:relative;
+}
+.saved-item:hover{
+  background:var(--bg2h);
+  border-color:var(--brd);
+  transform:translateY(-1px);
+  box-shadow:0 4px 14px rgba(0,0,0,.06),0 0 0 1px var(--brd);
+}
+.saved-item:active{transform:translateY(0)}
+
+.saved-dot{
+  width:8px;height:8px;border-radius:var(--r-pill);
+  background:var(--gn);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--gn) 18%, transparent);
+  flex-shrink:0;
+}
+
+.saved-name{
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);
+  font-weight:500;
+  letter-spacing:var(--tracking-tight);
+  color:var(--t1);
+}
+.saved-meta{
+  font-family:var(--font-sans);
+  font-size:11px;
+  color:var(--tm);
+  margin-top:2px;
+  letter-spacing:0;
+  font-variant-numeric:tabular-nums;
+}
+
+.saved-del{
+  width:24px;height:24px;
+  border-radius:var(--r-pill);
+  font-size:12px;
+  display:inline-flex;align-items:center;justify-content:center;
+  opacity:0;
+  transition:opacity var(--dur-2) var(--ease),
+             background var(--dur-1) var(--ease),
+             color var(--dur-1) var(--ease);
+}
+.saved-item:hover .saved-del{opacity:.7}
+.saved-del:hover{opacity:1 !important;background:var(--c-bad-bg);color:var(--rd)}
+
+/* === MIZAN APPLE-STYLE — PHASE 6 — END === */
 .skeleton-card{height:80px;border-radius:10px;margin-bottom:12px}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
