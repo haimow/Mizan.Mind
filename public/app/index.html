@@ -2242,13 +2242,20 @@ function rRat(el){
     return;
   }
   let h='<div style="display:flex;flex-direction:column;gap:12px">';
-  // Sağlık skoru
+  // Sağlık skoru — analist hassasiyetinde ağırlıklı puanlama
+  //  iyi=1.0 · orta=0.5 · zayıf=0.0 · nötr (sektör BM'i yoksa, ör. Değerleme) puana girmez
   const allItems=Object.values(RATIOS).flatMap(c=>c.items);
-  const scored=allItems.map(r=>{const v=r.calc(d);if(v===null)return null;return rColS(r.key,v);}).filter(Boolean);
-  const goodC=scored.filter(s=>s==='var(--gn)').length;
-  const total=scored.length;
-  const pct=total?Math.round(goodC/total*100):0;
-  const sColor=pct>=70?'var(--gn)':pct>=40?'var(--am)':'var(--rd)';
+  let _wSum=0,_wN=0,goodC=0,midC=0,badC=0,total=0;
+  allItems.forEach(r=>{
+    const v=r.calc(d); if(v===null) return;
+    total++;
+    const col=rColS(r.key,v);
+    if(col==='var(--gn)'){ goodC++; _wSum+=1.0; _wN++; }
+    else if(col==='var(--am)'){ midC++; _wSum+=0.5; _wN++; }
+    else if(col==='var(--rd)'){ badC++; _wSum+=0.0; _wN++; }
+    // diğer dönüşler nötr — toplama dahil ama puana etki etmez
+  });
+  const pct = _wN ? Math.round(_wSum/_wN*100) : 0;
   const _verdict = pct>=65?'İyi':pct>=40?'Ortalama':'Zayıf';
   const _vSev    = pct>=65?'good':pct>=40?'warn':'bad';
   h+=`<div class="card"><div class="card-h"><div class="card-t">📊 Finansal Sağlık Skoru</div><div style="font-size:11px;color:var(--tm)">${total} rasyo</div></div>
@@ -2261,7 +2268,7 @@ function rRat(el){
       </div>
     </div>
     <div class="mm-cf" data-sev="${_vSev}">
-      <span class="summary">${goodC}/${total} rasyo hedef aralığında</span>
+      <span class="summary">İyi: ${goodC} · Orta: ${midC} · Zayıf: ${badC} <span style="opacity:.55">(toplam ${total} oran)</span></span>
       <span class="pill">${_verdict}</span>
     </div>
   </div>`;
