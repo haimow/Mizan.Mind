@@ -1491,6 +1491,8 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
         </ul>
       </div>
 
+      <div class="kv-banner" style="margin:0 0 14px"><div class="kv-banner-icon">⏱</div><div class="kv-banner-body"><strong>Otomatik Saklama Süresi: 6 ay (180 gün)</strong><br>KVKK Madde 4 (veri minimizasyonu) gereği kayıtlı analizler 6 ay sonra otomatik olarak silinir. Silinmeden 7 gün önce e-posta ile uyarı alırsınız. Saklamak istediğiniz analizleri sidebar'daki <strong>⏱</strong> butonu ile 6 ay daha uzatabilirsiniz.</div></div>
+
       <div class="kv-banner amber" style="margin:0 0 14px">
         <div class="kv-banner-icon">⚠️</div>
         <div class="kv-banner-body"><strong>Tüm Verilerimi Sil</strong><br>KVKK Madde 7 ve 11/e kapsamında verilerinizin silinmesini talep edebilirsiniz. Aşağıdaki buton tüm kayıtlı analizlerinizi, e-Defter raporlarınızı ve Storage'daki dosyalarınızı kalıcı olarak siler. <strong>Bu işlem geri alınamaz.</strong></div>
@@ -1543,7 +1545,10 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
         </ul>
         <p>Tüm sunucu tarafı veriler e-postanıza bağlıdır; başka kullanıcılar erişemez. Storage dosyalarına yalnızca 5 dakika geçerli imzalı URL ile erişilir; yol bilgisi (<code>dosya_path</code>) hiçbir koşulda istemciye döndürülmez.</p>
 
-        <h3>5. Haklarınız (KVKK Madde 11)</h3>
+        <h3>5. Saklama Süresi (KVKK Madde 4 — Veri Minimizasyonu)</h3>
+        <p>Kaydedilen analizlerin varsayılan saklama süresi <strong>6 ay (180 gün)</strong>'dır. Bu sürenin dolmasından <strong>7 gün önce</strong> e-posta ile bilgilendirilirsiniz. Süre dolduğunda Storage'daki dosyanız ve veritabanındaki kaydınız <strong>otomatik olarak ve kalıcı olarak silinir</strong>. Saklamak istediğiniz bir analizi <em>Kayıtlı</em> sekmesindeki ⏱ butonu ile 6 ay daha uzatabilirsiniz. e-Defter raporları (yalnızca özet + anomali sayıları) bu otomatik silmeye tabi <strong>değildir</strong> — bunları manuel olarak silebilirsiniz.</p>
+
+        <h3>6. Haklarınız (KVKK Madde 11)</h3>
         <ul>
           <li><strong>Erişim & öğrenme:</strong> Hangi verilerinizin işlendiğini öğrenebilirsiniz</li>
           <li><strong>Düzeltme:</strong> Yanlış verileri düzeltme talebinde bulunabilirsiniz</li>
@@ -1551,7 +1556,7 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
           <li><strong>Açık rıza geri çekme:</strong> PDF işleme rızanızı her an geri çekebilirsiniz</li>
         </ul>
 
-        <h3>6. Üçüncü Taraf Hizmet Sağlayıcılar</h3>
+        <h3>7. Üçüncü Taraf Hizmet Sağlayıcılar</h3>
         <ul>
           <li><strong>Anthropic Inc.</strong> (ABD) — Yapay zeka model çıkarımı (PDF analizi, AI yorum)</li>
           <li><strong>Supabase</strong> — Veritabanı + dosya depolama</li>
@@ -1561,7 +1566,7 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
           <li><strong>Cloudflare CDN, jsDelivr</strong> — Statik kütüphane dağıtımı (xlsx, chart.js, jspdf, jszip) — kullanıcı verisi iletilmez</li>
         </ul>
 
-        <h3>7. İletişim</h3>
+        <h3>8. İletişim</h3>
         <p>Sorularınız için: <a href="mailto:info@mizanmind.net">info@mizanmind.net</a></p>
 
         <p style="margin-top:18px;color:var(--tm);font-size:11px">Son güncelleme: 2026-05-08</p>
@@ -1885,12 +1890,23 @@ function rSBSaved(el){
       const tarih=d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
       const sektor=item.sektor?` · ${esc(SEKTOR_LABELS[item.sektor]||item.sektor)}`:'';
       const dosyaBtn=item.has_file?`<button class="saved-del" onclick="event.stopPropagation();downloadSaved('${item.id}')" title="Dosyayı İndir" style="color:var(--ac)">⬇</button>`:'';
+      // Saklama süresi kalan gün hesabı (KVKK m.4 — 180 gün TTL)
+      let expBadge='', extendBtn='';
+      if(item.expires_at){
+        const daysLeft=Math.floor((new Date(item.expires_at).getTime()-Date.now())/86400000);
+        if(daysLeft<=30){
+          const col=daysLeft<=7?'var(--rd)':'var(--am)';
+          expBadge=` · <span style="color:${col};font-weight:600">${daysLeft<=0?'süresi doldu':daysLeft+' gün kaldı'}</span>`;
+          extendBtn=`<button class="saved-del" onclick="event.stopPropagation();extendRetention('${item.id}')" title="6 ay uzat" style="color:var(--am)">⏱</button>`;
+        }
+      }
       h+=`<div class="saved-item" onclick="loadSaved('${item.id}')">
         <div class="saved-dot" style="${item.has_file?'background:var(--gn)':''}"></div>
         <div class="saved-info">
           <div class="saved-name">${esc(item.sirket_adi||item.donem||'Adsız Analiz')}</div>
-          <div class="saved-meta">${tarih}${sektor}${item.dosya_adi?' 📎':''}</div>
+          <div class="saved-meta">${tarih}${sektor}${item.dosya_adi?' 📎':''}${expBadge}</div>
         </div>
+        ${extendBtn}
         ${dosyaBtn}
         <button class="saved-del" onclick="event.stopPropagation();deleteSaved('${item.id}')" title="Sil">✕</button>
       </div>`;
@@ -2468,6 +2484,20 @@ window.closePrivacyPolicy=closePrivacyPolicy;
 window.openAccountSettings=openAccountSettings;
 window.closeAccountSettings=closeAccountSettings;
 window.deleteAllMyData=deleteAllMyData;
+
+// ─── Saklama süresini uzat (KVKK m.4 — kullanıcı kontrollü TTL) ──────────────
+async function extendRetention(id){
+  if(!confirm('Bu analizin saklama süresini 6 ay daha uzatmak istiyor musunuz?'))return;
+  try{
+    const res=await sbCall('extendRetention',{id});
+    if(res.error){throw new Error(res.error);}
+    showToast('Saklama süresi 6 ay uzatıldı ✓','success',3000);
+    await loadSavedList();render();
+  }catch(e){
+    showToast('Uzatma hatası: '+e.message,'error',4000);
+  }
+}
+window.extendRetention=extendRetention;
 function moConfirm(){
   const n=document.getElementById('moInp').value.trim();
   if(!n)return;
