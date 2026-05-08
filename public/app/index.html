@@ -1168,6 +1168,117 @@ body{
 }
 
 /* === MIZAN APPLE-STYLE — PHASE 11 — END === */
+
+/* ======================================================================
+   KVKK COMPLIANCE — Priority 1+2+3 from privacy audit (2026-05-08)
+   - PDF cross-border transfer consent (Anthropic, USA)
+   - "Tüm Verilerimi Sil" account control (KVKK m.7 / m.11)
+   - e-Defter zero-transmission trust badge
+   - In-app Privacy Policy modal
+   ====================================================================== */
+
+/* Trust badges & disclosure banners */
+.kv-banner{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 14px;
+  background:rgba(10,132,255,.08);
+  border:1px solid var(--brd);
+  border-left:3px solid var(--ac);
+  border-radius:var(--r-2);
+  font-family:var(--font-sans);
+  font-size:var(--fs-12);
+  line-height:1.55;
+  color:var(--t2);
+  margin:10px 0 0;
+}
+.kv-banner.green{
+  background:rgba(48,209,88,.10);
+  border-left-color:var(--gn);
+}
+.kv-banner.amber{
+  background:rgba(255,159,10,.10);
+  border-left-color:var(--am);
+}
+.kv-banner-icon{font-size:14px;line-height:1.55;flex-shrink:0}
+.kv-banner-body{flex:1;min-width:0}
+.kv-banner strong{color:var(--t1);font-weight:600}
+.kv-banner a{color:var(--ac);text-decoration:none;border-bottom:1px solid transparent;transition:border-color var(--dur-1) var(--ease)}
+.kv-banner a:hover{border-bottom-color:var(--ac)}
+
+/* Inline trust badge — small green pill */
+.kv-trustbadge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:var(--r-pill);
+  background:rgba(48,209,88,.14);
+  color:var(--gn);
+  font-family:var(--font-sans);
+  font-size:11px;font-weight:600;
+  letter-spacing:var(--tracking-tight);
+  margin:0 0 10px;
+}
+.kv-trustbadge::before{content:"🔒";font-size:11px}
+
+/* KVKK consent modal & checkbox */
+.kv-cb-row{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;margin-top:14px;
+  background:var(--bg2h);
+  border:1px solid var(--brd);
+  border-radius:var(--r-2);
+  cursor:pointer;
+  transition:background var(--dur-1) var(--ease),border-color var(--dur-1) var(--ease);
+}
+.kv-cb-row:hover{background:var(--bg2);border-color:var(--ac)}
+.kv-cb-row input[type="checkbox"]{
+  width:18px;height:18px;flex-shrink:0;margin-top:1px;
+  accent-color:var(--ac);cursor:pointer;
+}
+.kv-cb-row label{
+  font-family:var(--font-sans);
+  font-size:var(--fs-12);line-height:1.55;
+  color:var(--t1);cursor:pointer;
+  letter-spacing:var(--tracking-tight);
+  flex:1;
+}
+
+/* Danger button — for irreversible actions */
+.btn-danger{
+  background:var(--rd);color:#fff;
+  border:0;border-radius:var(--r-pill);
+  padding:8px 16px;
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);font-weight:500;
+  cursor:pointer;
+  transition:background var(--dur-1) var(--ease),transform var(--dur-1) var(--ease),box-shadow var(--dur-2) var(--ease);
+  box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 12px rgba(255,69,58,.28);
+}
+.btn-danger:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.08),0 6px 18px rgba(255,69,58,.36)}
+.btn-danger:active{transform:translateY(0)}
+
+/* Privacy Policy modal body */
+.kv-pp-body{
+  font-family:var(--font-sans);
+  font-size:var(--fs-13);line-height:1.7;
+  color:var(--t2);
+  letter-spacing:var(--tracking-tight);
+  max-height:70vh;overflow-y:auto;
+}
+.kv-pp-body h3{
+  color:var(--t1);font-size:var(--fs-15);font-weight:600;
+  margin:18px 0 8px;letter-spacing:var(--tracking-display);
+}
+.kv-pp-body h3:first-child{margin-top:0}
+.kv-pp-body ul{padding-left:20px;margin:6px 0 12px}
+.kv-pp-body li{margin-bottom:4px}
+.kv-pp-body a{color:var(--ac);text-decoration:none}
+.kv-pp-body a:hover{text-decoration:underline}
+.kv-pp-body code{
+  font-family:var(--font-num);font-size:11px;
+  padding:1px 5px;background:var(--bg1);
+  border-radius:var(--r-1);color:var(--t1);
+}
+
+/* === KVKK COMPLIANCE — END === */
 .skeleton-card{height:80px;border-radius:10px;margin-bottom:12px}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
@@ -1294,6 +1405,8 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
 <div class="userbar" id="userBar">
   <div class="userbar-av" id="userAv">?</div>
   <div class="userbar-nm" id="userNm">Yükleniyor...</div>
+  <button onclick="openAccountSettings()" title="Hesap & Veri Yönetimi (KVKK)"
+    style="background:none;border:1px solid var(--brd);border-radius:6px;color:var(--t2);font-size:14px;cursor:pointer;padding:3px 8px;transition:all .2s;flex-shrink:0">⚙️</button>
   <button id="themeToggle" onclick="toggleTheme()" title="Tema değiştir"
     style="background:none;border:1px solid var(--brd);border-radius:6px;color:var(--t2);font-size:14px;cursor:pointer;padding:3px 8px;transition:all .2s;flex-shrink:0"
     >🌙</button>
@@ -1326,6 +1439,139 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
 </div>
 </div>
 <div class="mo" id="moOv" style="display:none" onclick="closeMo()"><div class="mod" onclick="event.stopPropagation()"><div class="mod-h"><div class="mod-t" id="moTitle">Yeni Dönem Ekle</div><button class="mod-x" onclick="closeMo()">×</button></div><div class="mod-b"><div class="igr"><label class="igl" id="moLabel">Dönem Adı</label><input class="inp" id="moInp" placeholder="ör: 2024, 2023 3.Dönem, 2024 Q2" onkeydown="if(event.key==='Enter')moConfirm()"><div style="margin-top:6px;font-size:10px;color:var(--am)">⚠ Dönem adı karşılaştırma sıralaması için önemlidir. Lütfen yılı mutlaka belirtin.</div></div></div><div class="mod-f"><button class="btn" onclick="closeMo()">İptal</button><button class="btn btn-p" onclick="moConfirm()">Tamam</button></div></div></div>
+
+<!-- ─── KVKK m.9 Açık Rıza Modalı (PDF → Anthropic ABD) ─── -->
+<div class="mo" id="kvkkConsentMo" style="display:none" onclick="closeKvkkConsent()">
+  <div class="mod" onclick="event.stopPropagation()" style="max-width:520px">
+    <div class="mod-h">
+      <div class="mod-t">🌐 Yurt Dışı Veri Aktarımı — Açık Rıza</div>
+      <button class="mod-x" onclick="closeKvkkConsent()">×</button>
+    </div>
+    <div class="mod-b">
+      <div class="kv-banner amber" style="margin:0 0 12px">
+        <div class="kv-banner-icon">⚠️</div>
+        <div class="kv-banner-body"><strong>KVKK Madde 9 — Yurt Dışına Veri Aktarımı</strong><br>PDF dosyalarınızın yapay zeka ile analiz edilmesi için içeriği <strong>Anthropic Inc. (ABD)</strong> sunucularına iletilir. Bu, KVKK kapsamında <strong>yurt dışına veri aktarımı</strong> sayılır ve açık rızanızı gerektirir.</div>
+      </div>
+      <div style="font-size:13px;line-height:1.7;color:var(--t2);font-family:var(--font-sans);letter-spacing:var(--tracking-tight)">
+        <p style="margin:0 0 8px"><strong style="color:var(--t1)">Aktarılan veri:</strong> PDF dosyanızın içeriği base64 olarak kodlanıp Anthropic'in <code style="font-family:var(--font-num);background:var(--bg1);padding:1px 5px;border-radius:4px">api.anthropic.com</code> adresine iletilir.</p>
+        <p style="margin:0 0 8px"><strong style="color:var(--t1)">Saklama:</strong> Anthropic veriyi yalnızca model çıktısı üretmek için geçici olarak işler; eğitim verisi olarak kullanmaz ve <strong>kalıcı olarak saklamaz</strong>.</p>
+        <p style="margin:0 0 8px"><strong style="color:var(--t1)">Anthropic Gizlilik Politikası:</strong> <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer" style="color:var(--ac)">anthropic.com/privacy →</a></p>
+        <p style="margin:0;color:var(--tm);font-size:12px">Excel, CSV ve e-Defter (XML/ZIP) dosyalarınız tarayıcınızda işlenir ve hiçbir sunucuya iletilmez — bunlar için rıza gerekmez.</p>
+      </div>
+      <label class="kv-cb-row">
+        <input type="checkbox" id="kvkkChk" onchange="kvkkConsentToggle()">
+        <span>PDF içeriğimin yapay zeka analizi amacıyla Anthropic Inc. (ABD) sunucularına iletilmesine, KVKK Madde 9 kapsamında <strong>açık rıza</strong> veriyorum. Rızamı her zaman <em>Hesap Ayarları</em>'ndan geri çekebilirim.</span>
+      </label>
+    </div>
+    <div class="mod-f">
+      <button class="btn" onclick="closeKvkkConsent()">İptal</button>
+      <button class="btn btn-p" id="kvkkConfirmBtn" onclick="kvkkConsentConfirm()" disabled>Onayla & Devam Et</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Hesap & Veri Yönetimi modalı (KVKK m.7 / m.11) ─── -->
+<div class="mo" id="accountMo" style="display:none" onclick="closeAccountSettings()">
+  <div class="mod" onclick="event.stopPropagation()" style="max-width:560px">
+    <div class="mod-h">
+      <div class="mod-t">⚙️ Hesap & Veri Yönetimi</div>
+      <button class="mod-x" onclick="closeAccountSettings()">×</button>
+    </div>
+    <div class="mod-b">
+      <h3 style="margin:0 0 8px;font-size:13px;color:var(--t1);font-family:var(--font-sans)">PDF Yapay Zeka Rıza Durumu</h3>
+      <div id="kvkkConsentStatus" style="font-size:12px;color:var(--t2);margin-bottom:18px;padding:10px 14px;background:var(--bg2h);border-radius:8px"></div>
+
+      <h3 style="margin:0 0 8px;font-size:13px;color:var(--t1);font-family:var(--font-sans)">Verileriniz</h3>
+      <div style="font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:14px">
+        Mizan Mind hesabınızda saklanan veriler:
+        <ul style="padding-left:20px;margin:6px 0">
+          <li><strong>analizler</strong> — kayıtlı mali analizleriniz (Supabase Postgres)</li>
+          <li><strong>analizler dosyaları</strong> — opsiyonel olarak kaydettiğiniz orijinal Excel/PDF dosyaları (Supabase Storage)</li>
+          <li><strong>defter_raporlari</strong> — kayıtlı e-Defter anomali raporlarınız (özet + analiz, ham veri yok)</li>
+        </ul>
+      </div>
+
+      <div class="kv-banner amber" style="margin:0 0 14px">
+        <div class="kv-banner-icon">⚠️</div>
+        <div class="kv-banner-body"><strong>Tüm Verilerimi Sil</strong><br>KVKK Madde 7 ve 11/e kapsamında verilerinizin silinmesini talep edebilirsiniz. Aşağıdaki buton tüm kayıtlı analizlerinizi, e-Defter raporlarınızı ve Storage'daki dosyalarınızı kalıcı olarak siler. <strong>Bu işlem geri alınamaz.</strong></div>
+      </div>
+      <button class="btn-danger" id="deleteAllBtn" onclick="deleteAllMyData()">🗑 Tüm Verilerimi Sil</button>
+    </div>
+    <div class="mod-f">
+      <button class="btn" onclick="closeAccountSettings()">Kapat</button>
+      <button class="btn" onclick="openPrivacyPolicy()">Gizlilik Politikası</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Gizlilik Politikası modalı ─── -->
+<div class="mo" id="privacyPolicyMo" style="display:none" onclick="closePrivacyPolicy()">
+  <div class="mod" onclick="event.stopPropagation()" style="max-width:680px">
+    <div class="mod-h">
+      <div class="mod-t">🔒 Gizlilik Politikası & KVKK Aydınlatma Metni</div>
+      <button class="mod-x" onclick="closePrivacyPolicy()">×</button>
+    </div>
+    <div class="mod-b">
+      <div class="kv-pp-body">
+        <h3>1. Veri İşleme Genel Bakışı</h3>
+        <p>Mizan Mind, Türk şirketleri için finansal analiz hizmeti sunar. Bu metin, KVKK (6698 sayılı Kişisel Verilerin Korunması Kanunu) kapsamında veri işleme uygulamalarımızı açıklar.</p>
+
+        <h3>2. Yapay Zeka İşleme & Üçüncü Taraf Sağlayıcılar</h3>
+        <p><strong style="color:var(--t1)">Anthropic Inc. (ABD)</strong> alt-işleyen olarak görev yapar:</p>
+        <ul>
+          <li><strong>Aktarılan veri:</strong> PDF dosyalarınızın içeriği, base64 ile kodlanmış olarak</li>
+          <li><strong>Amaç:</strong> Yapay zeka destekli finansal tablo okuma & ayrıştırma</li>
+          <li><strong>Saklama:</strong> Anthropic veriyi geçici olarak işler — kalıcı saklama yapmaz, eğitim verisi olarak kullanmaz</li>
+          <li><strong>KVKK Madde 9 — Yurt Dışına Veri Aktarımı:</strong> Anthropic ABD'de bulunduğundan PDF yüklemesi öncesi açık rıza alınır</li>
+          <li><strong>Anthropic Gizlilik Politikası:</strong> <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer">anthropic.com/privacy</a></li>
+        </ul>
+
+        <h3>3. Cihazınızda Kalan Veriler — Sunucuya Gönderilmeyenler</h3>
+        <p>Aşağıdaki dosya türleri <strong style="color:var(--gn)">tamamen tarayıcınızda işlenir</strong> ve hiçbir sunucuya iletilmez:</p>
+        <ul>
+          <li><strong>Excel, CSV (.xlsx, .xls, .csv)</strong> — <code>xlsx.js</code> kütüphanesi ile yerel ayrıştırma</li>
+          <li><strong>e-Defter (XML/ZIP)</strong> — <code>DOMParser</code> + <code>JSZip</code> ile yerel ayrıştırma. Yevmiye kayıtlarınız, müşteri/tedarikçi bilgileriniz ve diğer hassas veriler cihazınızı asla terk etmez.</li>
+        </ul>
+        <p>e-Defter "Raporu Kaydet" butonuna bastığınızda dahi yalnızca özet & anomali sayımları kaydedilir; ham yevmiye verisi <strong>hiçbir koşulda</strong> sunucuya iletilmez veya kaydedilmez.</p>
+
+        <h3>4. Sunucu Tarafında Saklanan Veriler</h3>
+        <p>Yalnızca açıkça <em>Kaydet</em> butonuna basarak kaydettiğiniz veriler sunucumuzda tutulur:</p>
+        <ul>
+          <li><code>analizler</code> tablosu — kayıtlı analizlerin özet alanları (şirket adı, dönem, sektör, hesaplanan rasyolar)</li>
+          <li><code>analizler</code> Storage bucket — opsiyonel olarak yüklediğiniz orijinal Excel/PDF dosyaları</li>
+          <li><code>defter_raporlari</code> tablosu — e-Defter analiz özeti (ham veri yok)</li>
+        </ul>
+        <p>Tüm sunucu tarafı veriler e-postanıza bağlıdır; başka kullanıcılar erişemez. Storage dosyalarına yalnızca 5 dakika geçerli imzalı URL ile erişilir; yol bilgisi (<code>dosya_path</code>) hiçbir koşulda istemciye döndürülmez.</p>
+
+        <h3>5. Haklarınız (KVKK Madde 11)</h3>
+        <ul>
+          <li><strong>Erişim & öğrenme:</strong> Hangi verilerinizin işlendiğini öğrenebilirsiniz</li>
+          <li><strong>Düzeltme:</strong> Yanlış verileri düzeltme talebinde bulunabilirsiniz</li>
+          <li><strong>Silme & yok etme:</strong> <em>Hesap Ayarları</em> → <em>Tüm Verilerimi Sil</em> ile tek tıkla tüm kayıtlı verilerinizi silebilirsiniz</li>
+          <li><strong>Açık rıza geri çekme:</strong> PDF işleme rızanızı her an geri çekebilirsiniz</li>
+        </ul>
+
+        <h3>6. Üçüncü Taraf Hizmet Sağlayıcılar</h3>
+        <ul>
+          <li><strong>Anthropic Inc.</strong> (ABD) — Yapay zeka model çıkarımı (PDF analizi, AI yorum)</li>
+          <li><strong>Supabase</strong> — Veritabanı + dosya depolama</li>
+          <li><strong>Netlify</strong> — Web sunumu, kimlik (Identity), serverless fonksiyonlar</li>
+          <li><strong>Resend</strong> — E-posta bildirimleri (vergi takvimi)</li>
+          <li><strong>Google</strong> — Yalnızca "Google ile Giriş" seçildiğinde OAuth kimlik doğrulama</li>
+          <li><strong>Cloudflare CDN, jsDelivr</strong> — Statik kütüphane dağıtımı (xlsx, chart.js, jspdf, jszip) — kullanıcı verisi iletilmez</li>
+        </ul>
+
+        <h3>7. İletişim</h3>
+        <p>Sorularınız için: <a href="mailto:info@mizanmind.net">info@mizanmind.net</a></p>
+
+        <p style="margin-top:18px;color:var(--tm);font-size:11px">Son güncelleme: 2026-05-08</p>
+      </div>
+    </div>
+    <div class="mod-f">
+      <button class="btn btn-p" onclick="closePrivacyPolicy()">Anladım</button>
+    </div>
+  </div>
+</div>
 <script>
 // THP ACCOUNT MAP
 const THP={
@@ -1852,7 +2098,9 @@ if(isFirstVisit){
   return;
 }
 // ── Normal görünüm (veri yüklü) ───────────────────────────
-let h=`<div class="card"><div class="card-h"><div class="card-t">📂 Dosya Yükleme${p.name?' — '+p.name:''}</div>${p.fileName?`<span style="font-size:10px;color:var(--gn);font-family:'JetBrains Mono',monospace">✓ ${p.fileName}</span>`:''}</div><div class="card-b"><div class="uz" id="upZ" onclick="document.getElementById('fInp').click()"><div class="uz-i">📂</div><div class="uz-t">Analiz edilecek dönem için dosya yükleyin</div><div class="uz-h">Excel (.xlsx .xls .csv) veya PDF — Sürükle & Bırak</div><div class="uz-h" style="margin-top:2px;color:var(--ac)">Detay Mizan · Bilanço · Gelir Tablosu · Beyanname</div></div><input type="file" id="fInp" accept=".xlsx,.xls,.csv,.pdf" style="display:none" onchange="hFile(this.files[0])">${logH}${guidance}</div></div>`;
+let h=`<div class="card"><div class="card-h"><div class="card-t">📂 Dosya Yükleme${p.name?' — '+p.name:''}</div>${p.fileName?`<span style="font-size:10px;color:var(--gn);font-family:'JetBrains Mono',monospace">✓ ${p.fileName}</span>`:''}</div><div class="card-b"><div class="uz" id="upZ" onclick="document.getElementById('fInp').click()"><div class="uz-i">📂</div><div class="uz-t">Analiz edilecek dönem için dosya yükleyin</div><div class="uz-h">Excel (.xlsx .xls .csv) veya PDF — Sürükle & Bırak</div><div class="uz-h" style="margin-top:2px;color:var(--ac)">Detay Mizan · Bilanço · Gelir Tablosu · Beyanname</div></div><input type="file" id="fInp" accept=".xlsx,.xls,.csv,.pdf" style="display:none" onchange="hFile(this.files[0])">
+<div class="kv-banner"><div class="kv-banner-icon">ℹ️</div><div class="kv-banner-body"><strong>PDF dosyaları</strong> yapay zeka okuma için <strong>Anthropic Inc. (ABD)</strong> sunucularına base64 olarak iletilir; Anthropic tarafında kalıcı olarak saklanmaz. <strong>Excel</strong> ve <strong>e-Defter (XML/ZIP)</strong> tarayıcınızda işlenir, hiçbir sunucuya gönderilmez. <a href="javascript:void(0)" onclick="openPrivacyPolicy()">Gizlilik Politikası →</a></div></div>
+${logH}${guidance}</div></div>`;
 
 // Detay mizan yüklüyse özet göster, manuel giriş gösterme
 if(p.isMizan){
@@ -2118,6 +2366,108 @@ function openMo(mode,cb,prefill){
   setTimeout(()=>document.getElementById('moInp').focus(),100);
 }
 function closeMo(){document.getElementById('moOv').style.display='none';document.getElementById('moInp').value='';moCallback=null;pendingFile=null}
+
+// ─── KVKK Madde 9 — PDF işleme için açık rıza (cross-border data transfer) ──
+const KV_PDF_KEY='mm-kvkk-pdf-consent';
+function kvkkPdfConsentOK(){return localStorage.getItem(KV_PDF_KEY)==='1';}
+let _kvCb=null;
+function openKvkkConsent(onConsent){
+  _kvCb=onConsent||null;
+  const m=document.getElementById('kvkkConsentMo');
+  if(!m)return;
+  document.getElementById('kvkkChk').checked=false;
+  document.getElementById('kvkkConfirmBtn').disabled=true;
+  m.style.display='flex';
+  setTimeout(()=>document.getElementById('kvkkChk').focus(),100);
+}
+function closeKvkkConsent(){
+  const m=document.getElementById('kvkkConsentMo');
+  if(m)m.style.display='none';
+  _kvCb=null;
+}
+function kvkkConsentToggle(){
+  const ok=document.getElementById('kvkkChk').checked;
+  document.getElementById('kvkkConfirmBtn').disabled=!ok;
+}
+function kvkkConsentConfirm(){
+  if(!document.getElementById('kvkkChk').checked)return;
+  localStorage.setItem(KV_PDF_KEY,'1');
+  localStorage.setItem(KV_PDF_KEY+'-at',new Date().toISOString());
+  const cb=_kvCb;closeKvkkConsent();
+  if(typeof cb==='function')cb();
+  showToast('Rıza kaydedildi. PDF işleme başlatılıyor…','success',3000);
+}
+function revokeKvkkConsent(){
+  if(!confirm('PDF işleme rızasını geri çekmek istediğinize emin misiniz? Yeni PDF yüklemelerinde tekrar rıza istenecek.'))return;
+  localStorage.removeItem(KV_PDF_KEY);
+  localStorage.removeItem(KV_PDF_KEY+'-at');
+  showToast('PDF işleme rızası geri çekildi','info',3000);
+  if(S.tab==='input')render();
+}
+
+// ─── Gizlilik Politikası modalı (in-app, KVKK uyumlu) ────────────────────────
+function openPrivacyPolicy(){
+  const m=document.getElementById('privacyPolicyMo');
+  if(m)m.style.display='flex';
+}
+function closePrivacyPolicy(){
+  const m=document.getElementById('privacyPolicyMo');
+  if(m)m.style.display='none';
+}
+
+// ─── Hesap & Veri Yönetimi modalı (KVKK m.7 ve m.11 — silme hakkı) ───────────
+function openAccountSettings(){
+  const m=document.getElementById('accountMo');
+  if(!m)return;
+  // Refresh consent status display
+  const cs=document.getElementById('kvkkConsentStatus');
+  if(cs){
+    if(kvkkPdfConsentOK()){
+      const at=localStorage.getItem(KV_PDF_KEY+'-at');
+      const dt=at?new Date(at).toLocaleDateString('tr-TR'):'';
+      cs.innerHTML=`<span style="color:var(--gn)">✓ PDF rıza onayı verilmiş${dt?' — '+dt:''}</span> · <a href="javascript:void(0)" onclick="revokeKvkkConsent()" style="color:var(--rd)">Geri çek</a>`;
+    } else {
+      cs.innerHTML=`<span style="color:var(--tm)">Henüz rıza verilmedi (PDF yüklenince istenir)</span>`;
+    }
+  }
+  m.style.display='flex';
+}
+function closeAccountSettings(){
+  const m=document.getElementById('accountMo');
+  if(m)m.style.display='none';
+}
+
+// ─── KVKK m.7 — Tüm Verilerimi Sil (analizler + storage + defter_raporlari) ──
+async function deleteAllMyData(){
+  // Çift onay — geri alınamaz işlem
+  if(!confirm('TÜM kayıtlı analizleriniz, e-Defter raporlarınız ve Supabase Storage\'daki dosyalarınız KALICI OLARAK SİLİNECEK.\n\nBu işlem geri alınamaz. Devam etmek istiyor musunuz?'))return;
+  if(!confirm('Son onay: gerçekten tüm verilerinizi silmek istiyor musunuz?'))return;
+  const btn=document.getElementById('deleteAllBtn');
+  if(btn){btn.disabled=true;btn.textContent='Siliniyor…';}
+  try{
+    const res=await sbCall('deleteAllData',{});
+    if(res.error){throw new Error(res.error);}
+    showToast(`Tüm verileriniz silindi: ${res.analizler||0} analiz · ${res.defter_raporlari||0} e-Defter raporu · ${res.files||0} dosya`,'success',6000);
+    // Local state temizle
+    S.savedList=[];
+    if(S.defter)S.defter.savedList=[];
+    closeAccountSettings();
+    render();
+  }catch(e){
+    showToast('Silme hatası: '+e.message,'error',5000);
+    if(btn){btn.disabled=false;btn.textContent='🗑 Tüm Verilerimi Sil';}
+  }
+}
+window.openKvkkConsent=openKvkkConsent;
+window.closeKvkkConsent=closeKvkkConsent;
+window.kvkkConsentToggle=kvkkConsentToggle;
+window.kvkkConsentConfirm=kvkkConsentConfirm;
+window.revokeKvkkConsent=revokeKvkkConsent;
+window.openPrivacyPolicy=openPrivacyPolicy;
+window.closePrivacyPolicy=closePrivacyPolicy;
+window.openAccountSettings=openAccountSettings;
+window.closeAccountSettings=closeAccountSettings;
+window.deleteAllMyData=deleteAllMyData;
 function moConfirm(){
   const n=document.getElementById('moInp').value.trim();
   if(!n)return;
@@ -2173,11 +2523,17 @@ function getMissing(p){return FIELDS.flatMap(s=>s.fields).filter(f=>!p.data[f.ke
 // File upload: ask period name first if not set
 async function hFile(file){
   if(!file)return;
-  // e-Defter dosyaları (.xml veya .zip) ayrı sekmede işlenir
+  // e-Defter dosyaları (.xml veya .zip) ayrı sekmede işlenir — tarayıcıda işlenir, sunucuya gönderilmez
   if(/\.(xml|zip)$/i.test(file.name)){
     S.tab='defter';render();
     showToast('e-Defter dosyası tespit edildi → 🔍 e-Defter sekmesine yönlendirildiniz','info',3500);
     setTimeout(()=>hDefterFile(file),120);
+    return;
+  }
+  // KVKK Madde 9 — PDF içeriği Anthropic (ABD) sunucularına iletildiğinden açık rıza gerekir.
+  // Excel/CSV dosyaları tarayıcıda işlendiği için rıza gerekmez.
+  if(/\.pdf$/i.test(file.name) && !kvkkPdfConsentOK()){
+    openKvkkConsent(()=>{ hFile(file); }); // re-call after consent
     return;
   }
   const p=S.periods[S.ap];
@@ -4398,13 +4754,14 @@ function rDefter(el){
   const D=S.defter;let h='';
   if(!D.report){
     if(S.user&&!D._listLoaded){loadDefterList().then(()=>{if(S.tab==='defter')render();});}
-    h+=`<div class="card"><div class="card-h"><div class="card-t">🔍 e-Defter Anomali Tespiti</div></div><div class="card-b">
+    h+=`<div class="card"><div class="card-h"><div class="card-t">🔍 e-Defter Anomali Tespiti</div><span class="kv-trustbadge" title="Tarayıcıda işlenir — sunucuya gönderilmez">Tarayıcıda işlenir</span></div><div class="card-b">
       <div class="uz" id="defterUz" onclick="document.getElementById('defterFileIn').click()">
         <div class="uz-i">📂</div>
         <div class="uz-t">${D.loading?'İşleniyor…':'XML veya ZIP dosyasını buraya bırakın'}</div>
         <div class="uz-h">e-Defter (XBRL GL) yevmiye dosyası · maks 50 MB</div>
       </div>
       <input type="file" id="defterFileIn" accept=".xml,.zip" style="display:none" onchange="hDefterFile(this.files[0])">
+      <div class="kv-banner green" style="margin-top:14px"><div class="kv-banner-icon">🔒</div><div class="kv-banner-body"><strong>Bu dosya sunucuya yüklenmez.</strong> e-Defter dosyanız tamamen tarayıcınızda işlenir — yevmiye kayıtlarınız, müşteri ve tedarikçi bilgileriniz cihazınızı asla terk etmez. <em>Raporu Kaydet</em> butonuna basarsanız yalnızca özet ve anomali sayımı sunucuda saklanır; ham veri hiçbir koşulda gönderilmez. <a href="javascript:void(0)" onclick="openPrivacyPolicy()">Detaylar →</a></div></div>
       <div style="font-size:12px;color:var(--t2);line-height:1.7;margin-top:14px">
         Bu modül yalnızca anomali tespiti yapar — finansal rasyo analizi <b>içermez</b>.
         Yevmiye bütünlüğü, mükerrer kayıt, tarih sapması, KDV uyumu gibi
