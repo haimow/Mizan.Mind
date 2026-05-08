@@ -41,3 +41,10 @@
 # ─── Vergi Takvimi — her gün 09:00 TSI (06:00 UTC) ────────
 [functions."tax-reminder"]
   schedule = "0 6 * * *"
+
+# ─── Saklama TTL Temizleyicisi — her gün 06:00 TSI (03:00 UTC) ────────
+# 6 ay (180 gün) önce kaydedilmiş analizleri Storage'dan + DB'den siler.
+# 7 gün önce uyarı e-postası gönderir; kullanıcı "Uzat" derse 180 gün daha saklanır.
+# KVKK Madde 4 — veri minimizasyonu uyumluluğu.
+[functions."retention-cleanup"]
+  schedule = "0 3 * * *"
