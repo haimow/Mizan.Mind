@@ -373,6 +373,95 @@ export const handler = async (event, context) => {
       return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true }) };
     }
 
+    // ─── KVKK m.7 / m.11 — TÜM VERİLERİ SİL (silme hakkı)
+    // Kullanıcı kendi e-postasına bağlı tüm verileri kalıcı olarak siler:
+    //   1. Storage'daki tüm dosyalar (analizler bucket, dosya_path'ler)
+    //   2. analizler tablosundaki tüm satırlar
+    //   3. defter_raporlari tablosundaki tüm satırlar
+    //   4. deletion_log'a denetim kaydı
+    // JWT-gated; client-supplied user ID asla kabul edilmez — yalnızca verifiedEmail (token'dan) kullanılır.
+    if (action === "deleteAllData") {
+      let analizDeleted = 0, defterDeleted = 0, filesDeleted = 0;
+      // 1. Storage path'lerini topla (silmeden önce)
+      try {
+        const pathsRes = await sbFetch(
+          `/analizler?user_email=eq.${encodeURIComponent(verifiedEmail)}&select=dosya_path`,
+          "GET"
+        );
+        const pathRows = await pathsRes.json();
+        if (Array.isArray(pathRows)) {
+          for (const r of pathRows) {
+            if (r.dosya_path && isValidPath(r.dosya_path)) {
+              try {
+                const delRes = await storageFetch(`/object/analizler/${r.dosya_path}`, "DELETE", null, null);
+                if (delRes && delRes.ok) filesDeleted++;
+              } catch (e) {
+                console.warn('[deleteAllData] storage delete failed for path:', r.dosya_path, e.message);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[deleteAllData] path enumeration failed:', e.message);
+      }
+      // 2. analizler satırlarını sil
+      try {
+        const aRes = await sbFetch(
+          `/analizler?user_email=eq.${encodeURIComponent(verifiedEmail)}`,
+          "DELETE",
+          null,
+          { Prefer: "return=representation" }
+        );
+        if (aRes.ok) {
+          const deleted = await aRes.json().catch(() => []);
+          analizDeleted = Array.isArray(deleted) ? deleted.length : 0;
+        }
+      } catch (e) {
+        console.warn('[deleteAllData] analizler delete failed:', e.message);
+      }
+      // 3. defter_raporlari satırlarını sil
+      try {
+        const dRes = await sbFetch(
+          `/defter_raporlari?user_email=eq.${encodeURIComponent(verifiedEmail)}`,
+          "DELETE",
+          null,
+          { Prefer: "return=representation" }
+        );
+        if (dRes.ok) {
+          const deleted = await dRes.json().catch(() => []);
+          defterDeleted = Array.isArray(deleted) ? deleted.length : 0;
+        }
+      } catch (e) {
+        console.warn('[deleteAllData] defter_raporlari delete failed:', e.message);
+      }
+      // 4. Denetim kaydı (KVKK uyum kanıtı — silinen veri içeriği kaydedilmez, yalnızca metrikler)
+      try {
+        await sbFetch(
+          `/deletion_log`,
+          "POST",
+          {
+            user_email: verifiedEmail,
+            analizler_deleted: analizDeleted,
+            defter_raporlari_deleted: defterDeleted,
+            files_deleted: filesDeleted,
+          }
+        );
+      } catch (e) {
+        console.warn('[deleteAllData] audit log failed (non-fatal):', e.message);
+      }
+      return {
+        statusCode: 200,
+        headers: CORS,
+        body: JSON.stringify({
+          ok: true,
+          analizler: analizDeleted,
+          defter_raporlari: defterDeleted,
+          files: filesDeleted,
+          deletedAt: new Date().toISOString(),
+        }),
+      };
+    }
+
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Geçersiz istek" }) };
 
   } catch (err) {
