@@ -955,7 +955,6 @@ body{
 }
 
 .mm-find-empty{
-  display:flex;align-items:center;gap:10px;
   padding:14px 18px;
   background:var(--grad-good);
   border:1px solid var(--brd);
@@ -964,6 +963,17 @@ body{
   font-size:var(--fs-13);font-weight:500;
   color:var(--gn);
   letter-spacing:var(--tracking-tight);
+  line-height:1.6;
+}
+.mm-find-empty strong{font-weight:600;color:inherit}
+.mm-find-empty code{
+  font-family:var(--font-num);
+  font-variant-numeric:tabular-nums;
+  font-size:var(--fs-12);
+  padding:1px 6px;
+  background:rgba(255,255,255,.06);
+  border-radius:var(--r-1);
+  letter-spacing:0;
 }
 
 /* --- e-Defter findings (extends Phase 9 — same severity language, drill-down) --- */
@@ -1020,6 +1030,25 @@ body{
   font-size:11px;color:var(--tm);
   font-variant-numeric:tabular-nums;
   letter-spacing:0;
+}
+.mm-fdtl-fix{
+  margin-top:6px;
+  font-family:var(--font-sans);
+  font-size:var(--fs-12);
+  color:var(--t2);
+  line-height:1.55;
+  letter-spacing:var(--tracking-tight);
+  display:flex;align-items:flex-start;gap:6px;
+  padding:6px 10px;
+  background:rgba(10,132,255,.06);
+  border-left:2px solid var(--ac);
+  border-radius:0 var(--r-1) var(--r-1) 0;
+}
+.mm-fdtl-fix::before{
+  content:"💡";
+  flex-shrink:0;
+  font-size:11px;
+  line-height:1.55;
 }
 .mm-fdtl-conf{
   font-family:var(--font-num);
@@ -1093,6 +1122,52 @@ body{
 }
 
 /* === MIZAN APPLE-STYLE — PHASE 10 — END === */
+
+/* ======================================================================
+   MIZAN APPLE-STYLE — PHASE 11 (Veri Girişi polish) — START
+   Refines .plog (parse log) and the file-name success indicator.
+   Onboarding (.onb-*) refreshed in-place inside rInp's dynamic style block.
+   ====================================================================== */
+.plog{
+  margin-top:12px;
+  padding:12px 14px;
+  background:var(--bg2);
+  border:1px solid var(--brd);
+  border-radius:var(--r-2);
+  font-family:var(--font-num);
+  font-size:11px;
+  letter-spacing:0;
+  color:var(--t2);
+  max-height:180px;
+  line-height:1.65;
+}
+.plog .ok  {color:var(--gn)}
+.plog .warn{color:var(--am)}
+.plog .err {color:var(--rd)}
+.plog .info{color:var(--ac)}
+
+/* Upload zone — slightly more refined hover state */
+.uz{
+  border-radius:var(--r-3);
+  transition:border-color var(--dur-2) var(--ease),
+             background var(--dur-2) var(--ease),
+             box-shadow var(--dur-2) var(--ease);
+}
+.uz:hover{
+  box-shadow:0 4px 18px rgba(0,0,0,.06), inset 0 0 0 1px var(--ac);
+}
+
+/* Field section heading (.st) — refined typography */
+.st{
+  font-family:var(--font-sans);
+  font-size:var(--fs-12);
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--t2);
+}
+
+/* === MIZAN APPLE-STYLE — PHASE 11 — END === */
 .skeleton-card{height:80px;border-radius:10px;margin-bottom:12px}
 @media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200}.sidebar.collapsed{transform:translateX(-100%)}.ig{grid-template-columns:1fr 1fr}.rgrid{grid-template-columns:1fr}}
 @media(max-width:600px){.ig{grid-template-columns:1fr}.rgrid{grid-template-columns:1fr}}
@@ -1761,16 +1836,16 @@ if(isFirstVisit){
     const st=document.createElement('style');
     st.id='onb-style';
     st.textContent=`
-      .onb-card{background:var(--bg1);border:1px solid var(--brd);border-radius:12px;padding:20px 18px;transition:border-color .2s,transform .15s,box-shadow .15s;display:flex;flex-direction:column;gap:10px}
-      .onb-card:hover{border-color:var(--brd2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.18)}
-      .onb-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-      .onb-title{font-size:13px;font-weight:600;color:var(--t1);letter-spacing:-.2px}
-      .onb-desc{font-size:11px;color:var(--tm);line-height:1.6;font-weight:300}
-      .onb-chips{display:flex;flex-wrap:wrap;gap:5px}
-      .onb-chip{font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(79,142,247,.1);color:var(--ac);border:1px solid rgba(79,142,247,.2);font-family:'JetBrains Mono',monospace;letter-spacing:.3px}
-      .onb-chip-gn{background:rgba(34,200,151,.08);color:var(--gn);border-color:rgba(34,200,151,.2)}
-      .onb-chip-pr{background:rgba(123,92,240,.08);color:#9b6bf2;border-color:rgba(123,92,240,.2)}
-      .onb-formats{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace;margin-top:auto}
+      .onb-card{background:var(--bg2);border:1px solid var(--brd);border-radius:var(--r-3);padding:22px 20px;transition:border-color var(--dur-2) var(--ease),transform var(--dur-1) var(--ease),box-shadow var(--dur-2) var(--ease);display:flex;flex-direction:column;gap:12px;font-family:var(--font-sans);letter-spacing:var(--tracking-tight)}
+      .onb-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.10),0 0 0 1px var(--brd)}
+      .onb-icon{width:44px;height:44px;border-radius:var(--r-2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+      .onb-title{font-size:var(--fs-15);font-weight:600;color:var(--t1);letter-spacing:var(--tracking-tight)}
+      .onb-desc{font-size:var(--fs-12);color:var(--t2);line-height:1.7;font-weight:400}
+      .onb-chips{display:flex;flex-wrap:wrap;gap:6px}
+      .onb-chip{font-family:var(--font-sans);font-size:11px;font-weight:500;padding:3px 10px;border-radius:var(--r-pill);background:rgba(10,132,255,.14);color:var(--ac);border:1px solid var(--brd);letter-spacing:var(--tracking-tight)}
+      .onb-chip-gn{background:rgba(48,209,88,.14);color:var(--gn)}
+      .onb-chip-pr{background:rgba(191,90,242,.14);color:#bf5af2}
+      .onb-formats{font-family:var(--font-num);font-size:10px;color:var(--tm);margin-top:auto;letter-spacing:0;font-variant-numeric:tabular-nums}
     `;
     document.head.appendChild(st);
   }
@@ -4227,6 +4302,35 @@ const _DEF_CAT_LBL={
 };
 function _defEsc(s){return String(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
 
+// Anomali tipi → düzeltme önerisi (Türkçe). Kullanıcıya ne yapması gerektiğini söyler.
+const _DEF_FIX_GUIDE={
+  // HIGH
+  UNBALANCED_ENTRY:       'Yevmiyenin borç ve alacak tutarları eşit olmalıdır. Eksik kaydı tamamlayın veya yanlış girilen tutarı düzeltin.',
+  TRIAL_BALANCE_MISMATCH: 'Mizan dengesizliği — toplam borç ve toplam alacak eşit olmak zorundadır. Eksik yevmiyeyi bulup tamamlayın; aksi halde bilanço kapanmaz.',
+  DUPLICATE_ENTRY:        'Aynı yevmiye birden fazla kez kaydedilmiş. Tekrarlanan kaydı silin.',
+  FUTURE_DATED:           'İleri tarihli kayıt — gerçek işlem tarihiyle güncelleyin.',
+  CROSS_SOURCE_DUPLICATE: 'Birden fazla kaynaktan aynı kayıt geldi. Çift kaynak girişini engelleyin.',
+  // MEDIUM
+  DUPLICATE_DOC_NUMBER:   'Aynı belge no farklı yevmiyelerde kullanılmış. Belge numaralarını birbirinden ayırın.',
+  BACKDATED_ENTRY:        'Geçmiş döneme atılmış kayıt — vergisel risk taşır. Gerekçesini doğrulayıp belgeleyin.',
+  WEEKEND_HIGH_VALUE:     'Hafta sonu yüksek tutarlı işlem. Olağan iş akışıysa açıklama notu düşün; değilse kaydı doğrulayın.',
+  HOLIDAY_HIGH_VALUE:     'Resmi tatilde yüksek tutarlı işlem. Tarih ve gerçeklik teyidini yapın.',
+  AMOUNT_OUTLIER:         'Tutar grubun standart aralığının çok dışında. Hatalı giriş olabilir — orijinal belgeden doğrulayın.',
+  SPLIT_TRANSACTION:      'Tutar parçalara bölünmüş — eşik aşımını gizleme şüphesi. Tek kayda birleştirilmesi gerekip gerekmediğini sorgulayın.',
+  DIRECT_MAIN_ACCOUNT:    'Ana hesaba doğrudan kayıt yapılmış. Uygun alt hesaba taşıyın.',
+  RARE_ACCOUNT_ACTIVATION:'Pasif hesap aniden aktifleşmiş. Hesap kullanımının doğru olduğunu kontrol edin.',
+  EMPTY_DESCRIPTION:      'Açıklama alanı boş. Vergi denetiminde açıklama zorunludur — eksik kayıtları tamamlayın.',
+  VAT_ONLY_INPUT:         'Sadece KDV indirim kaydı, fatura matrahı eksik. Eşleşen alış faturasını ekleyin.',
+  VAT_ONLY_OUTPUT:        'Sadece KDV hesaplanan kaydı, fatura matrahı eksik. Eşleşen satış faturasını ekleyin.',
+  VAT_ODD_RATE:           'Standart dışı KDV oranı (%1, %10, %20 dışı). Doğru oranı orijinal faturadan kontrol edin.',
+  OFF_HOURS_ENTRY:        'Mesai saati dışı kayıt. Otomatik girişler dışında manuel kayıtsa açıklama ekleyin.',
+  BULK_BURST:             'Kısa sürede çok sayıda kayıt — toplu giriş veya import hatası olabilir. Toplu kaydın doğruluğunu doğrulayın.',
+  // LOW
+  ROUND_NUMBER_PATTERN:   'Yuvarlak rakamların yoğunluğu — tahmini/manuel kayıt şüphesi. Faturalardan teyit edin.',
+  SHORT_DESCRIPTION:      'Açıklama çok kısa. Daha açıklayıcı bilgi ekleyin (vergi denetimi için faydalıdır).',
+  REPEATED_DESCRIPTION:   'Aynı açıklama çok kez kullanılmış. Her kayda özgü açıklama girilmesi tavsiye edilir.'
+};
+
 // ─── KONSANTRASYON RİSKİ TESPİTİ — alıcı (120) & satıcı (320+329) sub-account analysis ──
 // 30% threshold per user spec. A sub-account's balance > 30% of its group total = RISKY.
 function _defConcentrationRisk(entries){
@@ -4484,6 +4588,7 @@ function rDefter(el){
             <div>
               <div class="mm-fdtl-msg">${_defEsc(a.description)}</div>
               <div class="mm-fdtl-meta">${a.type} · güven %${a.confidence}${ec?` · ${ec} kayıt`:''}</div>
+              ${_DEF_FIX_GUIDE[a.type]?`<div class="mm-fdtl-fix">${_defEsc(_DEF_FIX_GUIDE[a.type])}</div>`:''}
             </div>
             <div class="mm-fdtl-conf">${a.confidence}</div>
             <div class="det-arr" style="font-size:11px;color:var(--tm);align-self:center;${hasDetail?'':'visibility:hidden'}">▶</div>
