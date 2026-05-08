@@ -179,8 +179,38 @@ export const handler = async (event, context) => {
       if (!res.ok) return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Liste hatası" }) };
       // Strip dosya_path — clients never need the raw storage path.
       // Replace with has_file boolean so the UI can still show the download button.
-      const sanitized = rows.map(({ dosya_path, ...rest }) => ({ ...rest, has_file: !!dosya_path }));
+      // Compute expires_at = COALESCE(extended_until, olusturma_tarihi + 180 days) for retention UI.
+      const TTL_MS = 180 * 86400000;
+      const sanitized = rows.map(({ dosya_path, ...rest }) => {
+        const baseTs = rest.olusturma_tarihi ? new Date(rest.olusturma_tarihi).getTime() : Date.now();
+        const expiresAt = rest.extended_until
+          ? rest.extended_until
+          : new Date(baseTs + TTL_MS).toISOString();
+        return { ...rest, has_file: !!dosya_path, expires_at: expiresAt };
+      });
       return { statusCode: 200, headers: CORS, body: JSON.stringify(sanitized) };
+    }
+
+    // ─── SAKLAMA SÜRESİNİ UZAT (6 ay) — KVKK m.4 / kullanıcı kontrolü
+    if (action === "extendRetention") {
+      const { id } = data;
+      if (!isValidUUID(id)) return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Geçersiz ID" }) };
+      const checkRes = await sbFetch(
+        `/analizler?id=eq.${id}&user_email=eq.${encodeURIComponent(verifiedEmail)}&select=id`,
+        "GET"
+      );
+      const checkRows = await checkRes.json();
+      if (!checkRows || checkRows.length === 0) {
+        return { statusCode: 403, headers: CORS, body: JSON.stringify({ error: "Bu kayıt size ait değil" }) };
+      }
+      const newExpiry = new Date(Date.now() + 180 * 86400000).toISOString();
+      const upd = await sbFetch(
+        `/analizler?id=eq.${id}&user_email=eq.${encodeURIComponent(verifiedEmail)}`,
+        "PATCH",
+        { extended_until: newExpiry, warning_sent_at: null }
+      );
+      if (!upd.ok) return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Uzatma başarısız" }) };
+      return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true, expires_at: newExpiry }) };
     }
 
     // ─── SİL
