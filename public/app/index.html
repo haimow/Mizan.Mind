@@ -4339,7 +4339,7 @@ async function hDefterFile(file){
 // ANOMALİ TESPİT MOTORU — 9 KATEGORİ, saf fonksiyonlar
 // ═══════════════════════════════════════════════════════════════════════════
 const _SEV_W={LOW:2,MEDIUM:5,HIGH:10};
-const fmtTL=v=>{const n=Number(v);if(!isFinite(n))return'—';return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' ₺';};
+const fmtTL=v=>{const n=Number(v);if(!isFinite(n))return'—';return new Intl.NumberFormat('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' ₺';};
 // Drill-down için kayıt referansı — sadece görüntüleme için gereken alanlar
 const _refE=e=>({id:e.id,no:e.entry_no,date:e.date,acct:e.account_code,acct_name:(e.account_name||'').slice(0,40),debit:e.debit||0,credit:e.credit||0,desc:(e.description||'').slice(0,120),doc:e.doc_no||''});
 const _mkA=(type,severity,confidence,description,affected,category)=>{
