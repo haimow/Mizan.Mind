@@ -4266,15 +4266,17 @@ function parseDefterXML(xmlText,sourceFile){
   const entries=[];
   for(let i=0;i<headers.length;i++){
     const h=headers[i];
-    const date=_dxText(h,'postingDate');
+    const date=_dxText(h,'postingDate')||_dxText(h,'postedDate');
     const entryNo=_dxText(h,'entryNumberCounter')||_dxText(h,'entryNumber');
     const enteredBy=_dxText(h,'enteredByName')||_dxText(h,'enteredBy');
     const stamp=_dxText(h,'enteredDate')||date;
     const details=h.getElementsByTagNameNS('*','entryDetail');
     for(let j=0;j<details.length;j++){
       const d=details[j];
-      const acct=_dxText(d,'accountMainID')||_dxText(d,'accountSub');
-      const acctName=_dxText(d,'accountMainDescription');
+      // Prefer granular sub-account code (e.g. 120.01.001) so customer/supplier concentration
+      // analysis can run; fall back to main code (120/320/329) when sub-account absent.
+      const acct=_dxText(d,'accountSubID')||_dxText(d,'accountSub')||_dxText(d,'accountMainID');
+      const acctName=_dxText(d,'accountSubDescription')||_dxText(d,'accountMainDescription');
       const amount=parseFloat(_dxText(d,'amount')||'0')||0;
       const dc=(_dxText(d,'debitCreditCode')||'').toUpperCase();
       const desc=_dxText(d,'detailComment')||_dxText(d,'comment')||'';
