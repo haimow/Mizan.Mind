@@ -5173,34 +5173,39 @@ window.deleteSaved      = deleteSaved;
 
 const THP_TREE = {
   // ─── BİLANÇO — AKTİF ─────────────────────────────────────────────────────
+  // codes[]: Normal pozitif aktif hesaplar (borç bakiyeli).
+  // neg[]:   Karşılık / amortisman / contra hesaplar (alacak bakiyeli — aktiften düşülür).
+  // Resmi T.C. Tek Düzen Hesap Planı 2003+ uyumlu; finansal kiralama (IFRS-16) eklemeleri dahil.
   aktif: [
     { code:'1', label:'DÖNEN VARLIKLAR', groups:[
-      { code:'10', label:'Hazır Değerler',        codes:['100','101','102','103','108'] },
+      { code:'10', label:'Hazır Değerler',        codes:['100','101','102','108'], neg:['103'] },  // 103 Verilen Çekler ve Öd.Emirleri (-)
       { code:'11', label:'Menkul Kıymetler',      codes:['110','111','112','118'], neg:['119'] },
-      { code:'12', label:'Ticari Alacaklar',      codes:['120','121','122','124','126','127'], neg:['128','129'] },
-      { code:'13', label:'Diğer Alacaklar',       codes:['131','132','133','135','136','137','138'], neg:['139'] },
+      { code:'12', label:'Ticari Alacaklar',      codes:['120','121','126','127','128'], neg:['122','124','129'] },  // 122 reeskont, 124 kazan.FK faiz, 129 karşılık
+      { code:'13', label:'Diğer Alacaklar',       codes:['131','132','133','135','136','138'], neg:['137','139'] },
       { code:'15', label:'Stoklar',               codes:['150','151','152','153','157','159'], neg:['158'] },
-      { code:'17', label:'Yıllara Yaygın İnşaat', codes:['170','171','172','173','174','175','176','177','178'] },
+      { code:'17', label:'Yıllara Yaygın İnşaat', codes:['170','171','172','173','174','175','176','177','178','179'] },  // 179 Taşeronlara V.Avanslar
       { code:'18', label:'Gelecek Aylara Ait',    codes:['180','181'] },
-      { code:'19', label:'Diğer Dönen Varlıklar', codes:['190','191','192','193','195','196'], neg:['197','198'] },
+      { code:'19', label:'Diğer Dönen Varlıklar', codes:['190','191','192','193','195','196','197','198'], neg:['199'] },  // 197/198 pozitif, 199 karşılık
     ]},
     { code:'2', label:'DURAN VARLIKLAR', groups:[
-      { code:'22', label:'Ticari Alacaklar (UV)',    codes:['220','221','222','226'], neg:['229'] },
-      { code:'23', label:'Diğer Alacaklar (UV)',     codes:['231','232','235','236','237','238'], neg:['239'] },
-      { code:'24', label:'Mali Duran Varlıklar',     codes:['240','241','242','243','244','245','246','247','248'], neg:['249'] },
+      { code:'22', label:'Ticari Alacaklar (UV)',    codes:['220','221','226','227','228'], neg:['222','224','229'] },
+      { code:'23', label:'Diğer Alacaklar (UV)',     codes:['231','232','233','235','236','238'], neg:['237','239'] },  // 233 eklendi
+      { code:'24', label:'Mali Duran Varlıklar',     codes:['240','242','245','248'], neg:['241','243','244','246','247','249'] },  // contra'lar düzenlendi
       { code:'25', label:'Maddi Duran Varlıklar',    codes:['250','251','252','253','254','255','256','258','259','265'], neg:['257','266'] },
-      { code:'26', label:'Maddi Olmayan Duran V.',   codes:['260','261','262','263','264','267'], neg:['268','269'] },
-      { code:'27', label:'Özel Tükenmeye Tabi V.',   codes:['271','272'], neg:['278'] },
+      { code:'26', label:'Maddi Olmayan Duran V.',   codes:['260','261','262','263','264','267','269'], neg:['268'] },  // 269 (Verilen Avanslar) pozitif
+      { code:'27', label:'Özel Tükenmeye Tabi V.',   codes:['271','272','277','279'], neg:['278'] },  // 277/279 eklendi
       { code:'28', label:'Gelecek Yıllara Ait',      codes:['280','281'] },
       { code:'29', label:'Diğer Duran Varlıklar',    codes:['291','292','293','294','295','297'], neg:['298','299'] },
     ]},
   ],
   // ─── BİLANÇO — PASİF ─────────────────────────────────────────────────────
+  // codes[]: Pasif hesaplar (alacak bakiyeli).
+  // neg[]:   Contra-pasif / aktif-bakiyeli düzeltme hesapları (pasiften düşülür).
   pasif: [
     { code:'3', label:'KISA VADELİ YABANCI KAYNAKLAR', groups:[
-      { code:'30', label:'Mali Borçlar',                codes:['300','301','303','304','305','306','308','309'], neg:['302'] },
-      { code:'32', label:'Ticari Borçlar',              codes:['320','321','322','326','329'] },
-      { code:'33', label:'Diğer Borçlar',               codes:['331','332','333','335','336','337','338','339'] },
+      { code:'30', label:'Mali Borçlar',                codes:['300','301','303','304','305','306','309'], neg:['302','307','308'] },  // 307 eklendi; 308 contra olarak düzenlendi
+      { code:'32', label:'Ticari Borçlar',              codes:['320','321','326','329'], neg:['322','324'] },  // 324 eklendi
+      { code:'33', label:'Diğer Borçlar',               codes:['331','332','333','335','336','338','339'], neg:['337'] },
       { code:'34', label:'Alınan Avanslar',             codes:['340','349'] },
       { code:'35', label:'Yıllara Yaygın İnşaat Hak.',  codes:['350','351','352','353','354','355','356','357','358'] },
       { code:'36', label:'Ödenecek Vergi & Diğer Yük.', codes:['360','361','368','369'] },
@@ -5209,16 +5214,16 @@ const THP_TREE = {
       { code:'39', label:'Diğer Kısa Vadeli YK',        codes:['391','392','393','397','399'] },
     ]},
     { code:'4', label:'UZUN VADELİ YABANCI KAYNAKLAR', groups:[
-      { code:'40', label:'Mali Borçlar (UV)',           codes:['400','401','405','407','408','409'], neg:['402'] },
-      { code:'42', label:'Ticari Borçlar (UV)',         codes:['420','421','422','426','429'] },
-      { code:'43', label:'Diğer Borçlar (UV)',          codes:['431','432','433','436','437','438'] },
+      { code:'40', label:'Mali Borçlar (UV)',           codes:['400','401','405','407','409'], neg:['402','408'] },
+      { code:'42', label:'Ticari Borçlar (UV)',         codes:['420','421','426','429'], neg:['422'] },
+      { code:'43', label:'Diğer Borçlar (UV)',          codes:['431','432','433','436','438'], neg:['437'] },
       { code:'44', label:'Alınan Avanslar (UV)',        codes:['440'] },
       { code:'47', label:'Borç ve Gider Karşılıkları',  codes:['472','479'] },
       { code:'48', label:'Gelecek Yıllara Ait Gelirler',codes:['480','481'] },
       { code:'49', label:'Diğer Uzun Vadeli YK',        codes:['491','492','493','499'] },
     ]},
     { code:'5', label:'ÖZ KAYNAKLAR', groups:[
-      { code:'50', label:'Ödenmiş Sermaye',             codes:['500','501','502'] },
+      { code:'50', label:'Ödenmiş Sermaye',             codes:['500','502'], neg:['501','503'] },  // 501 Ödenmemiş Sermaye contra, 503 olumsuz farklar eklendi
       { code:'52', label:'Sermaye Yedekleri',           codes:['520','521','522','523','524','525','529'] },
       { code:'54', label:'Kâr Yedekleri',               codes:['540','541','542','548','549'] },
       { code:'57', label:'Geçmiş Yıllar Kârları',       codes:['570'] },
