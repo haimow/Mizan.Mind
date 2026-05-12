@@ -1491,7 +1491,22 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
         </ul>
       </div>
 
-      <div class="kv-banner" style="margin:0 0 14px"><div class="kv-banner-icon">⏱</div><div class="kv-banner-body"><strong>Otomatik Saklama Süresi: 6 ay (180 gün)</strong><br>KVKK Madde 4 (veri minimizasyonu) gereği kayıtlı analizler 6 ay sonra otomatik olarak silinir. Silinmeden 7 gün önce e-posta ile uyarı alırsınız. Saklamak istediğiniz analizleri sidebar'daki <strong>⏱</strong> butonu ile 6 ay daha uzatabilirsiniz.</div></div>
+      <div class="kv-banner" style="margin:0 0 14px"><div class="kv-banner-icon">⏱</div><div class="kv-banner-body"><strong>Otomatik Saklama Süresi: 6 ay (180 gün)</strong><br>KVKK Madde 4 (veri minimizasyonu) gereği kayıtlı analizler 6 ay sonra otomatik olarak silinir. Silinmeden 7 gün önce e-posta ile uyarı alırsınız. Saklamak istediğiniz analizleri sidebar'daki <strong>⏱</strong> butonu ile 6 ay daha uzatabilirsiniz. <em>Maksimum saklama süresi 2 yıldır.</em></div></div>
+
+      <div class="kv-banner" style="margin:0 0 14px">
+        <div class="kv-banner-icon">📧</div>
+        <div class="kv-banner-body">
+          <strong>E-posta Bildirimleri</strong><br>
+          <span id="emailPrefsStatus" style="color:var(--tm);font-size:12px">Yükleniyor…</span><br>
+          <small style="color:var(--tm)">Vergi takvimi hatırlatmaları ve 7 gün önceden saklama uyarıları. KVKK m.5 (açık rıza) — istediğiniz zaman kapatabilirsiniz.</small>
+          <div style="margin-top:10px">
+            <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="emailNotifToggle" onchange="toggleEmailNotifications()" disabled />
+              <span id="emailNotifLabel">E-posta bildirimleri aktif</span>
+            </label>
+          </div>
+        </div>
+      </div>
 
       <div class="kv-banner amber" style="margin:0 0 14px">
         <div class="kv-banner-icon">⚠️</div>
@@ -2447,21 +2462,83 @@ function openAccountSettings(){
     }
   }
   m.style.display='flex';
+  // E-posta bildirim tercihini yükle (KVKK m.5 — açık rıza)
+  loadEmailPreferences();
 }
 function closeAccountSettings(){
   const m=document.getElementById('accountMo');
   if(m)m.style.display='none';
 }
 
-// ─── KVKK m.7 — Tüm Verilerimi Sil (analizler + storage + defter_raporlari) ──
-async function deleteAllMyData(){
-  // Çift onay — geri alınamaz işlem
-  if(!confirm('TÜM kayıtlı analizleriniz, e-Defter raporlarınız ve Supabase Storage\'daki dosyalarınız KALICI OLARAK SİLİNECEK.\n\nBu işlem geri alınamaz. Devam etmek istiyor musunuz?'))return;
-  if(!confirm('Son onay: gerçekten tüm verilerinizi silmek istiyor musunuz?'))return;
-  const btn=document.getElementById('deleteAllBtn');
-  if(btn){btn.disabled=true;btn.textContent='Siliniyor…';}
+// ─── KVKK m.5 — E-posta bildirim tercihi (opt-in/opt-out) ────────────────────
+async function loadEmailPreferences(){
+  const toggle=document.getElementById('emailNotifToggle');
+  const label=document.getElementById('emailNotifLabel');
+  const status=document.getElementById('emailPrefsStatus');
+  if(!toggle||!label||!status)return;
   try{
-    const res=await sbCall('deleteAllData',{});
+    const res=await sbCall('getUserPreferences',{});
+    if(res.error)throw new Error(res.error);
+    const enabled=res.email_notifications!==false; // varsayılan: açık
+    toggle.checked=enabled;
+    toggle.disabled=false;
+    label.textContent=enabled?'E-posta bildirimleri aktif':'E-posta bildirimleri kapalı';
+    status.textContent=res.updated_at
+      ?'Son güncelleme: '+new Date(res.updated_at).toLocaleDateString('tr-TR')
+      :'Varsayılan: aktif';
+  }catch(e){
+    status.textContent='Yüklenemedi: '+e.message;
+    toggle.disabled=true;
+  }
+}
+async function toggleEmailNotifications(){
+  const toggle=document.getElementById('emailNotifToggle');
+  const label=document.getElementById('emailNotifLabel');
+  if(!toggle)return;
+  const newVal=toggle.checked;
+  toggle.disabled=true;
+  try{
+    const res=await sbCall('setUserPreferences',{email_notifications:newVal});
+    if(res.error)throw new Error(res.error);
+    label.textContent=newVal?'E-posta bildirimleri aktif':'E-posta bildirimleri kapalı';
+    showToast(newVal?'Bildirimler açıldı':'Bildirimler kapatıldı','success',2500);
+  }catch(e){
+    toggle.checked=!newVal; // geri al
+    showToast('Tercih kaydedilemedi: '+e.message,'error',4000);
+  }finally{
+    toggle.disabled=false;
+  }
+}
+
+// ─── KVKK m.7 — Tüm Verilerimi Sil (iki adımlı: token al → onayla & sil) ─────
+// 1. adım: confirm() ile niyet teyidi → server'dan 5 dk geçerli HMAC token al
+// 2. adım: ikinci confirm() ile son onay → token'ı geri gönder, server gerçek silme yapar
+// Çalınmış JWT senaryosunda saldırganın ayrıca 5 dk içinde token alıp dönmesi gerekir.
+async function deleteAllMyData(){
+  // 1. niyet teyidi
+  if(!confirm('TÜM kayıtlı analizleriniz, e-Defter raporlarınız ve Supabase Storage\'daki dosyalarınız KALICI OLARAK SİLİNECEK.\n\nBu işlem geri alınamaz. Devam etmek istiyor musunuz?'))return;
+  const btn=document.getElementById('deleteAllBtn');
+  if(btn){btn.disabled=true;btn.textContent='Onay alınıyor…';}
+  let confirmToken=null;
+  try{
+    // 1. adım: token iste
+    const tokRes=await sbCall('requestDataDeletion',{});
+    if(tokRes.error){throw new Error(tokRes.error);}
+    confirmToken=tokRes.confirmToken;
+    if(!confirmToken)throw new Error('Onay token\'ı alınamadı');
+  }catch(e){
+    showToast('Onay hatası: '+e.message,'error',5000);
+    if(btn){btn.disabled=false;btn.textContent='🗑 Tüm Verilerimi Sil';}
+    return;
+  }
+  // 2. son onay (token alındıktan SONRA — saldırgan token çalsa bile UI confirm'i geçemez)
+  if(!confirm('Son onay: gerçekten tüm verilerinizi silmek istiyor musunuz?\n\n(Bu onay 5 dakika içinde verilmezse token geçersiz olur.)')){
+    if(btn){btn.disabled=false;btn.textContent='🗑 Tüm Verilerimi Sil';}
+    return;
+  }
+  if(btn){btn.textContent='Siliniyor…';}
+  try{
+    const res=await sbCall('deleteAllData',{confirmToken});
     if(res.error){throw new Error(res.error);}
     showToast(`Tüm verileriniz silindi: ${res.analizler||0} analiz · ${res.defter_raporlari||0} e-Defter raporu · ${res.files||0} dosya`,'success',6000);
     // Local state temizle
@@ -2484,6 +2561,8 @@ window.closePrivacyPolicy=closePrivacyPolicy;
 window.openAccountSettings=openAccountSettings;
 window.closeAccountSettings=closeAccountSettings;
 window.deleteAllMyData=deleteAllMyData;
+window.loadEmailPreferences=loadEmailPreferences;
+window.toggleEmailNotifications=toggleEmailNotifications;
 
 // ─── Saklama süresini uzat (KVKK m.4 — kullanıcı kontrollü TTL) ──────────────
 async function extendRetention(id){
@@ -4732,11 +4811,15 @@ function _defConcentrationRisk(entries){
     else if(ac.startsWith('320')){ bucket = supp; group = '320'; }
     else if(ac.startsWith('329')){ bucket = supp; group = '329'; }
     if(!bucket) continue;
-    if(!bucket[ac]) bucket[ac] = {code:ac, group, debit:0, credit:0, count:0, lastDate:'', descCount:{}};
+    if(!bucket[ac]) bucket[ac] = {code:ac, group, debit:0, credit:0, count:0, lastDate:'', descCount:{}, acctName:''};
     bucket[ac].debit  += +e.debit  || 0;
     bucket[ac].credit += +e.credit || 0;
     bucket[ac].count++;
     if(e.date && e.date > bucket[ac].lastDate) bucket[ac].lastDate = e.date;
+    // account_name (e-Defter accountSubDescription'dan gelir, örn. "Alfa Teknoloji A.Ş.") — birincil isim kaynağı
+    const an = String(e.account_name||'').trim();
+    if(an && !bucket[ac].acctName) bucket[ac].acctName = an;
+    // İşlem açıklaması — yedek (eski davranış, account_name yoksa)
     const dsc = String(e.description||'').trim();
     if(dsc) bucket[ac].descCount[dsc] = (bucket[ac].descCount[dsc]||0) + 1;
   }
@@ -4744,8 +4827,14 @@ function _defConcentrationRisk(entries){
   const _process = (map, balanceFn) => {
     const arr = Object.values(map).map(o => {
       const bal = balanceFn(o);
-      const top = Object.entries(o.descCount).sort((a,b)=>b[1]-a[1])[0];
-      const name = top ? top[0].slice(0,80) : '—';
+      // İsim önceliği: (1) accountSubDescription (account_name)
+      //                (2) En sık geçen işlem açıklaması
+      //                (3) '—'
+      let name = o.acctName ? o.acctName.slice(0,80) : '';
+      if(!name){
+        const top = Object.entries(o.descCount).sort((a,b)=>b[1]-a[1])[0];
+        name = top ? top[0].slice(0,80) : '—';
+      }
       const totalVol = o.debit + o.credit;
       return {
         code:o.code, group:o.group, name,
@@ -4912,7 +5001,12 @@ function rDefter(el){
       top.forEach((x, i) => {
         const pctCol = x.pct > 30 ? 'var(--rd)' : x.pct > 20 ? 'var(--am)' : 'var(--t2)';
         const pctWt  = x.pct > 30 ? '700' : x.pct > 20 ? '600' : '500';
-        const dateStr = x.lastDate ? String(x.lastDate).slice(0,10) : '—';
+        // Kompakt tarih formatı: YYYY-MM-DD → DD/MM/YY (alan tasarrufu, satır kaymasın)
+        let dateStr = '—';
+        if(x.lastDate){
+          const m = String(x.lastDate).match(/^(\d{4})-(\d{2})-(\d{2})/);
+          dateStr = m ? `${m[3]}/${m[2]}/${m[1].slice(2)}` : String(x.lastDate).slice(0,10);
+        }
         body += `<tr>
           <td style="color:var(--tm);font-weight:600;text-align:center">${i+1}</td>
           <td><div style="color:var(--t1);font-weight:500;font-family:var(--font-sans);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_defEsc(x.name)}">${_defEsc(x.name)}</div><div style="font-family:var(--font-num);font-size:10px;color:var(--tm);letter-spacing:0">${_defEsc(x.code)}</div></td>
