@@ -167,6 +167,86 @@ footer{border-top:1px solid var(--brd);padding:32px 48px;display:flex;align-item
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
 .reveal.visible{opacity:1;transform:none}
 
+/* ── HERO AMBIENT ORBS (CSS-only, GPU-accelerated) ── */
+.hero{position:relative;overflow:hidden}
+.hero::before,.hero::after{
+  content:'';position:absolute;border-radius:50%;
+  filter:blur(80px);opacity:.55;pointer-events:none;z-index:0;
+  animation:orbFloat 18s ease-in-out infinite;
+  will-change:transform;
+}
+.hero::before{
+  width:560px;height:560px;
+  background:radial-gradient(circle,rgba(124,92,247,.35),transparent 70%);
+  top:-120px;left:-160px;
+}
+.hero::after{
+  width:520px;height:520px;
+  background:radial-gradient(circle,rgba(79,142,247,.30),transparent 70%);
+  bottom:-180px;right:-120px;animation-delay:-9s;animation-duration:22s;
+}
+@keyframes orbFloat{
+  0%,100%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(60px,-30px) scale(1.08)}
+  66%{transform:translate(-40px,40px) scale(.94)}
+}
+.hero-inner,.hero canvas{position:relative;z-index:1}
+
+/* ── STAGGERED FEATURE-CARD REVEAL ── */
+.feat-cell{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease,background .2s}
+.features.visible .feat-cell{opacity:1;transform:none}
+.features.visible .feat-cell:nth-child(1){transition-delay:.05s}
+.features.visible .feat-cell:nth-child(2){transition-delay:.13s}
+.features.visible .feat-cell:nth-child(3){transition-delay:.21s}
+.features.visible .feat-cell:nth-child(4){transition-delay:.29s}
+.features.visible .feat-cell:nth-child(5){transition-delay:.37s}
+.features.visible .feat-cell:nth-child(6){transition-delay:.45s}
+.features.visible .feat-cell:nth-child(7){transition-delay:.53s}
+.features.visible .feat-cell:nth-child(8){transition-delay:.61s}
+.features.visible .feat-cell:nth-child(9){transition-delay:.69s}
+
+/* ── HOVER GLOW ON FEATURE CARDS ── */
+.feat-cell::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(124,92,247,.10),transparent 50%);
+  opacity:0;transition:opacity .35s;pointer-events:none;
+}
+.feat-cell:hover::after{opacity:1}
+
+/* ── NEW-BADGE PILL (for recently shipped features) ── */
+.feat-new{
+  display:inline-block;margin-left:8px;padding:2px 8px;font-size:9px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;border-radius:999px;
+  background:linear-gradient(135deg,#7c5cf7,#4f8ef7);color:#fff;
+  vertical-align:1px;animation:pillPulse 2.6s ease-in-out infinite;
+}
+@keyframes pillPulse{0%,100%{box-shadow:0 0 0 0 rgba(124,92,247,.5)}50%{box-shadow:0 0 0 6px rgba(124,92,247,0)}}
+
+/* ── ANIMATED COUNTER (number tick) ── */
+.hn-val{font-variant-numeric:tabular-nums;display:inline-block}
+
+/* ── SHIMMER ON PRIMARY CTA ── */
+.btn-solid{position:relative;overflow:hidden}
+.btn-solid::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.25) 50%,transparent 70%);
+  transition:left .8s ease;
+}
+.btn-solid:hover::before{left:120%}
+
+/* ── SECTION-DIVIDER GRADIENT LINE ── */
+.divider-glow{
+  height:1px;width:60%;max-width:520px;margin:0 auto;
+  background:linear-gradient(90deg,transparent,rgba(124,92,247,.45),transparent);
+}
+
+/* ── DOTTED-LINE CONNECTOR ON HOW-IT-WORKS ARROWS ── */
+.step-arrow{position:relative}
+.step-arrow::before{
+  content:'';position:absolute;top:50%;right:140%;width:32px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--brd2),transparent);
+}
+
 @media(max-width:768px){
   nav{padding:0 20px}.nav-links{display:none}
   .transform-inner,.cal-inner{grid-template-columns:1fr;gap:48px}
@@ -210,8 +290,10 @@ footer{border-top:1px solid var(--brd);padding:32px 48px;display:flex;align-item
       <a href="#ozellikler" class="btn-ghost">Özellikleri Gör</a>
     </div>
     <div class="hero-numbers">
-      <div class="hn-item"><div class="hn-val">20+</div><div class="hn-lbl">Finansal Rasyo</div></div>
-      <div class="hn-item"><div class="hn-val">10</div><div class="hn-lbl">Sektör Benchmark</div></div>
+      <div class="hn-item"><div class="hn-val" data-count="20" data-suffix="+">0</div><div class="hn-lbl">Finansal Rasyo</div></div>
+      <div class="hn-item"><div class="hn-val" data-count="9">0</div><div class="hn-lbl">Anomali Kategorisi</div></div>
+      <div class="hn-item"><div class="hn-val" data-count="10">0</div><div class="hn-lbl">Sektör Benchmark</div></div>
+      <div class="hn-item"><div class="hn-val" data-count="100" data-suffix="%">0</div><div class="hn-lbl">KVKK Uyumlu</div></div>
       <div class="hn-item"><div class="hn-val">AI</div><div class="hn-lbl">Uzman Yorum</div></div>
     </div>
   </div>
@@ -247,9 +329,25 @@ footer{border-top:1px solid var(--brd);padding:32px 48px;display:flex;align-item
         <span class="feat-tag">Yapay Zeka ile Okuma</span>
       </div>
       <div class="feat-cell">
+        <span class="feat-icon">📊</span>
+        <h3>Mali Tablolar<span class="feat-new">YENİ</span></h3>
+        <p>Bilanço ve Gelir Tablosu — mizan veya e-Defter'den otomatik. 171 THP hesap kodu, kapanış-öncesi sentetik dönem kârı, denge kontrolü.</p>
+      </div>
+      <div class="feat-cell">
         <span class="feat-icon">🔬</span>
         <h3>Detay Mizan Analizi</h3>
         <p>DSO/DPO, müşteri yoğunlaşması, 120/320 piyasa fonlama tespiti, ortaklar cari banka perspektifi.</p>
+      </div>
+      <div class="feat-cell">
+        <span class="feat-icon">🔍</span>
+        <h3>e-Defter Anomali Tespiti<span class="feat-new">YENİ</span></h3>
+        <p>9 kategoride otomatik anomali tarama: bakiye eşitsizliği, mükerrer kayıt, tarih tutarsızlığı, hesap yanlış kullanımı, KDV uyumsuzluğu, parçalanmış işlem ve daha fazlası.</p>
+        <span class="feat-tag green">🔒 Tarayıcıda işlenir</span>
+      </div>
+      <div class="feat-cell">
+        <span class="feat-icon">🏢</span>
+        <h3>Müşteri & Tedarikçi Konsantrasyonu<span class="feat-new">YENİ</span></h3>
+        <p>Top 10 müşteri (120) ve tedarikçi (320+329) sıralaması, %30 eşik üstü risk uyarısı, alt-hesap bazlı tek-firma bağımlılık tespiti.</p>
       </div>
       <div class="feat-cell">
         <span class="feat-icon">🌊</span>
@@ -265,7 +363,12 @@ footer{border-top:1px solid var(--brd);padding:32px 48px;display:flex;align-item
       <div class="feat-cell">
         <span class="feat-icon">🏦</span>
         <h3>Kredi & BDDK Skoru</h3>
-        <p>Altman Z-Score ve 5 BDDK kriteri. "Banka neden kredi vermiyor?" sorusunun rakamsal yanıtı.</p>
+        <p>Altman Z-Score ve 5 BDDK kriteri + 8 boyutlu banka kredisi değerlendirmesi.</p>
+      </div>
+      <div class="feat-cell">
+        <span class="feat-icon">🔐</span>
+        <h3>KVKK Uyumlu Veri Yönetimi<span class="feat-new">YENİ</span></h3>
+        <p>180-gün otomatik saklama, kullanıcı kontrollü uzatma, "tüm verilerimi sil" hakkı, denetim kaydı, e-posta bildirim açık-rıza. KVKK m.4/5/7/9/11 tam uyum.</p>
       </div>
       <div class="feat-cell" style="grid-column:span 3">
         <span class="feat-icon">📅</span>
@@ -773,6 +876,36 @@ const obs=new IntersectionObserver(entries=>{
   entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
 },{threshold:0.1});
 document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+
+// ── ANIMATED COUNTERS ─────────────────────────────────────────────────────
+// Hero rakamları 0'dan hedefe doğru tick eder (kullanıcı görünür alana girince).
+const countObs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting||e.target.dataset.counted)return;
+    e.target.dataset.counted='1';
+    const target=parseInt(e.target.dataset.count,10);
+    const suffix=e.target.dataset.suffix||'';
+    const dur=1100;const start=performance.now();
+    const tick=now=>{
+      const t=Math.min(1,(now-start)/dur);
+      const eased=1-Math.pow(1-t,3); // ease-out cubic
+      e.target.textContent=Math.round(target*eased)+suffix;
+      if(t<1)requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+},{threshold:0.6});
+document.querySelectorAll('.hn-val[data-count]').forEach(el=>countObs.observe(el));
+
+// ── HOVER GLOW TRACKING ───────────────────────────────────────────────────
+// Mouse pozisyonunu CSS custom property olarak feat-cell'lere geçer; radial glow takip eder.
+document.querySelectorAll('.feat-cell').forEach(cell=>{
+  cell.addEventListener('pointermove',e=>{
+    const r=cell.getBoundingClientRect();
+    cell.style.setProperty('--mx',(e.clientX-r.left)+'px');
+    cell.style.setProperty('--my',(e.clientY-r.top)+'px');
+  });
+});
 
 // OAuth callback: GoTrue token'ı kök URL'ye düşerse /app/'ye yönlendir
 if(window.location.hash&&window.location.hash.includes('access_token=')){
