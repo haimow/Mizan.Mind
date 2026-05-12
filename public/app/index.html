@@ -1091,6 +1091,29 @@ body{
   color:var(--tm);font-size:10px;font-style:italic;
 }
 
+/* ─── Mali Tablolar (Bilanço + Gelir Tablosu) ─── */
+.mt-tbl{width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;font-size:12.5px;color:var(--t1)}
+.mt-tbl th{
+  background:var(--bgi);padding:10px 14px;text-align:left;
+  border-bottom:1px solid var(--brd);font-size:11px;color:var(--tm);
+  text-transform:uppercase;letter-spacing:0.04em;font-weight:600;
+}
+.mt-tbl th.r{text-align:right}
+.mt-tbl td{padding:7px 14px;border-bottom:1px solid var(--brd);vertical-align:top}
+.mt-tbl td.r{text-align:right;font-family:var(--font-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mt-tbl tr.mt-row td{font-size:12px}
+.mt-tbl tr.mt-bigrow td{
+  background:rgba(0,113,227,.03);padding:9px 14px;font-size:12.5px;
+  border-top:1px solid var(--brd);
+}
+.mt-tbl tr.mt-toprow td{
+  background:rgba(0,113,227,.08);padding:11px 14px;font-size:13px;
+  border-top:2px solid var(--ac);border-bottom:0;
+}
+.mt-tbl tr:hover td{background:rgba(0,113,227,.02)}
+.mt-tbl tr.mt-bigrow:hover td{background:rgba(0,113,227,.05)}
+.mt-tbl tr.mt-toprow:hover td{background:rgba(0,113,227,.10)}
+
 /* === MIZAN APPLE-STYLE — PHASE 9 — END === */
 
 /* ======================================================================
@@ -1434,7 +1457,7 @@ button:focus-visible,a:focus-visible,.chip:focus-visible{outline:2px solid var(-
   <div style="flex:1"></div>
 </div>
 <div class="pbar" id="pBar"></div>
-<div class="mtabs" id="mainTabs"><button class="mtab on" data-mt="input" onclick="sTab('input')">📥 Veri Girişi</button><button class="mtab" data-mt="analiz" onclick="sTab('ratios')">📊 Analiz</button><button class="mtab" data-mt="ai" onclick="sTab('ai')">🤖 Uzman Yorum</button><button class="mtab" data-mt="kredi" onclick="sTab('kredi')">🏦 Kredi Analizi</button><button class="mtab" data-mt="rapor" onclick="sTab('rapor')">📄 PDF Rapor</button><button class="mtab" data-mt="detay" onclick="sTab('detay')">🔍 Detay Mizan</button><button class="mtab" data-mt="takvim" onclick="sTab('takvim')">📅 Takvim</button><button class="mtab" data-mt="checklist" onclick="sTab('checklist')">✅ Checklist</button><button class="mtab" data-mt="defter" onclick="sTab('defter')">🔍 e-Defter</button></div>
+<div class="mtabs" id="mainTabs"><button class="mtab on" data-mt="input" onclick="sTab('input')">📥 Veri Girişi</button><button class="mtab" data-mt="analiz" onclick="sTab('ratios')">📊 Analiz</button><button class="mtab" data-mt="ai" onclick="sTab('ai')">🤖 Uzman Yorum</button><button class="mtab" data-mt="kredi" onclick="sTab('kredi')">🏦 Kredi Analizi</button><button class="mtab" data-mt="rapor" onclick="sTab('rapor')">📄 PDF Rapor</button><button class="mtab" data-mt="detay" onclick="sTab('detay')">🔍 Detay Mizan</button><button class="mtab" data-mt="malitab" onclick="sTab('malitab')">📑 Mali Tablolar</button><button class="mtab" data-mt="takvim" onclick="sTab('takvim')">📅 Takvim</button><button class="mtab" data-mt="checklist" onclick="sTab('checklist')">✅ Checklist</button><button class="mtab" data-mt="defter" onclick="sTab('defter')">🔍 e-Defter</button></div>
 <div class="cont" id="cont"></div>
 </div>
 </div>
@@ -2026,7 +2049,7 @@ function rC(){
     el.innerHTML=`<div class="subtabs"><button class="subtab ${S.tab==='ratios'?'on':''}" onclick="sTab('ratios')">📊 Rasyolar</button><button class="subtab ${S.tab==='compare'?'on':''}" onclick="sTab('compare')">⚖️ Karşılaştırma</button></div><div id="subCont"></div>`;
     if(S.tab==='ratios')rRat(document.getElementById('subCont'));else rCmp(document.getElementById('subCont'));
   }
-  else if(S.tab==='detay')rDetay(el);else if(S.tab==='kredi')rKredi(el);else if(S.tab==='rapor')rRapor(el);else if(S.tab==='takvim')rTakvim(el);else if(S.tab==='checklist')rChecklist(el);else if(S.tab==='defter')rDefter(el);else rAI(el);
+  else if(S.tab==='detay')rDetay(el);else if(S.tab==='malitab')rMaliTablolar(el);else if(S.tab==='kredi')rKredi(el);else if(S.tab==='rapor')rRapor(el);else if(S.tab==='takvim')rTakvim(el);else if(S.tab==='checklist')rChecklist(el);else if(S.tab==='defter')rDefter(el);else rAI(el);
 }
 function rInp(el){const p=S.periods[S.ap];const logH=p.parseLog.length?`<div class="plog">${p.parseLog.map(l=>`<div class="${l.t}">${l.t==='ok'?'✓':l.t==='warn'?'⚠':l.t==='err'?'✗':'ℹ'} ${l.m}</div>`).join('')}</div>`:'';
 const hasData=p.fileName&&Object.values(p.data).some(v=>v);
@@ -5142,6 +5165,289 @@ window.raporOnizle      = raporOnizle;
 window.loadSaved        = loadSaved;
 window.loadSavedList    = loadSavedList;
 window.deleteSaved      = deleteSaved;
+// ═══════════════════════════════════════════════════════════════════════════
+// MALİ TABLOLAR — Bilanço + Gelir Tablosu üretici/render modülü
+// Veri kaynağı önceliği: mizan (mizanAccts) → e-Defter (entries agregasyonu)
+// THP_TREE: T.C. Türk Düzen Hesap Planı hiyerarşik şeması (1-2-3 haneli grup yapısı)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const THP_TREE = {
+  // ─── BİLANÇO — AKTİF ─────────────────────────────────────────────────────
+  aktif: [
+    { code:'1', label:'DÖNEN VARLIKLAR', groups:[
+      { code:'10', label:'Hazır Değerler',        codes:['100','101','102','103','108'] },
+      { code:'11', label:'Menkul Kıymetler',      codes:['110','111','112','118'], neg:['119'] },
+      { code:'12', label:'Ticari Alacaklar',      codes:['120','121','122','124','126','127'], neg:['128','129'] },
+      { code:'13', label:'Diğer Alacaklar',       codes:['131','132','133','135','136','137','138'], neg:['139'] },
+      { code:'15', label:'Stoklar',               codes:['150','151','152','153','157','159'], neg:['158'] },
+      { code:'17', label:'Yıllara Yaygın İnşaat', codes:['170','171','172','173','174','175','176','177','178'] },
+      { code:'18', label:'Gelecek Aylara Ait',    codes:['180','181'] },
+      { code:'19', label:'Diğer Dönen Varlıklar', codes:['190','191','192','193','195','196'], neg:['197','198'] },
+    ]},
+    { code:'2', label:'DURAN VARLIKLAR', groups:[
+      { code:'22', label:'Ticari Alacaklar (UV)',    codes:['220','221','222','226'], neg:['229'] },
+      { code:'23', label:'Diğer Alacaklar (UV)',     codes:['231','232','235','236','237','238'], neg:['239'] },
+      { code:'24', label:'Mali Duran Varlıklar',     codes:['240','241','242','243','244','245','246','247','248'], neg:['249'] },
+      { code:'25', label:'Maddi Duran Varlıklar',    codes:['250','251','252','253','254','255','256','258'], neg:['257'] },
+      { code:'26', label:'Maddi Olmayan Duran V.',   codes:['260','261','262','263','264','267'], neg:['268','269'] },
+      { code:'27', label:'Özel Tükenmeye Tabi V.',   codes:['271','272'], neg:['278'] },
+      { code:'28', label:'Gelecek Yıllara Ait',      codes:['280','281'] },
+      { code:'29', label:'Diğer Duran Varlıklar',    codes:['291','292','293','294','295','297'], neg:['298','299'] },
+    ]},
+  ],
+  // ─── BİLANÇO — PASİF ─────────────────────────────────────────────────────
+  pasif: [
+    { code:'3', label:'KISA VADELİ YABANCI KAYNAKLAR', groups:[
+      { code:'30', label:'Mali Borçlar',                codes:['300','301','303','304','305','306','308','309'], neg:['302'] },
+      { code:'32', label:'Ticari Borçlar',              codes:['320','321','322','326','329'] },
+      { code:'33', label:'Diğer Borçlar',               codes:['331','332','333','335','336','337','338','339'] },
+      { code:'34', label:'Alınan Avanslar',             codes:['340','349'] },
+      { code:'35', label:'Yıllara Yaygın İnşaat Hak.',  codes:['350','351','352','353','354','355','356','357','358'] },
+      { code:'36', label:'Ödenecek Vergi & Diğer Yük.', codes:['360','361','368','369'] },
+      { code:'37', label:'Borç ve Gider Karşılıkları',  codes:['370','372','373','379'], neg:['371'] },
+      { code:'38', label:'Gelecek Aylara Ait Gelirler', codes:['380','381'] },
+      { code:'39', label:'Diğer Kısa Vadeli YK',        codes:['391','392','393','397','399'] },
+    ]},
+    { code:'4', label:'UZUN VADELİ YABANCI KAYNAKLAR', groups:[
+      { code:'40', label:'Mali Borçlar (UV)',           codes:['400','401','405','407','408','409'], neg:['402'] },
+      { code:'42', label:'Ticari Borçlar (UV)',         codes:['420','421','422','426','429'] },
+      { code:'43', label:'Diğer Borçlar (UV)',          codes:['431','432','433','436','437','438'] },
+      { code:'44', label:'Alınan Avanslar (UV)',        codes:['440'] },
+      { code:'47', label:'Borç ve Gider Karşılıkları',  codes:['472','479'] },
+      { code:'48', label:'Gelecek Yıllara Ait Gelirler',codes:['480','481'] },
+      { code:'49', label:'Diğer Uzun Vadeli YK',        codes:['491','492','493','499'] },
+    ]},
+    { code:'5', label:'ÖZ KAYNAKLAR', groups:[
+      { code:'50', label:'Ödenmiş Sermaye',             codes:['500','501','502'] },
+      { code:'52', label:'Sermaye Yedekleri',           codes:['520','521','522','523','524','525','529'] },
+      { code:'54', label:'Kâr Yedekleri',               codes:['540','541','542','548','549'] },
+      { code:'57', label:'Geçmiş Yıllar Kârları',       codes:['570'] },
+      { code:'58', label:'Geçmiş Yıllar Zararları',     codes:[], neg:['580'] },
+      { code:'59', label:'Dönem Net Kârı (Zararı)',     codes:['590'], neg:['591'] },
+    ]},
+  ],
+  // ─── GELİR TABLOSU (ardışık, hiyerarşik değil) ───────────────────────────
+  // sign: 'add' → toplamayı artırır; 'sub' → düşürür; 'subtotal' → ara hesaplama (codes yok)
+  gelir: [
+    { ref:'A', label:'Brüt Satışlar (60)',                 codes:['600','601','602'], dir:'C', sign:'add' },
+    { ref:'B', label:'Satış İndirimleri (-) (61)',         codes:['610','611','612'], dir:'D', sign:'sub' },
+    { ref:'C', label:'NET SATIŞLAR',                       subtotal:true, formula:['A','-B'] },
+    { ref:'D', label:'Satışların Maliyeti (-) (62)',       codes:['620','621','622','623'], dir:'D', sign:'sub' },
+    { ref:'BK',label:'BRÜT SATIŞ KÂRI/ZARARI',             subtotal:true, formula:['C','-D'], emphasis:true },
+    { ref:'E', label:'Faaliyet Giderleri (-) (63)',        codes:['630','631','632','633','634'], dir:'D', sign:'sub' },
+    { ref:'FK',label:'FAALİYET KÂRI/ZARARI',               subtotal:true, formula:['BK','-E'], emphasis:true },
+    { ref:'F', label:'Diğer Faaliyetlerden Gelir (64)',    codes:['640','641','642','643','644','645','646','647','648','649'], dir:'C', sign:'add' },
+    { ref:'G', label:'Diğer Faaliyetlerden Gider (-) (65)',codes:['653','654','655','656','657','658','659'], dir:'D', sign:'sub' },
+    { ref:'H', label:'Finansman Giderleri (-) (66)',       codes:['660','661'], dir:'D', sign:'sub' },
+    { ref:'OK',label:'OLAĞAN KÂR/ZARAR',                   subtotal:true, formula:['FK','+F','-G','-H'], emphasis:true },
+    { ref:'I', label:'Olağan Dışı Gelir ve Kârlar (67)',   codes:['671','679'], dir:'C', sign:'add' },
+    { ref:'J', label:'Olağan Dışı Gider ve Zararlar (-) (68)', codes:['680','681','689'], dir:'D', sign:'sub' },
+    { ref:'DK',label:'DÖNEM KÂRI/ZARARI',                  subtotal:true, formula:['OK','+I','-J'], emphasis:true },
+    { ref:'K', label:'Dönem Kârı Vergi & Diğer Yas. Yük. Karş. (-)', codes:['691'], dir:'D', sign:'sub' },
+    { ref:'NK',label:'DÖNEM NET KÂRI/ZARARI',              subtotal:true, formula:['DK','-K'], emphasis:true, finalRow:true },
+  ],
+};
+
+// Hesapları kod→bakiye sözlüğü olarak normalize et.
+// Mizan: { '120': {d:..., c:..., n:...}, ... }
+// e-Defter entries: aynı şekle indirgenir (debit/credit toplamı)
+// Dönüş: { accts:{ '120':{d,c}, ... }, source:'mizan'|'edefter'|null }
+function _maliCollectAccounts(period){
+  // 1. mizan birincil
+  if(period && period.isMizan && period.mizanAccts && Object.keys(period.mizanAccts).length){
+    return { accts: period.mizanAccts, source:'mizan' };
+  }
+  // 2. e-Defter agregasyonu (S.defter.entries)
+  if(S.defter && S.defter.entries && S.defter.entries.length){
+    const accts = {};
+    for(const e of S.defter.entries){
+      const ac = String(e.account_code||'').trim();
+      const c3 = ac.split('.')[0]; // 3 haneli ana kod
+      if(!/^\d{3}$/.test(c3)) continue;
+      if(!accts[c3]) accts[c3] = { d:0, c:0, n:String(e.account_name||'').trim() };
+      accts[c3].d += +e.debit  || 0;
+      accts[c3].c += +e.credit || 0;
+      if(!accts[c3].n && e.account_name) accts[c3].n = String(e.account_name).trim();
+    }
+    return Object.keys(accts).length ? { accts, source:'edefter' } : { accts:null, source:null };
+  }
+  return { accts:null, source:null };
+}
+
+// Kod listesi için debit veya credit bakiyesini topla.
+// dir='D' → (debit - credit) toplamı; dir='C' → (credit - debit) toplamı
+function _maliSum(accts, codes, neg, dir){
+  let total = 0;
+  (codes||[]).forEach(c => {
+    if(accts[c]){
+      const a = accts[c];
+      total += dir === 'D' ? (a.d - a.c) : (a.c - a.d);
+    }
+  });
+  (neg||[]).forEach(c => {
+    if(accts[c]){
+      const a = accts[c];
+      total -= dir === 'D' ? (a.c - a.d) : (a.d - a.c);
+    }
+  });
+  return total;
+}
+
+// Bilanço ağacını işle: her grup için toplam + ana toplam + büyük toplam
+function _maliBuildBilancoSide(accts, side, dir){
+  let total = 0;
+  const branches = side.map(branch => {
+    let bTotal = 0;
+    const groups = branch.groups.map(g => {
+      const gTotal = _maliSum(accts, g.codes, g.neg, dir);
+      bTotal += gTotal;
+      return { code:g.code, label:g.label, total:gTotal };
+    });
+    total += bTotal;
+    return { code:branch.code, label:branch.label, total:bTotal, groups };
+  });
+  return { total, branches };
+}
+
+// Ana mali tablo üreticisi
+function _buildMaliTablo(period){
+  const { accts, source } = _maliCollectAccounts(period);
+  if(!accts) return { source:null };
+
+  // BİLANÇO
+  const aktif = _maliBuildBilancoSide(accts, THP_TREE.aktif, 'D');
+  const pasif = _maliBuildBilancoSide(accts, THP_TREE.pasif, 'C');
+  const diff = aktif.total - pasif.total;
+
+  // GELİR TABLOSU (ardışık hesaplama, subtotal formüllerini çözerek)
+  const gelirRows = [];
+  const refMap = {};
+  for(const row of THP_TREE.gelir){
+    let value = 0;
+    if(row.subtotal){
+      // formula tokens: 'A','+B','-C' gibi
+      for(const tok of row.formula){
+        if(tok.startsWith('+'))      value += refMap[tok.slice(1)] || 0;
+        else if(tok.startsWith('-')) value -= refMap[tok.slice(1)] || 0;
+        else                          value += refMap[tok]          || 0;
+      }
+    } else {
+      value = _maliSum(accts, row.codes, null, row.dir);
+      // 'sub' işaretli satırlar pozitif gösterilir (parantez ile), formülde negatifle birikir
+      // (yani sub satırının kendi value'su her zaman pozitif olur)
+    }
+    refMap[row.ref] = value;
+    gelirRows.push({ ref:row.ref, label:row.label, value, emphasis:!!row.emphasis, subtotal:!!row.subtotal, sign:row.sign, finalRow:!!row.finalRow });
+  }
+
+  return { source, aktif, pasif, diff, gelirRows, periodName: period?.name || '' };
+}
+
+// ─── RENDERER ────────────────────────────────────────────────────────────
+function rMaliTablolar(el){
+  const p = S.periods[S.ap];
+  const mt = _buildMaliTablo(p);
+
+  if(!mt.source){
+    el.innerHTML = `<div class="card" style="margin:20px"><div class="card-b" style="padding:24px">
+      <div class="mm-find-empty">
+        📑 Mali Tablo üretmek için <strong>mizan</strong> veya <strong>e-Defter</strong> dosyası yükleyin.<br>
+        <small style="color:var(--tm)">Detaylı mizan ya da e-Defter XML/ZIP yüklendiğinde Bilanço ve Gelir Tablosu burada otomatik oluşturulur.</small>
+      </div>
+    </div></div>`;
+    return;
+  }
+
+  // ─── Kaynak rozeti
+  const srcLabel = mt.source === 'mizan'
+    ? `🧾 Mizan kaynaklı`
+    : `📋 e-Defter (${S.defter.entries.length.toLocaleString('tr-TR')} kayıt agregasyonu)`;
+
+  // ─── BİLANÇO RENDER ─────────────────────────────────────────────────
+  const fmtCell = v => v ? fmtTL(v) : '<span style="color:var(--tm)">—</span>';
+
+  const _renderSide = side => {
+    let html = '';
+    for(const branch of side.branches){
+      html += `<tr class="mt-bigrow"><td colspan="2"><strong>${branch.code} ${branch.label}</strong></td><td class="r"><strong>${fmtCell(branch.total)}</strong></td></tr>`;
+      for(const g of branch.groups){
+        if(g.total === 0) continue; // boş alt grupları gizle
+        html += `<tr class="mt-row"><td style="width:38px;color:var(--tm);font-family:var(--font-num);font-size:11px;padding-left:18px">${g.code}</td><td>${g.label}</td><td class="r">${fmtCell(g.total)}</td></tr>`;
+      }
+    }
+    return html;
+  };
+
+  const balanceCheck = Math.abs(mt.diff) < 2
+    ? `<span style="color:var(--gn);font-weight:600">✓ Denk</span>`
+    : `<span style="color:var(--rd);font-weight:600">⚠ Fark: ${fmtTL(Math.abs(mt.diff))}</span>`;
+
+  const bilancoHtml = `
+    <div class="card" style="margin:0 0 16px">
+      <div class="card-h">
+        <div class="card-t">📑 BİLANÇO ${mt.periodName?`· ${esc(mt.periodName)}`:''}</div>
+        <span style="font-size:11px;color:var(--tm)">${srcLabel} · ${balanceCheck}</span>
+      </div>
+      <div class="card-b" style="padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:0">
+        <div style="border-right:1px solid var(--brd)">
+          <table class="mt-tbl">
+            <thead><tr><th colspan="2" style="text-align:left;font-weight:600;color:var(--t1)">AKTİF</th><th class="r">Tutar (₺)</th></tr></thead>
+            <tbody>${_renderSide(mt.aktif)}
+              <tr class="mt-toprow"><td colspan="2"><strong>AKTİF TOPLAM</strong></td><td class="r"><strong>${fmtCell(mt.aktif.total)}</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <table class="mt-tbl">
+            <thead><tr><th colspan="2" style="text-align:left;font-weight:600;color:var(--t1)">PASİF</th><th class="r">Tutar (₺)</th></tr></thead>
+            <tbody>${_renderSide(mt.pasif)}
+              <tr class="mt-toprow"><td colspan="2"><strong>PASİF TOPLAM</strong></td><td class="r"><strong>${fmtCell(mt.pasif.total)}</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+  // ─── GELİR TABLOSU RENDER ────────────────────────────────────────────
+  let gelirBody = '';
+  for(const r of mt.gelirRows){
+    const isEmph = r.emphasis;
+    const isFinal = r.finalRow;
+    const isSub = r.sign === 'sub' && !r.subtotal; // negatif gösterim
+    const display = r.value === 0
+      ? `<span style="color:var(--tm)">—</span>`
+      : (isSub ? `<span style="color:var(--rd)">(${fmtTL(Math.abs(r.value))})</span>` : fmtTL(r.value));
+    const rowStyle = isFinal
+      ? 'background:rgba(34,197,94,.06);border-top:2px solid var(--ac)'
+      : isEmph ? 'background:rgba(0,113,227,.04);font-weight:600' : '';
+    gelirBody += `<tr style="${rowStyle}">
+      <td style="width:42px;color:var(--tm);font-family:var(--font-num);font-size:11px">${r.ref}</td>
+      <td>${isEmph?`<strong>${r.label}</strong>`:r.label}</td>
+      <td class="r" style="font-weight:${isEmph?'700':'500'}">${display}</td>
+    </tr>`;
+  }
+  const gelirHtml = `
+    <div class="card">
+      <div class="card-h">
+        <div class="card-t">📈 GELİR TABLOSU ${mt.periodName?`· ${esc(mt.periodName)}`:''}</div>
+        <span style="font-size:11px;color:var(--tm)">${srcLabel}</span>
+      </div>
+      <div class="card-b" style="padding:0">
+        <table class="mt-tbl">
+          <thead><tr><th style="width:42px">Ref</th><th>Kalem</th><th class="r">Tutar (₺)</th></tr></thead>
+          <tbody>${gelirBody}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  el.innerHTML = `<div style="padding:16px 18px;max-width:1200px;margin:0 auto">
+    ${bilancoHtml}
+    ${gelirHtml}
+  </div>`;
+}
+
+window.rMaliTablolar = rMaliTablolar;
+
 window.sbCall           = sbCall;
 window.renamePeriod     = renamePeriod;
 window.handleLogoUpload = handleLogoUpload;
