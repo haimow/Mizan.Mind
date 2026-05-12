@@ -1113,6 +1113,8 @@ body{
 .mt-tbl tr:hover td{background:rgba(0,113,227,.02)}
 .mt-tbl tr.mt-bigrow:hover td{background:rgba(0,113,227,.05)}
 .mt-tbl tr.mt-toprow:hover td{background:rgba(0,113,227,.10)}
+.mt-tbl tr.mt-synrow td{background:rgba(0,113,227,.04);font-style:italic;border-left:2px solid var(--ac)}
+.mt-tbl tr.mt-synrow:hover td{background:rgba(0,113,227,.08)}
 
 /* === MIZAN APPLE-STYLE — PHASE 9 — END === */
 
@@ -5319,10 +5321,9 @@ function _buildMaliTablo(period){
   const { accts, source } = _maliCollectAccounts(period);
   if(!accts) return { source:null };
 
-  // BİLANÇO
+  // BİLANÇO — Aktif & Pasif (sadece 1-5 hesap grupları)
   const aktif = _maliBuildBilancoSide(accts, THP_TREE.aktif, 'D');
   const pasif = _maliBuildBilancoSide(accts, THP_TREE.pasif, 'C');
-  const diff = aktif.total - pasif.total;
 
   // GELİR TABLOSU (ardışık hesaplama, subtotal formüllerini çözerek)
   const gelirRows = [];
@@ -5345,7 +5346,49 @@ function _buildMaliTablo(period){
     gelirRows.push({ ref:row.ref, label:row.label, value, emphasis:!!row.emphasis, subtotal:!!row.subtotal, sign:row.sign, finalRow:!!row.finalRow });
   }
 
-  return { source, aktif, pasif, diff, gelirRows, periodName: period?.name || '' };
+  // ─── KAPANIŞ-ÖNCESİ DÜZELTMESİ ──────────────────────────────────────────
+  // Mizan dengesi (Σ tüm hesap bakiyeleri = 0) garantilidir. Bilanço (1-5)
+  // sadece bu evrenin bir parçasını içerir; gerisi 6xx (gelir tablosu),
+  // 7xx (maliyet hesapları — yansıtma ile self-net), 9xx (nazım — self-net).
+  //
+  // Kapanış-öncesi mizanlarda 6xx hesapları henüz 690→692→590 yoluyla öz
+  // kaynaklara aktarılmamış olabilir. Bu durumda 6/7/9 bakiyelerinin net'i,
+  // Bilanço'nun "eksik" kısmıdır → sentetik bir öz kaynak satırı olarak ekleriz.
+  //
+  // Matematiksel kimlik: Σ(1-5 bakiye) + Σ(6-9 bakiye) = 0
+  // → Pasif'e eklenecek tutar = -Σ(6-9 bakiye)
+  //
+  // Hem kapanış-öncesi hem kapanış-sonrası durumda doğru çalışır:
+  //   - Kapanış-öncesi: 6xx net'i = dönem kârı,  sentetik = +K ekler, dengelenir
+  //   - Kapanış-sonrası: 690 absorbe etmiş → 6xx net ≈ 0, sentetik = 0, çift sayım yok
+  //   - 7xx/9xx self-net olduğundan 6xx anomalileri zaten sentetiğe sızar
+  let nonBilancoNet = 0; // Σ(6-9 bakiye) — pozitifse net gider tarafı, negatifse net gelir
+  for(const code in accts){
+    if(!/^\d{3}$/.test(code)) continue;
+    const first = code[0];
+    if(first === '6' || first === '7' || first === '9'){
+      nonBilancoNet += (accts[code].d || 0) - (accts[code].c || 0);
+    }
+  }
+  // Sentetik öz kaynak katkısı = -nonBilancoNet
+  // (6xx gelir-yoğunsa Σ negatif olur → katkı pozitif → öz kaynağa kâr eklenir)
+  const cariDonemKar = -nonBilancoNet;
+  if(Math.abs(cariDonemKar) > 0.5){
+    const ozKaynakBranch = pasif.branches.find(b => b.code === '5');
+    if(ozKaynakBranch){
+      ozKaynakBranch.groups.push({
+        code: '—',
+        label: 'Cari Dönem Net Kârı/Zararı (Hesaplanan)',
+        total: cariDonemKar,
+        synthetic: true,  // renderer'a görsel ipucu için
+      });
+      ozKaynakBranch.total += cariDonemKar;
+      pasif.total += cariDonemKar;
+    }
+  }
+
+  const diff = aktif.total - pasif.total;
+  return { source, aktif, pasif, diff, gelirRows, periodName: period?.name || '', cariDonemKar };
 }
 
 // ─── RENDERER ────────────────────────────────────────────────────────────
@@ -5377,7 +5420,11 @@ function rMaliTablolar(el){
       html += `<tr class="mt-bigrow"><td colspan="2"><strong>${branch.code} ${branch.label}</strong></td><td class="r"><strong>${fmtCell(branch.total)}</strong></td></tr>`;
       for(const g of branch.groups){
         if(g.total === 0) continue; // boş alt grupları gizle
-        html += `<tr class="mt-row"><td style="width:38px;color:var(--tm);font-family:var(--font-num);font-size:11px;padding-left:18px">${g.code}</td><td>${g.label}</td><td class="r">${fmtCell(g.total)}</td></tr>`;
+        // Sentetik satır (kapanış-öncesi 6xx → öz kaynak aktarımı) için görsel ipucu
+        const isSyn = g.synthetic;
+        const codeCol = isSyn ? `<span title="Gelir tablosundan hesaplandı — 6xx hesapları henüz kapatılmadığı için öz kaynaklara aktarılır" style="color:var(--ac)">⚙</span>` : g.code;
+        const labelCell = isSyn ? `<em style="color:var(--ac)">${g.label}</em>` : g.label;
+        html += `<tr class="mt-row${isSyn?' mt-synrow':''}"><td style="width:38px;color:var(--tm);font-family:var(--font-num);font-size:11px;padding-left:18px">${codeCol}</td><td>${labelCell}</td><td class="r">${fmtCell(g.total)}</td></tr>`;
       }
     }
     return html;
