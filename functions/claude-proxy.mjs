@@ -2,8 +2,16 @@
 // Streaming bypasses the Lambda response timeout: tokens flow through as they arrive,
 // so the function never sits idle waiting for Anthropic to finish.
 // Set { stream: true } in the request body to enable; otherwise behaves like a JSON proxy.
+//
+// AUTH: Netlify Functions v2 does NOT auto-populate context.clientContext.user from
+// Identity JWTs (only v1 does). To get real signature verification without holding the
+// HS256 secret ourselves, we round-trip the Bearer token to Netlify Identity's /user
+// endpoint — GoTrue verifies the signature server-side and returns the user record on
+// success. Adds ~50-100ms one-time overhead per request; acceptable since the heavy
+// work (Anthropic API) is downstream.
 
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://mizanmind.netlify.app';
+const SITE_URL = process.env.URL || ALLOWED_ORIGIN;
 
 const baseHeaders = {
   'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
@@ -16,6 +24,24 @@ const json = (body, status = 200) => new Response(
   { status, headers: { ...baseHeaders, 'Content-Type': 'application/json' } }
 );
 
+// Verify Identity JWT by asking GoTrue. Returns the user record on success, null otherwise.
+// Cheap and authoritative — no secret management, no manual HS256.
+async function verifyIdentityToken(authHeader) {
+  if (!authHeader || !/^Bearer\s+\S+/i.test(authHeader)) return null;
+  try {
+    const res = await fetch(`${SITE_URL}/.netlify/identity/user`, {
+      method: 'GET',
+      headers: { Authorization: authHeader },
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    if (!user?.email) return null;
+    return user;
+  } catch {
+    return null;
+  }
+}
+
 export default async (req, context) => {
   if (req.method === 'OPTIONS') {
     return new Response('', { status: 204, headers: baseHeaders });
@@ -24,25 +50,8 @@ export default async (req, context) => {
     return json({ error: 'Method not allowed' }, 405);
   }
 
-  // Netlify Functions v2 does NOT auto-populate context.clientContext.user from
-  // Identity JWTs (only v1 does). Decode the Authorization header manually.
-  // Signature verification isn't possible without the Identity HS256 secret,
-  // but checking shape + expiry blocks drive-by abuse; CORS handles browsers.
-  const decodeJwt = (raw) => {
-    if (!raw) return null;
-    try {
-      const t = raw.replace(/^Bearer\s+/i, '').trim();
-      const parts = t.split('.');
-      if (parts.length !== 3) return null;
-      const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-      const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
-      const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
-      if (payload.exp && payload.exp * 1000 < Date.now()) return null;
-      return payload;
-    } catch { return null; }
-  };
   const authHeader = req.headers.get('authorization') || '';
-  const decoded = context.clientContext?.user || decodeJwt(authHeader);
+  const decoded = await verifyIdentityToken(authHeader);
   if (!decoded?.email) {
     return json({ error: 'Kimlik doğrulama gerekli' }, 401);
   }
